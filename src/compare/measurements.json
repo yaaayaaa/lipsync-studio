@@ -1,0 +1,525 @@
+{
+  "generatedAt": "2026/10/19 22:25:12",
+  "impls": {
+    "radix": {
+      "bundle": {
+        "jsGzip": 36922,
+        "jsRaw": 108306,
+        "cssGzip": 864
+      },
+      "lines": {
+        "tsx": 121,
+        "css": 161
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": false,
+        "listScroll": false,
+        "listOutsideClick": false,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": false,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": false,
+            "byScrollBy": true,
+            "byWheel": false,
+            "scroll": false,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "ariakit": {
+      "bundle": {
+        "jsGzip": 47577,
+        "jsRaw": 133747,
+        "cssGzip": 784
+      },
+      "lines": {
+        "tsx": 94,
+        "css": 141
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "floating": {
+      "bundle": {
+        "jsGzip": 25386,
+        "jsRaw": 69671,
+        "cssGzip": 756
+      },
+      "lines": {
+        "tsx": 254,
+        "css": 143
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": true,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "reactaria": {
+      "bundle": {
+        "jsGzip": 63160,
+        "jsRaw": 196014,
+        "cssGzip": 606
+      },
+      "lines": {
+        "tsx": 112,
+        "css": 96
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": false
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": false
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "baseui": {
+      "bundle": {
+        "jsGzip": 64580,
+        "jsRaw": 189096,
+        "cssGzip": 817
+      },
+      "lines": {
+        "tsx": 132,
+        "css": 148
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "headless": {
+      "bundle": {
+        "jsGzip": 39288,
+        "jsRaw": 116889,
+        "cssGzip": 773
+      },
+      "lines": {
+        "tsx": 100,
+        "css": 148
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": true,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": "nn"
+          }
+        }
+      }
+    },
+    "current": {
+      "bundle": {
+        "jsGzip": 2755,
+        "jsRaw": 7976,
+        "cssGzip": 684,
+        "note": "RowMenu・LayerSelect と開閉の純粋関数（menu.ts / dropdown.ts）。既にアプリに入っているので実際の追加は 0。サムネイル描画（LayerThumb）は除外"
+      },
+      "lines": {
+        "tsx": 574,
+        "css": 149,
+        "note": "RowMenu.tsx + LayerSelect.tsx + menu.ts + dropdown.ts と app.css の該当部分（比較用の包み current.tsx は除く）"
+      },
+      "behaviour": {
+        "menuSelect": true,
+        "menuScroll": true,
+        "menuOutsideClick": true,
+        "previewAfterTwoDowns": "nn",
+        "preview3rd": true,
+        "escapeClears": true,
+        "valueUnchanged": true,
+        "oneClickSwitch": true,
+        "listScroll": true,
+        "listOutsideClick": true,
+        "wraps": false,
+        "jumpInsertText": false,
+        "jumpKeyPress": false,
+        "errors": [],
+        "detail": {
+          "menu": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "openedPreview": {
+            "kind": "active",
+            "id": ""
+          },
+          "afterTwoDowns": {
+            "kind": "active",
+            "id": "nn"
+          },
+          "afterEscape": {
+            "kind": "value",
+            "id": ""
+          },
+          "closedAfterEscape": true,
+          "switch": {
+            "iOpen": true,
+            "aOpen": false
+          },
+          "list": {
+            "openBeforeClick": true,
+            "outsideClick": true,
+            "byScrollBy": true,
+            "byWheel": true,
+            "scroll": true,
+            "openAfterScroll": true
+          },
+          "afterWrap": {
+            "kind": "active",
+            "id": "extra9"
+          },
+          "jumpInsertText": {
+            "kind": "active",
+            "id": ""
+          },
+          "jumpKey": {
+            "kind": "active",
+            "id": ""
+          }
+        }
+      }
+    }
+  }
+}

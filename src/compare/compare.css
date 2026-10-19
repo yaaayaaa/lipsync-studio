@@ -1,0 +1,260 @@
+/* 比較ページだけの見た目。色は app.css の変数だけを使う（白黒・ダークはそちらで切り替わる） */
+
+.cmp-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  color: var(--fg);
+}
+
+.cmp-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cmp-top h1 {
+  font-size: 20px;
+}
+
+.cmp-top p {
+  margin: 4px 0 0;
+}
+
+.cmp-muted {
+  color: var(--muted);
+}
+
+.cmp-section {
+  margin-bottom: 32px;
+}
+
+.cmp-h2 {
+  font-size: 16px;
+  color: var(--fg);
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--fg);
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+}
+
+.cmp-legend {
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.cmp-table-wrap {
+  overflow-x: auto;
+}
+
+.cmp-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.cmp-table th,
+.cmp-table td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.cmp-table thead th {
+  font-weight: 600;
+  background: var(--hover-bg);
+}
+
+.cmp-table a {
+  color: inherit;
+}
+
+.cmp-cell-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.cmp-mark.yes {
+  font-weight: 600;
+}
+
+.cmp-mark.no {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.cmp-mark.unknown {
+  color: var(--muted);
+}
+
+.cmp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 12px;
+}
+
+.cmp-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cmp-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.cmp-packages {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.cmp-mock-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+
+.cmp-log,
+.cmp-values {
+  margin: 0;
+  font-size: 12px;
+}
+
+.cmp-outside {
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+.cmp-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.cmp-vowels {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* あ と い は横に並べる（縦だと あ の一覧が い のボタンに重なり、1クリック切り替えを試せない） */
+.cmp-vowel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cmp-vowel > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-vowel-label {
+  flex: none;
+  width: 1.5em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cmp-preview {
+  flex: none;
+  width: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  text-align: center;
+}
+
+.cmp-preview.live {
+  border-style: solid;
+  border-color: var(--fg);
+}
+
+.cmp-preview-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0 / 8px 8px;
+}
+
+.cmp-preview-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cmp-preview-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.cmp-notes {
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  font-size: 12px;
+}
+
+.cmp-notes summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.cmp-notes ul {
+  list-style: disc;
+  padding-left: 1.2em;
+  margin: 6px 0;
+}
+
+.cmp-notes li + li {
+  margin-top: 3px;
+}
+
+.cmp-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 8px;
+  margin: 6px 0 0;
+}
+
+.cmp-facts dt {
+  color: var(--muted);
+}
+
+.cmp-facts dd {
+  margin: 0;
+}
+
+.cmp-spacer {
+  height: 150vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 24px;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+}
+
+@media (max-width: 600px) {
+  .cmp-top {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,96 @@
+.cmp-reactaria-trigger,
+.cmp-reactaria-select-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+}
+.cmp-reactaria-trigger {
+  padding: 4px;
+}
+.cmp-reactaria-select-button {
+  padding: 4px 8px;
+  /* 置き場所の幅に合わせる（固定の最小幅だと横に並べたときにはみ出す） */
+  width: 100%;
+  min-width: 0;
+}
+.cmp-reactaria-trigger[data-hovered],
+.cmp-reactaria-select-button[data-hovered] {
+  background: var(--hover-bg);
+}
+.cmp-reactaria-trigger[data-focus-visible],
+.cmp-reactaria-select-button[data-focus-visible] {
+  outline: 2px solid var(--selected-bg);
+  outline-offset: 1px;
+}
+.cmp-reactaria-select-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.cmp-reactaria-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.cmp-reactaria-popover {
+  z-index: 1000;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  min-width: 140px;
+}
+.cmp-reactaria-select-popover {
+  min-width: var(--trigger-width);
+}
+.cmp-reactaria-menu,
+.cmp-reactaria-listbox {
+  outline: none;
+  padding: 4px;
+  max-height: 280px;
+  overflow: auto;
+}
+.cmp-reactaria-menu-item,
+.cmp-reactaria-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  outline: none;
+}
+.cmp-reactaria-menu-item[data-focused],
+.cmp-reactaria-option[data-focused] {
+  background: var(--hover-bg);
+}
+.cmp-reactaria-option[data-selected] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+.cmp-reactaria-danger {
+  color: var(--danger);
+}
+.cmp-reactaria-thumb {
+  flex: none;
+  box-sizing: border-box;
+  object-fit: contain;
+  border-radius: 2px;
+  background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0 / 8px 8px;
+}
+.cmp-reactaria-thumb-empty {
+  background: none;
+  border: 1px dashed var(--muted);
+}

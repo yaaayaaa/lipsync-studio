@@ -1,0 +1,148 @@
+.cmp-baseui-menu-trigger {
+  width: 26px;
+  padding: 1px 0;
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+}
+
+.cmp-baseui-menu-trigger:hover:not(:disabled),
+.cmp-baseui-menu-trigger[data-popup-open] {
+  border-color: currentColor;
+}
+
+.cmp-baseui-menu-trigger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.cmp-baseui-positioner {
+  z-index: 1000;
+}
+
+.cmp-baseui-popup {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  max-height: min(280px, var(--available-height));
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--fg);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.cmp-baseui-menu-item {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  outline: none;
+  user-select: none;
+}
+
+.cmp-baseui-menu-item[data-highlighted] {
+  background: var(--hover-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.cmp-baseui-menu-item[data-danger] {
+  color: var(--danger);
+}
+
+.cmp-baseui-select-trigger {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 2px 6px 2px 2px;
+}
+
+.cmp-baseui-select-trigger:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.cmp-baseui-select-trigger[data-popup-open] {
+  border-color: var(--fg);
+}
+
+.cmp-baseui-select-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-baseui-thumb {
+  flex: none;
+  box-sizing: border-box;
+  background-color: var(--checker-a);
+  background-image: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%),
+    linear-gradient(45deg, var(--checker-b) 25%, transparent 25%, transparent 75%, var(--checker-b) 75%);
+  background-position: 0 0, 3px 3px;
+  background-size: 6px 6px, 6px 6px;
+  border: 1px solid var(--border);
+}
+
+.cmp-baseui-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cmp-baseui-thumb[data-empty] {
+  background: none;
+  border: 1px dashed var(--muted);
+}
+
+.cmp-baseui-thumb-sm {
+  width: 24px;
+  height: 24px;
+}
+
+.cmp-baseui-thumb-lg {
+  width: 32px;
+  height: 32px;
+}
+
+.cmp-baseui-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.cmp-baseui-caret {
+  flex: none;
+  color: var(--muted);
+}
+
+.cmp-baseui-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px 3px 3px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.cmp-baseui-option[data-highlighted] {
+  background: var(--hover-bg);
+  outline: 1px solid var(--border);
+}
+
+.cmp-baseui-option[data-selected] .cmp-baseui-name {
+  flex: none;
+  max-width: calc(100% - 44px);
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}

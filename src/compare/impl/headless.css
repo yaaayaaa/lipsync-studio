@@ -1,0 +1,148 @@
+.cmp-headless-menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  padding: 1px 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cmp-headless-menu-button:hover,
+.cmp-headless-menu-button[data-open] {
+  border-color: currentColor;
+}
+
+.cmp-headless-menu-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.cmp-headless-menu-items,
+.cmp-headless-list {
+  z-index: 1000;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--fg);
+  border-radius: var(--radius);
+}
+
+.cmp-headless-menu-items {
+  min-width: 140px;
+}
+
+.cmp-headless-list {
+  width: var(--button-width);
+  max-height: 280px;
+}
+
+.cmp-headless-menu-items:focus,
+.cmp-headless-list:focus {
+  outline: none;
+}
+
+.cmp-headless-menu-item {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cmp-headless-menu-item[data-focus] {
+  background: var(--hover-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.cmp-headless-menu-item.danger {
+  color: var(--danger);
+}
+
+.cmp-headless-select-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px 6px 2px 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.cmp-headless-select-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.cmp-headless-select-button[data-open] {
+  border-color: var(--fg);
+}
+
+.cmp-headless-thumb {
+  flex: none;
+  display: block;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0 / 8px 8px;
+  object-fit: contain;
+}
+
+.cmp-headless-thumb.small {
+  width: 24px;
+  height: 24px;
+  background-size: 6px 6px;
+}
+
+.cmp-headless-thumb.empty {
+  background: transparent;
+  border-style: dashed;
+}
+
+.cmp-headless-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.cmp-headless-caret {
+  flex: none;
+  color: var(--muted);
+}
+
+.cmp-headless-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px 3px 3px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.cmp-headless-option[data-focus] {
+  background: var(--hover-bg);
+  outline: 1px solid var(--border);
+}
+
+.cmp-headless-option[data-selected] .cmp-headless-name {
+  flex: none;
+  max-width: calc(100% - 44px);
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
