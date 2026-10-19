@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
-import { VOWELS } from '../../core/character/types'
 import type { Character, Expression, Vowel } from '../../core/character/types'
 import { initialVisibility, setVisible } from '../../core/psd/visibility'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
@@ -17,7 +16,7 @@ import { MouthPanel } from './MouthPanel'
 import { Preview } from './Preview'
 import { RowMenu } from './RowMenu'
 import { useRefocus } from './useRefocus'
-import { previewModeAfter, previewMouthLayer } from './previewMode'
+import { DEFAULT_PREVIEW_MODE, PREVIEW_MODES, previewModeAfter, previewMouthLayer } from './previewMode'
 import type { LiveMouth, PreviewEvent, PreviewMode } from './previewMode'
 import { VoicePanel } from './VoicePanel'
 import { newId } from '../../core/id'
@@ -188,8 +187,8 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
     () => character.expressions[0]?.visibility ?? initialVisibility(tree),
   )
   const [expressionId, setExpressionId] = useState<string | null>(character.expressions[0]?.id ?? null)
-  /** 中央で確認する母音。null ならツリーの状態のまま。口の編集に合わせて自動でも切り替わる */
-  const [previewMode, setPreviewMode] = useState<PreviewMode>(null)
+  /** 中央で確認する母音。口の編集に合わせて自動でも切り替わる */
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(DEFAULT_PREVIEW_MODE)
   const [playbackVowel, setPlaybackVowel] = useState<Vowel | null>(null)
   const live = useLiveMouth()
   const follow = (event: PreviewEvent) => setPreviewMode(previewModeAfter(event))
@@ -199,7 +198,6 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
     if (playbackVowel !== null) {
       return applyMouth(tree, visibility, mouthGroupId, resolveMouthLayer(mouthMap, playbackVowel))
     }
-    if (previewMode === null) return visibility
     return applyMouth(tree, visibility, mouthGroupId, previewMouthLayer(mouthMap, previewMode, live.value))
   }, [tree, visibility, playbackVowel, previewMode, live.value, character])
 
@@ -225,15 +223,7 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
       </section>
       <section className="column preview-column">
         <div className="vowel-switch" role="group" aria-label="プレビューの口">
-          <button
-            type="button"
-            className={previewMode === null ? 'active' : undefined}
-            aria-pressed={previewMode === null}
-            onClick={() => follow({ type: 'manual', mode: null })}
-          >
-            ツリーのまま
-          </button>
-          {VOWELS.map((v) => (
+          {PREVIEW_MODES.map((v) => (
             <button
               key={v}
               type="button"

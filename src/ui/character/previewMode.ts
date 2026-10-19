@@ -3,8 +3,14 @@ import { VOWELS } from '../../core/character/types'
 import type { MouthMap, Vowel } from '../../core/character/types'
 import type { LayerId } from '../../core/psd/types'
 
-/** 中央のプレビューで見せる口。null は「ツリーのまま」 */
-export type PreviewMode = Vowel | null
+/** 中央のプレビューで見せる口。口が未割り当てならツリーの状態のまま映る */
+export type PreviewMode = Vowel
+
+/** 既定は「閉じ」。喋っていないときの顔なので、ふだん確認したいのはこれ */
+export const DEFAULT_PREVIEW_MODE: PreviewMode = 'closed'
+
+/** 切り替えボタンの並び。既定の「閉じ」を先頭にする */
+export const PREVIEW_MODES: readonly PreviewMode[] = ['closed', ...VOWELS.filter((v) => v !== 'closed')]
 
 export type PreviewEvent =
   | { type: 'vowelOpened'; vowel: Vowel }
@@ -24,14 +30,13 @@ export function previewModeAfter(event: PreviewEvent): PreviewMode {
     case 'vowelOpened':
       return event.vowel
     case 'treeToggled':
-      // ツリーの変更が見えるように戻す
-      return null
+      // ツリーをいじったら、既定の顔に戻してその変更を確かめられるようにする
+      return DEFAULT_PREVIEW_MODE
     case 'manual':
       return event.mode
     case 'groupChanged': {
-      if (event.mouthGroupId === null) return null
-      if (event.mouthMap.closed !== undefined) return 'closed'
-      return VOWELS.find((v) => event.mouthMap[v] !== undefined) ?? null
+      if (event.mouthGroupId === null || event.mouthMap.closed !== undefined) return DEFAULT_PREVIEW_MODE
+      return VOWELS.find((v) => event.mouthMap[v] !== undefined) ?? DEFAULT_PREVIEW_MODE
     }
   }
 }

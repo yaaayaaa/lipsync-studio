@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { previewModeAfter, previewMouthLayer } from '../../../src/ui/character/previewMode'
+import { PREVIEW_MODES, previewModeAfter, previewMouthLayer } from '../../../src/ui/character/previewMode'
 
 describe('previewModeAfter', () => {
   it('follows the vowel whose dropdown was opened', () => {
@@ -7,13 +7,13 @@ describe('previewModeAfter', () => {
     expect(previewModeAfter({ type: 'vowelOpened', vowel: 'closed' })).toBe('closed')
   })
 
-  it('returns to the tree when layers are toggled in the tree', () => {
-    expect(previewModeAfter({ type: 'treeToggled' })).toBeNull()
+  it('returns to 閉じ when layers are toggled in the tree', () => {
+    expect(previewModeAfter({ type: 'treeToggled' })).toBe('closed')
   })
 
   it('keeps manual choices', () => {
     expect(previewModeAfter({ type: 'manual', mode: 'o' })).toBe('o')
-    expect(previewModeAfter({ type: 'manual', mode: null })).toBeNull()
+    expect(previewModeAfter({ type: 'manual', mode: 'closed' })).toBe('closed')
   })
 
   describe('after the mouth group changes', () => {
@@ -25,10 +25,16 @@ describe('previewModeAfter', () => {
       expect(previewModeAfter({ type: 'groupChanged', mouthGroupId: '1', mouthMap: { o: '1/1', i: '1/0' } })).toBe('i')
     })
 
-    it('shows the tree when nothing is assigned or no group is set', () => {
-      expect(previewModeAfter({ type: 'groupChanged', mouthGroupId: '1', mouthMap: {} })).toBeNull()
-      expect(previewModeAfter({ type: 'groupChanged', mouthGroupId: null, mouthMap: { closed: '1/2' } })).toBeNull()
+    it('shows 閉じ when nothing is assigned or no group is set', () => {
+      expect(previewModeAfter({ type: 'groupChanged', mouthGroupId: '1', mouthMap: {} })).toBe('closed')
+      expect(previewModeAfter({ type: 'groupChanged', mouthGroupId: null, mouthMap: { closed: '1/2' } })).toBe('closed')
     })
+  })
+})
+
+describe('PREVIEW_MODES', () => {
+  it('puts the default 閉じ first, then あいうえお', () => {
+    expect(PREVIEW_MODES).toEqual(['closed', 'a', 'i', 'u', 'e', 'o'])
   })
 })
 
