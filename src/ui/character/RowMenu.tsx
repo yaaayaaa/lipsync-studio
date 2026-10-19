@@ -1,5 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { EllipsisVertical } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { placePopover } from './dropdown'
@@ -8,6 +9,9 @@ import type { MenuEvent } from './menu'
 
 export interface RowMenuItem {
   label: string
+  /** 項目の頭に付けるアイコン */
+  icon?: LucideIcon
+  /** 削除などの取り返しのつかない操作。区切り線の後に赤で出す */
   danger?: boolean
   onSelect(): void
 }
@@ -18,7 +22,9 @@ interface Props {
   items: RowMenuItem[]
 }
 
-const MENU_MIN_WIDTH = 140
+const MENU_MIN_WIDTH = 180
+/** ボタンとメニューのすき間 */
+const MENU_GAP = 4
 
 /**
  * 一覧の行の「…」メニュー。項目へは実際にフォーカスを移す（role=menu の作法）。
@@ -62,7 +68,7 @@ export function RowMenu({ label, items }: Props) {
         { x: r.left, y: r.top, width: r.width, height: r.height },
         { width: window.innerWidth, height: window.innerHeight },
         menu.scrollHeight,
-        { align: 'end', minWidth: MENU_MIN_WIDTH },
+        { align: 'end', minWidth: MENU_MIN_WIDTH, gap: MENU_GAP },
       )
       if (!placement) setState((s) => ({ ...s, open: false }))
       else setPosition(placement)
@@ -145,19 +151,26 @@ export function RowMenu({ label, items }: Props) {
           // 項目を押してもフォーカスがメニューの外（body）へ逃げないようにする（Safari）
           onMouseDown={(e) => e.preventDefault()}
         >
-          {items.map((item, i) => (
-            <li
-              key={item.label}
-              id={`${id}-item-${i}`}
-              role="menuitem"
-              tabIndex={-1}
-              className={`row-menu-item${item.danger ? ' danger' : ''}`}
-              onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
-              onClick={() => dispatch({ type: 'click', index: i })}
-            >
-              {item.label}
-            </li>
-          ))}
+          {items.map((item, i) => {
+            const Icon = item.icon
+            return (
+              <Fragment key={item.label}>
+                {/* 取り返しのつかない操作は区切り線で離す（キーボードの移動先には含めない） */}
+                {item.danger && i > 0 && <li role="separator" className="row-menu-separator" />}
+                <li
+                  id={`${id}-item-${i}`}
+                  role="menuitem"
+                  tabIndex={-1}
+                  className={`row-menu-item${item.danger ? ' danger' : ''}`}
+                  onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
+                  onClick={() => dispatch({ type: 'click', index: i })}
+                >
+                  {Icon && <Icon {...iconProps} />}
+                  {item.label}
+                </li>
+              </Fragment>
+            )
+          })}
         </ul>
       )}
     </span>

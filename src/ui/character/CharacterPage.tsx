@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
 import { VOWELS } from '../../core/character/types'
@@ -122,8 +122,8 @@ export function CharacterPage() {
                 <RowMenu
                   label="キャラの操作"
                   items={[
-                    { label: '名前を変更', onSelect: () => setRenamingId(c.id) },
-                    { label: '削除', danger: true, onSelect: () => void remove(c) },
+                    { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(c.id) },
+                    { label: '削除', icon: Trash2, danger: true, onSelect: () => void remove(c) },
                   ]}
                 />
               )}

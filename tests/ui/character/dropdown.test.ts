@@ -139,3 +139,12 @@ describe('placePopover options for menus', () => {
     expect(placePopover({ x: 20, y: 100, width: 24, height: 24 }, viewport, 80, { align: 'end', minWidth: 140 })?.left).toBe(8)
   })
 })
+
+describe('placePopover gap option', () => {
+  it('leaves the requested gap between the button and the popover (default 2)', () => {
+    const anchor = { x: 100, y: 100, width: 24, height: 24 }
+    expect(placePopover(anchor, { width: 1000, height: 800 }, 80, { gap: 4 })?.top).toBe(128)
+    expect(placePopover({ x: 100, y: 700, width: 24, height: 24 }, { width: 1000, height: 800 }, 280, { gap: 4 })?.bottom).toBe(104)
+    expect(placePopover(anchor, { width: 1000, height: 800 }, 80)?.top).toBe(126)
+  })
+})

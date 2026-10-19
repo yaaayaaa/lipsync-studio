@@ -250,8 +250,9 @@ input[type='text'],
   gap: 8px;
 }
 
-.character-list li,
-.expression-list li {
+/* 行だけに当てる（行の中に出るメニューの項目 li には当てない） */
+.character-list > ul > li,
+.expression-list > li {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -259,8 +260,8 @@ input[type='text'],
   border-radius: var(--radius);
 }
 
-.character-list li.selected,
-.expression-list li.selected {
+.character-list > ul > li.selected,
+.expression-list > li.selected {
   background: var(--selected-bg);
   color: var(--selected-fg);
 }
@@ -287,8 +288,10 @@ input[type='text'],
 }
 
 .row-menu-button {
-  width: 26px;
-  padding: 1px 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius);
   border-color: transparent;
   background: transparent;
   color: inherit;
@@ -304,7 +307,8 @@ li:focus-within .row-menu-button,
   opacity: 1;
 }
 
-.row-menu-button:hover:not(:disabled) {
+.row-menu-button:hover:not(:disabled),
+.row-menu-button[aria-expanded='true'] {
   background: var(--hover-bg);
 }
 
@@ -313,10 +317,10 @@ li:focus-within .row-menu-button,
   outline-offset: 1px;
 }
 
-/* 選択中の行（反転した地）の上では、地の色と重ならないよう文字色で示す */
-li.selected .row-menu-button:hover:not(:disabled) {
-  background: transparent;
-  border-color: currentColor;
+/* 選択中の行（反転した地）の上でも、押せる地の色に合わせてアイコンを通常の文字色にする */
+li.selected .row-menu-button:hover:not(:disabled),
+li.selected .row-menu-button[aria-expanded='true'] {
+  color: var(--fg);
 }
 
 li.selected .row-menu-button:focus-visible {
@@ -339,11 +343,22 @@ li.selected .row-menu-button:focus-visible {
 .row-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
+  gap: 10px;
+  min-height: 32px;
+  padding: 6px 10px;
   border-radius: var(--radius);
   cursor: pointer;
   white-space: nowrap;
+}
+
+.row-menu-item svg {
+  flex: none;
+}
+
+.row-menu-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
 }
 
 .row-menu-item:focus {
@@ -353,6 +368,11 @@ li.selected .row-menu-button:focus-visible {
 
 .row-menu-item.danger {
   color: var(--danger);
+}
+
+/* 削除は強調中も赤のまま、地だけ淡い赤にする */
+.row-menu-item.danger:focus {
+  background: var(--danger-soft);
 }
 
 /* ---- レイヤーツリー ---- */

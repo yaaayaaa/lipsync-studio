@@ -1,3 +1,4 @@
+import { Pencil, Save, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Expression } from '../../core/character/types'
 import type { LayerNode, VisibilityState } from '../../core/psd/types'
@@ -90,9 +91,9 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
                 <RowMenu
                   label="表情の操作"
                   items={[
-                    { label: '現在の状態で上書き', onSelect: () => overwrite(e) },
-                    { label: '名前を変更', onSelect: () => setRenamingId(e.id) },
-                    { label: '削除', danger: true, onSelect: () => remove(e) },
+                    { label: '現在の状態で上書き', icon: Save, onSelect: () => overwrite(e) },
+                    { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(e.id) },
+                    { label: '削除', icon: Trash2, danger: true, onSelect: () => remove(e) },
                   ]}
                 />
               )}
