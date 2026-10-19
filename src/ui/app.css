@@ -189,6 +189,18 @@ input[type='text'],
   background: var(--surface);
 }
 
+/* 行の中で名前を直す欄は、行の色（選択中なら反転色）をそのまま使う。
+   地を --surface にすると選択中の行だけ白黒が入れ替わり、文字色は行から継ぐので読めなくなるため */
+.inline-name {
+  background: transparent;
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.inline-name:focus {
+  outline: none;
+  border-color: currentColor;
+}
+
 /* ---- レイアウト ---- */
 
 .app {
