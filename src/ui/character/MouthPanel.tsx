@@ -8,6 +8,7 @@ import { prepareQuery } from '../../core/voicevox/client'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
 import { LayerThumb } from './LayerThumb'
+import { MouthSelect } from './MouthSelect'
 import { VOWEL_LABELS } from './labels'
 import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
 import type { PlaybackHandle } from './samplePlayback'
@@ -54,6 +55,8 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
   const mouthGroup = mouthGroupId === null ? undefined : findNode(tree, mouthGroupId)
   const mouthOptions = mouthGroup ? [...mouthGroup.children].reverse().filter((n) => !n.flip) : []
   const thumb = { visibility, psdSize }
+  /** 開いている母音のドロップダウン（同時に1つだけ） */
+  const [openVowel, setOpenVowel] = useState<Vowel | null>(null)
 
   const chooseGroup = (id: LayerId | null) => {
     // 同じグループを押し直しただけで割り当てを消さない
@@ -86,29 +89,19 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
         <p className="notice error">設定された口グループが PSD に見つかりません。選び直してください。</p>
       )}
       {mouthGroup ? (
-        <div className="vowel-pickers">
+        <div className="vowel-grid">
           {VOWELS.map((v) => (
-            <div key={v} className="picker-field">
-              <span>{VOWEL_LABELS[v]}</span>
-              <div className="tile-picker" role="group" aria-label={`${VOWEL_LABELS[v]}の口`}>
-                <Tile
-                  name="未設定"
-                  node={null}
-                  selected={mouthMap[v] === undefined}
-                  onClick={() => onChange({ mouthGroupId, mouthMap: assign(mouthMap, v, null) })}
-                  {...thumb}
-                />
-                {mouthOptions.map((n) => (
-                  <Tile
-                    key={n.id}
-                    name={n.name}
-                    node={n}
-                    selected={mouthMap[v] === n.id}
-                    onClick={() => onChange({ mouthGroupId, mouthMap: assign(mouthMap, v, n.id) })}
-                    {...thumb}
-                  />
-                ))}
-              </div>
+            <div key={v} className="field">
+              <span aria-hidden>{VOWEL_LABELS[v]}</span>
+              <MouthSelect
+                label={`${VOWEL_LABELS[v]}の口`}
+                options={mouthOptions}
+                value={mouthMap[v] ?? null}
+                open={openVowel === v}
+                onOpenChange={(open) => setOpenVowel(open ? v : null)}
+                onChange={(id) => onChange({ mouthGroupId, mouthMap: assign(mouthMap, v, id) })}
+                {...thumb}
+              />
             </div>
           ))}
         </div>
