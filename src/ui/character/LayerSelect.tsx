@@ -6,11 +6,17 @@ import { dropdownReduce } from './dropdown'
 import type { DropdownEvent } from './dropdown'
 import { LayerThumb } from './LayerThumb'
 
-interface Props {
-  /** ボタンの読み上げ名（例「あの口」） */
+export interface LayerOption {
+  node: LayerNode
+  /** 表示名（グループならパス付きなど） */
   label: string
-  /** 口グループ直下の選択肢（上から順）。先頭に「未設定」が付く */
-  options: LayerNode[]
+}
+
+interface Props {
+  /** ボタンの読み上げ名（例「あの口」「口グループ」） */
+  label: string
+  /** 選択肢（上から順）。先頭に「未設定」が付く */
+  options: LayerOption[]
   value: LayerId | null
   /** 開いているか。同時に1つだけ開くよう親が持つ */
   open: boolean
@@ -25,10 +31,10 @@ const POPOVER_MIN_WIDTH = 200
 const SCREEN_MARGIN = 8
 
 /**
- * 縮小画像付きのドロップダウン（標準の select は画像を出せないため自作）。
+ * レイヤーを選ぶ縮小画像付きのドロップダウン（標準の select は画像を出せないため自作）。口グループと母音の口で使う。
  * 開いている間は一覧にフォーカスを移し、強調中の選択肢を aria-activedescendant で示す。
  */
-export function MouthSelect({ label, options, value, open, onOpenChange, onChange, visibility, psdSize }: Props) {
+export function LayerSelect({ label, options, value, open, onOpenChange, onChange, visibility, psdSize }: Props) {
   const id = useId()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -38,7 +44,7 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
   // 先頭（0）は「未設定」
   const items: { id: LayerId | null; name: string; node: LayerNode | null }[] = [
     { id: null, name: '未設定', node: null },
-    ...options.map((n) => ({ id: n.id, name: n.name, node: n })),
+    ...options.map((o) => ({ id: o.node.id, name: o.label, node: o.node })),
   ]
   const selected = items.findIndex((it) => it.id === value)
   const current = selected >= 0 ? items[selected] : null
@@ -112,11 +118,11 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
   }, [open, activeOptionId])
 
   return (
-    <div className="mouth-select">
+    <div className="layer-select">
       <button
         ref={buttonRef}
         type="button"
-        className="mouth-select-button"
+        className="layer-select-button"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? `${id}-list` : undefined}
@@ -125,8 +131,8 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
         onKeyDown={onKeyDown}
       >
         <LayerThumb node={current?.node ?? null} visibility={visibility} psdSize={psdSize} />
-        <span className="mouth-select-name">{current?.name ?? '未設定'}</span>
-        <span className="mouth-select-caret" aria-hidden>
+        <span className="layer-select-name">{current?.name ?? '未設定'}</span>
+        <span className="layer-select-caret" aria-hidden>
           ▾
         </span>
       </button>
@@ -134,7 +140,7 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
         <ul
           ref={listRef}
           id={`${id}-list`}
-          className="mouth-select-list"
+          className="layer-select-list"
           role="listbox"
           aria-label={label}
           tabIndex={-1}
@@ -148,7 +154,7 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
               id={optionId(i)}
               role="option"
               aria-selected={i === selected}
-              className={`mouth-select-option${i === active ? ' active' : ''}${i === selected ? ' selected' : ''}`}
+              className={`layer-select-option${i === active ? ' active' : ''}${i === selected ? ' selected' : ''}`}
               onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
               onClick={() => {
                 onChange(it.id)
@@ -157,7 +163,7 @@ export function MouthSelect({ label, options, value, open, onOpenChange, onChang
               }}
             >
               <LayerThumb node={it.node} visibility={visibility} psdSize={psdSize} />
-              <span className="mouth-select-name">{it.name}</span>
+              <span className="layer-select-name">{it.name}</span>
             </li>
           ))}
         </ul>

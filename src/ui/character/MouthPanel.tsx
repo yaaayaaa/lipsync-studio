@@ -7,8 +7,8 @@ import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import { prepareQuery } from '../../core/voicevox/client'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
-import { LayerThumb } from './LayerThumb'
-import { MouthSelect } from './MouthSelect'
+import { LayerSelect } from './LayerSelect'
+import type { LayerOption } from './LayerSelect'
 import { VOWEL_LABELS } from './labels'
 import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
 import type { PlaybackHandle } from './samplePlayback'
@@ -26,14 +26,8 @@ interface Props {
   onPlaybackMouth(vowel: Vowel | null): void
 }
 
-interface GroupOption {
-  node: LayerNode
-  /** 親からのパス付きの名前 */
-  label: string
-}
-
 /** flip を除いた全グループを、親からのパス付きの名前で上から順に並べる。 */
-function groupOptions(nodes: LayerNode[], prefix = ''): GroupOption[] {
+function groupOptions(nodes: LayerNode[], prefix = ''): LayerOption[] {
   return [...nodes]
     .reverse()
     .filter((n) => n.isGroup && !n.flip)
@@ -53,10 +47,19 @@ function assign(map: MouthMap, vowel: Vowel, layerId: LayerId | null): MouthMap 
 export function MouthPanel({ tree, character, visibility, psdSize, onChange, onPlaybackMouth }: Props) {
   const { mouthGroupId, mouthMap, voice } = character
   const mouthGroup = mouthGroupId === null ? undefined : findNode(tree, mouthGroupId)
-  const mouthOptions = mouthGroup ? [...mouthGroup.children].reverse().filter((n) => !n.flip) : []
+  const mouthOptions = mouthGroup
+    ? [...mouthGroup.children]
+        .reverse()
+        .filter((n) => !n.flip)
+        .map((n) => ({ node: n, label: n.name }))
+    : []
   const thumb = { visibility, psdSize }
-  /** 開いている母音のドロップダウン（同時に1つだけ） */
-  const [openVowel, setOpenVowel] = useState<Vowel | null>(null)
+  /** 開いているドロップダウン（同時に1つだけ） */
+  const [openSelect, setOpenSelect] = useState<Vowel | 'group' | null>(null)
+  const openProps = (key: Vowel | 'group') => ({
+    open: openSelect === key,
+    onOpenChange: (open: boolean) => setOpenSelect(open ? key : null),
+  })
 
   const chooseGroup = (id: LayerId | null) => {
     // 同じグループを押し直しただけで割り当てを消さない
@@ -68,22 +71,16 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
   return (
     <section className="panel">
       <h2>口</h2>
-      <div className="picker-field">
-        <span id="mouth-group-label">口グループ</span>
-        <div className="tile-picker group-picker" role="group" aria-labelledby="mouth-group-label">
-          <Tile name="未設定" node={null} selected={!mouthGroup} onClick={() => chooseGroup(null)} {...thumb} />
-          {groupOptions(tree).map((g) => (
-            <Tile
-              key={g.node.id}
-              name={g.node.name}
-              title={g.label}
-              node={g.node}
-              selected={g.node.id === mouthGroup?.id}
-              onClick={() => chooseGroup(g.node.id)}
-              {...thumb}
-            />
-          ))}
-        </div>
+      <div className="mouth-group-field">
+        <span aria-hidden>口グループ</span>
+        <LayerSelect
+          label="口グループ"
+          options={groupOptions(tree)}
+          value={mouthGroup ? mouthGroup.id : null}
+          onChange={chooseGroup}
+          {...openProps('group')}
+          {...thumb}
+        />
       </div>
       {mouthGroupId !== null && !mouthGroup && (
         <p className="notice error">設定された口グループが PSD に見つかりません。選び直してください。</p>
@@ -93,12 +90,11 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
           {VOWELS.map((v) => (
             <div key={v} className="field">
               <span aria-hidden>{VOWEL_LABELS[v]}</span>
-              <MouthSelect
+              <LayerSelect
                 label={`${VOWEL_LABELS[v]}の口`}
                 options={mouthOptions}
                 value={mouthMap[v] ?? null}
-                open={openVowel === v}
-                onOpenChange={(open) => setOpenVowel(open ? v : null)}
+                {...openProps(v)}
                 onChange={(id) => onChange({ mouthGroupId, mouthMap: assign(mouthMap, v, id) })}
                 {...thumb}
               />
@@ -115,33 +111,6 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
         onPlaybackMouth={onPlaybackMouth}
       />
     </section>
-  )
-}
-
-interface TileProps {
-  name: string
-  /** ボタンにかざしたときの説明（パス付きの名前など）。なければ name */
-  title?: string
-  node: LayerNode | null
-  selected: boolean
-  visibility: VisibilityState
-  psdSize: PsdSize
-  onClick(): void
-}
-
-/** サムネイルと名前の選択肢。選択中は枠を太くし、名前を反転させる。 */
-function Tile({ name, title, node, selected, visibility, psdSize, onClick }: TileProps) {
-  return (
-    <button
-      type="button"
-      className={`tile${selected ? ' selected' : ''}`}
-      aria-pressed={selected}
-      title={title ?? name}
-      onClick={onClick}
-    >
-      <LayerThumb node={node} visibility={visibility} psdSize={psdSize} />
-      <span className="tile-name">{name}</span>
-    </button>
   )
 }
 

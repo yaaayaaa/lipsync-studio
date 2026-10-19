@@ -429,13 +429,14 @@ li:focus-within .row-actions {
   color: var(--muted);
 }
 
-.picker-field {
+.mouth-group-field {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
-.picker-field > span {
+.mouth-group-field > span {
+  flex: none;
   color: var(--muted);
 }
 
@@ -449,31 +450,31 @@ li:focus-within .row-actions {
   min-width: 1.5em;
 }
 
-/* ---- 縮小画像付きのドロップダウン（母音の口） ---- */
+/* ---- 縮小画像付きのドロップダウン（口グループと母音の口） ---- */
 
-.mouth-select {
+.layer-select {
   flex: 1;
   min-width: 0;
 }
 
-.mouth-select-button {
+.layer-select-button {
   width: 100%;
   justify-content: flex-start;
   gap: 6px;
   padding: 2px 6px 2px 2px;
 }
 
-.mouth-select-button[aria-expanded='true'] {
+.layer-select-button[aria-expanded='true'] {
   border-color: var(--fg);
 }
 
-.mouth-select-button .layer-thumb {
+.layer-select-button .layer-thumb {
   width: 24px;
   height: 24px;
   background-size: 6px 6px;
 }
 
-.mouth-select-name {
+.layer-select-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -482,13 +483,13 @@ li:focus-within .row-actions {
   text-align: left;
 }
 
-.mouth-select-caret {
+.layer-select-caret {
   flex: none;
   color: var(--muted);
   font-size: 11px;
 }
 
-.mouth-select-list {
+.layer-select-list {
   z-index: 10;
   margin: 0;
   padding: 4px;
@@ -499,11 +500,11 @@ li:focus-within .row-actions {
   border-radius: var(--radius);
 }
 
-.mouth-select-list:focus {
+.layer-select-list:focus {
   outline: none;
 }
 
-.mouth-select-option {
+.layer-select-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -512,76 +513,24 @@ li:focus-within .row-actions {
   cursor: pointer;
 }
 
-.mouth-select-option .layer-thumb {
+.layer-select-option .layer-thumb {
   width: 32px;
   height: 32px;
 }
 
-.mouth-select-option.active {
+.layer-select-option.active {
   background: var(--hover-bg);
   outline: 1px solid var(--border);
 }
 
-/* 選択中は名前を反転させる（タイルと同じ表し方） */
-.mouth-select-option.selected .mouth-select-name {
+/* 選択中は名前を反転させる */
+.layer-select-option.selected .layer-select-name {
   flex: none;
   max-width: calc(100% - 44px);
   padding: 0 5px;
   border-radius: 3px;
   background: var(--selected-bg);
   color: var(--selected-fg);
-}
-
-.tile-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-/* グループは数が多くなりがちなので、パネルが伸びすぎないよう枠内でスクロールさせる */
-.group-picker {
-  max-height: 232px;
-  overflow-y: auto;
-}
-
-.tile {
-  flex-direction: column;
-  gap: 2px;
-  /* 右列の幅に5つ並ぶ大きさ（あいうえお＋閉じの口が5種でも1行に収まりやすい） */
-  width: 54px;
-  padding: 2px;
-  border-width: 2px;
-  border-color: var(--border);
-}
-
-.tile .layer-thumb {
-  width: 46px;
-  height: 46px;
-}
-
-.tile-name {
-  max-width: 100%;
-  padding: 0 3px;
-  border-radius: 3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.tile.selected,
-.tile.selected:hover:not(:disabled) {
-  border-color: var(--fg);
-}
-
-.tile.selected .tile-name {
-  background: var(--selected-bg);
-  color: var(--selected-fg);
-}
-
-.tile:focus-visible {
-  outline: 2px solid var(--fg);
-  outline-offset: 1px;
 }
 
 .button-row {
