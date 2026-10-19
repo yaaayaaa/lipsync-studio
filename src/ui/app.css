@@ -311,6 +311,22 @@ li:focus-within .row-actions {
   opacity: 0.6;
 }
 
+/* レイヤーのサムネイル。透明部分は市松模様、画像のないレイヤーは点線の空枠 */
+.layer-thumb {
+  flex: none;
+  display: block;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: repeating-conic-gradient(var(--checker) 0 25%, var(--surface) 0 50%) 0 0 / 8px 8px;
+}
+
+.layer-thumb.empty {
+  background: transparent;
+  border-style: dashed;
+}
+
 .layer-name.group {
   font-weight: 600;
 }
@@ -407,10 +423,72 @@ li:focus-within .row-actions {
   color: var(--muted);
 }
 
-.vowel-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
+.picker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.picker-field > span {
+  color: var(--muted);
+}
+
+.vowel-pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tile-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* グループは数が多くなりがちなので、パネルが伸びすぎないよう枠内でスクロールさせる */
+.group-picker {
+  max-height: 232px;
+  overflow-y: auto;
+}
+
+.tile {
+  flex-direction: column;
+  gap: 2px;
+  /* 右列の幅に5つ並ぶ大きさ（あいうえお＋閉じの口が5種でも1行に収まりやすい） */
+  width: 54px;
+  padding: 2px;
+  border-width: 2px;
+  border-color: var(--border);
+}
+
+.tile .layer-thumb {
+  width: 46px;
+  height: 46px;
+}
+
+.tile-name {
+  max-width: 100%;
+  padding: 0 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tile.selected,
+.tile.selected:hover:not(:disabled) {
+  border-color: var(--fg);
+}
+
+.tile.selected .tile-name {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
 }
 
 .button-row {

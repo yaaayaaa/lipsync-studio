@@ -186,6 +186,7 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           tree={tree}
           visibility={visibility}
           mouthGroupId={character.mouthGroupId}
+          psdSize={psdSize}
           onToggle={(id, visible) => setVisibility((v) => setVisible(tree, v, id, visible))}
         />
       </section>
@@ -223,6 +224,8 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
         <MouthPanel
           tree={tree}
           character={character}
+          visibility={visibility}
+          psdSize={psdSize}
           onChange={(patch) => onSave({ ...character, ...patch })}
           onPlaybackMouth={setPlaybackVowel}
         />

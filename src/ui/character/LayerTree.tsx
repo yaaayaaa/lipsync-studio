@@ -1,18 +1,21 @@
 import { isEffectivelyVisible } from '../../core/psd/visibility'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
+import type { PsdSize } from '../usePsd'
+import { LayerThumb } from './LayerThumb'
 
 interface Props {
   tree: LayerNode[]
   visibility: VisibilityState
   mouthGroupId: LayerId | null
+  psdSize: PsdSize
   onToggle(id: LayerId, visible: boolean): void
 }
 
 /** PSD と同じく上のレイヤーを上に並べる（ag-psd の配列は下から上）。flip は出さない。 */
-export function LayerTree({ tree, visibility, mouthGroupId, onToggle }: Props) {
+export function LayerTree(props: Props) {
   return (
     <ul className="layer-tree" role="tree">
-      <Nodes nodes={tree} groupName="root" {...{ tree, visibility, mouthGroupId, onToggle }} />
+      <Nodes nodes={props.tree} groupName="root" {...props} />
     </ul>
   )
 }
@@ -25,7 +28,7 @@ function Nodes({ nodes, groupName, ...props }: Props & { nodes: LayerNode[]; gro
 }
 
 function Node({ node, groupName, ...props }: Props & { node: LayerNode; groupName: string }) {
-  const { tree, visibility, mouthGroupId, onToggle } = props
+  const { tree, visibility, mouthGroupId, psdSize, onToggle } = props
   const checked = visibility[node.id] === true
   const dimmed = !isEffectivelyVisible(tree, visibility, node.id)
   const label = (
@@ -48,6 +51,7 @@ function Node({ node, groupName, ...props }: Props & { node: LayerNode; groupNam
     <li role="treeitem" aria-expanded={node.isGroup ? true : undefined}>
       <label className={`layer-row${dimmed ? ' dimmed' : ''}`}>
         {control}
+        <LayerThumb node={node} visibility={visibility} psdSize={psdSize} />
         {label}
       </label>
       {node.isGroup && node.children.length > 0 && (
