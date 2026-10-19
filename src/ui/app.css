@@ -24,8 +24,12 @@
   --popover-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
   /* 一覧の行やメニュー項目など、枠の内側の小さな角 */
   --radius-sm: 4px;
+  /* スクロールバーのつまみ。溝は透明にして、一覧の背景と分かれて見えないようにする */
+  --scrollbar-thumb: #c4c4c4;
   /* フォームやスクロールバーなどブラウザ標準の部品も同じ明暗にする */
   color-scheme: light;
+  /* scrollbar-color は継承されるので、ここで一度指定すれば全部のスクロール領域に効く */
+  scrollbar-color: var(--scrollbar-thumb) transparent;
   color: var(--fg);
   background: var(--bg);
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
@@ -54,6 +58,7 @@
     --checker-b: #a6a6a6;
     /* 黒地では影が見えないので、濃い影に薄い縁取りを重ねて浮いて見せる */
     --popover-shadow: 0 6px 20px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.08);
+    --scrollbar-thumb: #4a4a4a;
     /* 黒地で読めるよう明るめの赤にする */
     --danger: #ff6b6b;
     --danger-soft: #2b1313;
@@ -79,6 +84,7 @@
   --checker-b: #a6a6a6;
   /* 黒地では影が見えないので、濃い影に薄い縁取りを重ねて浮いて見せる */
   --popover-shadow: 0 6px 20px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.08);
+  --scrollbar-thumb: #4a4a4a;
   /* 黒地で読めるよう明るめの赤にする */
   --danger: #ff6b6b;
   --danger-soft: #2b1313;
