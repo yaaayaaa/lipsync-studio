@@ -22,6 +22,8 @@ interface Props {
   open: boolean
   onOpenChange(open: boolean): void
   onChange(layerId: LayerId | null): void
+  /** 開いている間に強調中の選択肢が変わるたびに呼ぶ（null は「未設定」）。閉じたら undefined */
+  onActiveChange?(layerId: LayerId | null | undefined): void
   visibility: VisibilityState
   psdSize: PsdSize
 }
@@ -31,7 +33,17 @@ interface Props {
  * レイヤーを選ぶ縮小画像付きのドロップダウン（標準の select は画像を出せないため自作）。口グループと母音の口で使う。
  * 開いている間は一覧にフォーカスを移し、強調中の選択肢を aria-activedescendant で示す。
  */
-export function LayerSelect({ label, options, value, open, onOpenChange, onChange, visibility, psdSize }: Props) {
+export function LayerSelect({
+  label,
+  options,
+  value,
+  open,
+  onOpenChange,
+  onChange,
+  onActiveChange,
+  visibility,
+  psdSize,
+}: Props) {
   const id = useId()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -62,9 +74,17 @@ export function LayerSelect({ label, options, value, open, onOpenChange, onChang
 
   // 閉じる処理は位置合わせの効果からも呼ぶ。毎回変わる関数で効果をやり直さない（一覧へのフォーカスが動く）よう最新を参照で持つ
   const onOpenChangeRef = useRef(onOpenChange)
+  const onActiveChangeRef = useRef(onActiveChange)
   useEffect(() => {
     onOpenChangeRef.current = onOpenChange
+    onActiveChangeRef.current = onActiveChange
   })
+
+  // 強調中の選択肢を知らせる（プレビューで試し見せするため）
+  const activeItemId = open ? (items[Math.min(active, items.length - 1)]?.id ?? null) : undefined
+  useEffect(() => {
+    onActiveChangeRef.current?.(activeItemId)
+  }, [activeItemId])
 
   // 一覧はパネルの枠で切れないよう画面に固定して置き、下に入らなければ上に出す
   useLayoutEffect(() => {

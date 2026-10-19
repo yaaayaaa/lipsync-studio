@@ -464,6 +464,11 @@ li:focus-within .row-actions {
   padding: 2px 6px 2px 2px;
 }
 
+.layer-select-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
 .layer-select-button[aria-expanded='true'] {
   border-color: var(--fg);
 }

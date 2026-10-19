@@ -24,6 +24,10 @@ interface Props {
   onChange(patch: { mouthGroupId: LayerId | null; mouthMap: MouthMap }): void
   /** 再生中は口の母音、終わったら null */
   onPlaybackMouth(vowel: Vowel | null): void
+  /** 母音のドロップダウンを開いた */
+  onVowelOpen(vowel: Vowel): void
+  /** 開いている母音のドロップダウンで強調中の口（null は「未設定」）。閉じたら undefined */
+  onLiveMouth(vowel: Vowel, layerId: LayerId | null | undefined): void
 }
 
 /** flip を除いた全グループを、親からのパス付きの名前で上から順に並べる。 */
@@ -44,7 +48,16 @@ function assign(map: MouthMap, vowel: Vowel, layerId: LayerId | null): MouthMap 
   return next
 }
 
-export function MouthPanel({ tree, character, visibility, psdSize, onChange, onPlaybackMouth }: Props) {
+export function MouthPanel({
+  tree,
+  character,
+  visibility,
+  psdSize,
+  onChange,
+  onPlaybackMouth,
+  onVowelOpen,
+  onLiveMouth,
+}: Props) {
   const { mouthGroupId, mouthMap, voice } = character
   const mouthGroup = mouthGroupId === null ? undefined : findNode(tree, mouthGroupId)
   const mouthOptions = mouthGroup
@@ -58,7 +71,10 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
   const [openSelect, setOpenSelect] = useState<Vowel | 'group' | null>(null)
   const openProps = (key: Vowel | 'group') => ({
     open: openSelect === key,
-    onOpenChange: (open: boolean) => setOpenSelect(open ? key : null),
+    onOpenChange: (open: boolean) => {
+      setOpenSelect(open ? key : null)
+      if (open && key !== 'group') onVowelOpen(key)
+    },
   })
 
   const chooseGroup = (id: LayerId | null) => {
@@ -96,6 +112,7 @@ export function MouthPanel({ tree, character, visibility, psdSize, onChange, onP
                 value={mouthMap[v] ?? null}
                 {...openProps(v)}
                 onChange={(id) => onChange({ mouthGroupId, mouthMap: assign(mouthMap, v, id) })}
+                onActiveChange={(id) => onLiveMouth(v, id)}
                 {...thumb}
               />
             </div>

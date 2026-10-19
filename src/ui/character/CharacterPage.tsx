@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
 import { VOWELS } from '../../core/character/types'
 import type { Character, Expression, Vowel } from '../../core/character/types'
 import { initialVisibility, setVisible } from '../../core/psd/visibility'
-import type { LayerNode, VisibilityState } from '../../core/psd/types'
+import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import { useApp } from '../useApp'
 import { afterPaint, cachePsd, forgetPsd, parsePsd, usePsd } from '../usePsd'
 import type { PsdSize } from '../usePsd'
@@ -13,6 +13,8 @@ import { LayerTree } from './LayerTree'
 import { VOWEL_LABELS } from './labels'
 import { MouthPanel } from './MouthPanel'
 import { Preview } from './Preview'
+import { previewModeAfter, previewMouthLayer } from './previewMode'
+import type { LiveMouth, PreviewEvent, PreviewMode } from './previewMode'
 import { VoicePanel } from './VoicePanel'
 import { newId } from '../../core/id'
 
@@ -160,18 +162,20 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
     () => character.expressions[0]?.visibility ?? initialVisibility(tree),
   )
   const [expressionId, setExpressionId] = useState<string | null>(character.expressions[0]?.id ?? null)
-  /** 中央で確認する母音。null ならツリーの状態のまま */
-  const [previewVowel, setPreviewVowel] = useState<Vowel | null>(null)
+  /** 中央で確認する母音。null ならツリーの状態のまま。口の編集に合わせて自動でも切り替わる */
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(null)
   const [playbackVowel, setPlaybackVowel] = useState<Vowel | null>(null)
+  const live = useLiveMouth()
+  const follow = (event: PreviewEvent) => setPreviewMode(previewModeAfter(event))
 
-  const shownVowel = playbackVowel ?? previewVowel
-  const previewVisibility = useMemo(
-    () =>
-      shownVowel === null
-        ? visibility
-        : applyMouth(tree, visibility, character.mouthGroupId, resolveMouthLayer(character.mouthMap, shownVowel)),
-    [tree, visibility, shownVowel, character.mouthGroupId, character.mouthMap],
-  )
+  const previewVisibility = useMemo(() => {
+    const { mouthGroupId, mouthMap } = character
+    if (playbackVowel !== null) {
+      return applyMouth(tree, visibility, mouthGroupId, resolveMouthLayer(mouthMap, playbackVowel))
+    }
+    if (previewMode === null) return visibility
+    return applyMouth(tree, visibility, mouthGroupId, previewMouthLayer(mouthMap, previewMode, live.value))
+  }, [tree, visibility, playbackVowel, previewMode, live.value, character])
 
   const selectExpression = (e: Expression) => {
     setVisibility(e.visibility)
@@ -187,15 +191,19 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           visibility={visibility}
           mouthGroupId={character.mouthGroupId}
           psdSize={psdSize}
-          onToggle={(id, visible) => setVisibility((v) => setVisible(tree, v, id, visible))}
+          onToggle={(id, visible) => {
+            setVisibility((v) => setVisible(tree, v, id, visible))
+            follow({ type: 'treeToggled' })
+          }}
         />
       </section>
       <section className="column preview-column">
         <div className="vowel-switch" role="group" aria-label="プレビューの口">
           <button
             type="button"
-            className={previewVowel === null ? 'active' : undefined}
-            onClick={() => setPreviewVowel(null)}
+            className={previewMode === null ? 'active' : undefined}
+            aria-pressed={previewMode === null}
+            onClick={() => follow({ type: 'manual', mode: null })}
           >
             ツリーのまま
           </button>
@@ -203,9 +211,10 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
             <button
               key={v}
               type="button"
-              className={previewVowel === v ? 'active' : undefined}
+              className={previewMode === v ? 'active' : undefined}
+              aria-pressed={previewMode === v}
               disabled={character.mouthGroupId === null}
-              onClick={() => setPreviewVowel(v)}
+              onClick={() => follow({ type: 'manual', mode: v })}
             >
               {VOWEL_LABELS[v]}
             </button>
@@ -226,8 +235,13 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           character={character}
           visibility={visibility}
           psdSize={psdSize}
-          onChange={(patch) => onSave({ ...character, ...patch })}
+          onChange={(patch) => {
+            onSave({ ...character, ...patch })
+            if (patch.mouthGroupId !== character.mouthGroupId) follow({ type: 'groupChanged', ...patch })
+          }}
           onPlaybackMouth={setPlaybackVowel}
+          onVowelOpen={(vowel) => follow({ type: 'vowelOpened', vowel })}
+          onLiveMouth={live.set}
         />
         <ExpressionPanel
           tree={tree}
@@ -240,4 +254,36 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
       </section>
     </>
   )
+}
+
+/**
+ * 母音のドロップダウンで強調中の口（保存前の試し見せ）。矢印キーで選択肢を素早く動かしても
+ * プレビューの合成が追いつくよう、反映は1フレームに1回にまとめる。閉じたときはすぐ消す。
+ */
+function useLiveMouth(): { value: LiveMouth | null; set(vowel: Vowel, layerId: LayerId | null | undefined): void } {
+  const [value, setValue] = useState<LiveMouth | null>(null)
+  const pending = useRef<LiveMouth | null>(null)
+  const frame = useRef(0)
+
+  useEffect(() => () => cancelAnimationFrame(frame.current), [])
+
+  const set = (vowel: Vowel, layerId: LayerId | null | undefined) => {
+    if (layerId === undefined) {
+      // 閉じた母音のものだけ消す（別の母音を開いた直後の知らせを消さない）
+      if (pending.current?.vowel === vowel) {
+        cancelAnimationFrame(frame.current)
+        frame.current = 0
+        pending.current = null
+      }
+      setValue((cur) => (cur?.vowel === vowel ? null : cur))
+      return
+    }
+    pending.current = { vowel, layerId }
+    if (frame.current) return
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0
+      setValue(pending.current)
+    })
+  }
+  return { value, set }
 }
