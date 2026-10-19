@@ -1,12 +1,8 @@
 import type { Character, Expression, ExportSettings, ScriptLine, Vowel } from '../../core/character/types'
 import { placement } from '../../core/export/frames'
 import type { MouthFrames } from '../../core/export/frames'
-import { buildMouthTimeline } from '../../core/lipsync/timeline'
-import type { MouthTimeline } from '../../core/lipsync/timeline'
 import { lineProblem } from '../../core/storage/db'
 import type { LineProblem } from '../../core/storage/db'
-import { prepareQuery } from '../../core/voicevox/client'
-import type { VoicevoxClient } from '../../core/voicevox/client'
 
 export const PROBLEM_LABELS: Record<LineProblem, string> = {
   'no-character': 'キャラが選ばれていないか、削除されています',
@@ -33,20 +29,6 @@ export function resolveLine(line: ScriptLine, characters: Character[], listenOnl
   const character = characters.find((c) => c.id === line.characterId)!
   const expression = character.expressions.find((e) => e.id === line.expressionId)!
   return { character: character as ReadyLine['character'], expression }
-}
-
-/**
- * audio_query → speedScale を行の値に → synthesis。タイムラインは合成に使ったクエリから作る。
- * 疑問形の語尾上げ（enable_interrogative_upspeak）はエンジンの既定のままにする（タイムラインがそれを前提にしている）。
- */
-export async function synthesizeLine(
-  client: VoicevoxClient,
-  line: ScriptLine,
-  styleId: number,
-): Promise<{ wav: ArrayBuffer; timeline: MouthTimeline }> {
-  const query = prepareQuery(await client.audioQuery(line.text, styleId), line.speedScale)
-  const wav = await client.synthesis(query, styleId)
-  return { wav, timeline: buildMouthTimeline(query) }
 }
 
 /** 書き出しと同じ配置で1フレームを描く（プレビュー用）。 */

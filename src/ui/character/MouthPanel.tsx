@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { VOWELS } from '../../core/character/types'
 import type { Character, MouthMap, Vowel } from '../../core/character/types'
-import { buildMouthTimeline } from '../../core/lipsync/timeline'
 import { findNode } from '../../core/psd/layerTree'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
-import { prepareQuery } from '../../core/voicevox/client'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
@@ -139,7 +137,7 @@ interface PlayerProps {
 
 /** 「あいうえお」を合成して再生し、再生位置に合わせて口を動かす。 */
 function SamplePlayer({ styleId, disabledReason, onPlaybackMouth }: PlayerProps) {
-  const { client } = useApp()
+  const { speech } = useApp()
   const [status, setStatus] = useState<'idle' | 'synthesizing' | 'playing'>('idle')
   const [error, setError] = useState<string | null>(null)
   // 進行中の再生。画面を離れたら null にしてから取り消し、終わった再生が状態を触らないようにする
@@ -162,11 +160,7 @@ function SamplePlayer({ styleId, disabledReason, onPlaybackMouth }: PlayerProps)
     setError(null)
     setStatus('synthesizing')
     const handle = startSamplePlayback(
-      async () => {
-        const query = prepareQuery(await client.audioQuery(SAMPLE_TEXT, styleId), 1.0)
-        const wav = await client.synthesis(query, styleId)
-        return { wav, timeline: buildMouthTimeline(query) }
-      },
+      () => speech.speak(SAMPLE_TEXT, styleId, 1.0),
       browserPlaybackEnv,
       { onMouth: onPlaybackMouth, onPlaying: () => setStatus('playing') },
     )

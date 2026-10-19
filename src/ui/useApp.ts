@@ -2,11 +2,14 @@ import { createContext, useContext } from 'react'
 import type { Character } from '../core/character/types'
 import type { AppSettings, Store } from '../core/storage/db'
 import type { VoicevoxClient } from '../core/voicevox/client'
+import type { SpeechCache } from '../core/voicevox/speechCache'
 
 export interface AppContextValue {
   store: Store
   settings: AppSettings
   client: VoicevoxClient
+  /** 合成はこれを通す。同じ文・声・話速なら合成済みの音声を使い回す */
+  speech: SpeechCache
   characters: Character[]
   reloadCharacters(): Promise<void>
   /** 画面には即座に反映し、IndexedDB に保存する。保存に失敗したら保存済みの内容に戻して例外を投げる。 */

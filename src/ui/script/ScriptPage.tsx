@@ -17,7 +17,7 @@ import { LinePreview } from './LinePreview'
 import type { PreviewFrame } from './LinePreview'
 import { LineRow, SPEED_MAX, SPEED_MIN } from './LineRow'
 import type { LineStatus, PlaybackMode } from './LineRow'
-import { downloadBlob, errorMessage, isAbortError, resolveLine, synthesizeLine } from './lineJobs'
+import { downloadBlob, errorMessage, isAbortError, resolveLine } from './lineJobs'
 import { MouthFrameCache } from './mouthFrameCache'
 import type { FramesLease } from './mouthFrameCache'
 
@@ -98,7 +98,7 @@ function useScript() {
 }
 
 export function ScriptPage({ active }: { active: boolean }) {
-  const { client, characters, settings, store } = useApp()
+  const { speech, characters, settings, store } = useApp()
   const { lines, update, error: scriptError } = useScript()
 
   const cache = useMemo(
@@ -174,7 +174,7 @@ export function ScriptPage({ active }: { active: boolean }) {
       async () => {
         const [prepared, sample] = await Promise.all([
           lease?.frames,
-          synthesizeLine(client, line, character.voice.styleId),
+          speech.speak(line.text, character.voice.styleId, line.speedScale),
         ])
         if (prepared && isCurrent()) setPreview({ lineNumber: index + 1, prepared, vowel: 'closed' })
         return sample
@@ -223,7 +223,7 @@ export function ScriptPage({ active }: { active: boolean }) {
     try {
       const [{ frames, psdSize }, { wav, timeline }] = await Promise.all([
         lease.frames,
-        synthesizeLine(client, line, character.voice.styleId),
+        speech.speak(line.text, character.voice.styleId, line.speedScale),
       ])
       const blob = await renderLineMp4({ wav, timeline, frames, psdSize, settings: settings.export, onProgress, signal })
       return { fileName: lineFileName(index, character.name, line.text), blob, speakerName: character.voice.speakerName }

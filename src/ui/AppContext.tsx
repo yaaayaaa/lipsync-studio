@@ -4,6 +4,7 @@ import type { Character } from '../core/character/types'
 import { openStore } from '../core/storage/db'
 import type { AppSettings, Store } from '../core/storage/db'
 import { VoicevoxClient } from '../core/voicevox/client'
+import { SpeechCache } from '../core/voicevox/speechCache'
 import { AppContext } from './useApp'
 import type { AppContextValue } from './useApp'
 
@@ -73,21 +74,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const engineUrl = loaded?.settings.engineUrl
   const client = useMemo(() => (engineUrl ? new VoicevoxClient({ baseUrl: engineUrl }) : null), [engineUrl])
+  // 合成結果はエンジンごとに別物なので、client と一緒に作り直す
+  const speech = useMemo(() => (client ? SpeechCache.forClient(client) : null), [client])
 
   const value = useMemo<AppContextValue | null>(
     () =>
-      loaded && client
+      loaded && client && speech
         ? {
             store: loaded.store,
             settings: loaded.settings,
             client,
+            speech,
             characters,
             reloadCharacters,
             saveCharacter,
             saveSettings,
           }
         : null,
-    [loaded, client, characters, reloadCharacters, saveCharacter, saveSettings],
+    [loaded, client, speech, characters, reloadCharacters, saveCharacter, saveSettings],
   )
 
   if (error) return <p className="app-message error">保存領域（IndexedDB）を開けませんでした: {error}</p>
