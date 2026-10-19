@@ -93,15 +93,30 @@ function indexNodes(tree: LayerNode[], map = new Map<LayerId, LayerNode>()): Map
   return map
 }
 
+/**
+ * PSD のどこをどの倍率で描くか。PSD 座標 (px, py) は出力の ((px - x) * scale, (py - y) * scale) に来る。
+ * width/height は出力（と途中の作業用 canvas）の大きさ。縮小画像を小さな作業用 canvas だけで作るために使う。
+ */
+export interface ComposeView {
+  x: number
+  y: number
+  scale: number
+  width: number
+  height: number
+}
+
+/** view を省くと PSD と同じ大きさ・等倍で描く（書き出しとプレビュー） */
 export function composeTo(
   ctx: Ctx2D,
   tree: LayerNode[],
   state: VisibilityState,
   psdSize: { width: number; height: number },
+  view?: ComposeView,
 ): void {
   const nodes = indexNodes(tree)
+  const outSize = view ?? psdSize
   const newLayerCanvas = () => {
-    const c = new OffscreenCanvas(psdSize.width, psdSize.height)
+    const c = new OffscreenCanvas(outSize.width, outSize.height)
     return { canvas: c, ctx: c.getContext('2d') as OffscreenCanvasRenderingContext2D }
   }
 
@@ -110,7 +125,15 @@ export function composeTo(
     if (!src?.canvas) return
     target.globalAlpha = opacity
     target.globalCompositeOperation = blend
-    target.drawImage(src.canvas as CanvasImageSource, src.left ?? 0, src.top ?? 0)
+    const image = src.canvas as CanvasImageSource
+    const left = src.left ?? 0
+    const top = src.top ?? 0
+    if (!view) {
+      target.drawImage(image, left, top)
+      return
+    }
+    const { x, y, scale } = view
+    target.drawImage(image, (left - x) * scale, (top - y) * scale, src.canvas.width * scale, src.canvas.height * scale)
   }
 
   const drawGroup = (target: Ctx2D, op: GroupOp) => {

@@ -1,7 +1,7 @@
 import type { Layer } from 'ag-psd'
 import { describe, expect, it } from 'vitest'
 import { buildLayerTree } from '../../../src/core/psd/layerTree'
-import { fitContain, groupThumbPlan, opaqueBounds, unionRects } from '../../../src/core/psd/thumbnail'
+import { fitContain, groupThumbPlan, intersectRects, mapScanBounds, opaqueBounds, unionRects } from '../../../src/core/psd/thumbnail'
 import { initialVisibility, setVisible } from '../../../src/core/psd/visibility'
 import { layer } from '../../fixtures/makePsd'
 
@@ -205,19 +205,92 @@ describe('groupThumbPlan with opaque leaf bounds', () => {
       '0/0': { x: 180, y: 258, width: 40, height: 6 },
       '0/1': { x: 5, y: 5, width: 10, height: 10 },
     }
-    const plan = groupThumbPlan(tree[0], initialVisibility(tree), (n) => boxes[n.id])
+    const plan = groupThumbPlan(tree[0], initialVisibility(tree), { leafBounds: (n) => boxes[n.id] })
     expect(plan?.bounds).toEqual({ x: 15, y: 25, width: 205, height: 239 })
   })
 
   it('skips fully transparent leaves and returns null when all drawn leaves are transparent', () => {
     const tree = buildLayerTree([layer('g', { children: [placed('a', 0, 0, 10, 10), placed('b', 0, 0, 10, 10)] })])
     const state = initialVisibility(tree)
-    expect(groupThumbPlan(tree[0], state, (n) => (n.id === '0/0' ? null : { x: 1, y: 2, width: 3, height: 4 }))?.bounds).toEqual({
+    expect(groupThumbPlan(tree[0], state, { leafBounds: (n) => (n.id === '0/0' ? null : { x: 1, y: 2, width: 3, height: 4 }) })?.bounds).toEqual({
       x: 1,
       y: 2,
       width: 3,
       height: 4,
     })
-    expect(groupThumbPlan(tree[0], state, () => null)).toBeNull()
+    expect(groupThumbPlan(tree[0], state, { leafBounds: () => null })).toBeNull()
+  })
+})
+
+describe('intersectRects', () => {
+  it('returns the overlap', () => {
+    expect(intersectRects({ x: -10, y: 5, width: 30, height: 10 }, { x: 0, y: 0, width: 400, height: 800 })).toEqual({
+      x: 0,
+      y: 5,
+      width: 20,
+      height: 10,
+    })
+  })
+
+  it('returns null when they do not overlap (touching edges do not count)', () => {
+    expect(intersectRects({ x: 0, y: 0, width: 10, height: 10 }, { x: 10, y: 0, width: 5, height: 5 })).toBeNull()
+    expect(intersectRects({ x: 500, y: 0, width: 10, height: 10 }, { x: 0, y: 0, width: 400, height: 800 })).toBeNull()
+  })
+})
+
+describe('groupThumbPlan clamped to the canvas', () => {
+  it('clips the bounds to clipTo and returns null when nothing is inside', () => {
+    const tree = buildLayerTree([layer('g', { children: [placed('a', -50, 700, 100, 200)] })])
+    const state = initialVisibility(tree)
+    const canvas = { x: 0, y: 0, width: 400, height: 800 }
+    expect(groupThumbPlan(tree[0], state, { clipTo: canvas })?.bounds).toEqual({ x: 0, y: 700, width: 50, height: 100 })
+    const outside = buildLayerTree([layer('g', { children: [placed('a', 500, 0, 10, 10)] })])
+    expect(groupThumbPlan(outside[0], initialVisibility(outside), { clipTo: canvas })).toBeNull()
+  })
+})
+
+describe('mapScanBounds', () => {
+  it('only offsets by the region when the scan was not downscaled', () => {
+    expect(mapScanBounds({ x: 2, y: 3, width: 4, height: 5 }, { width: 10, height: 10 }, { x: 0, y: 0, width: 10, height: 10 })).toEqual({
+      x: 2,
+      y: 3,
+      width: 4,
+      height: 5,
+    })
+    expect(mapScanBounds({ x: 2, y: 3, width: 4, height: 5 }, { width: 10, height: 10 }, { x: 100, y: 50, width: 10, height: 10 })).toEqual({
+      x: 102,
+      y: 53,
+      width: 4,
+      height: 5,
+    })
+  })
+
+  it('maps a downscaled scan of a sub-region back into source coordinates, clamped to the region', () => {
+    // 元の (200, 100) から 256x128 の範囲を 128x64 で走査（1走査画素 = 2元画素）
+    expect(mapScanBounds({ x: 0, y: 10, width: 4, height: 2 }, { width: 128, height: 64 }, { x: 200, y: 100, width: 256, height: 128 })).toEqual({
+      x: 200, // floor((0 - 1) * 2) = -2 → 区間の左端に収める
+      y: 118, // 100 + floor(9 * 2)
+      width: 10, // 200 + ceil(5 * 2) = 210
+      height: 8, // 100 + ceil(13 * 2) = 126
+    })
+  })
+
+  it('maps back to source pixels with one scan pixel of padding on each side', () => {
+    // 1000x500 を 128x64 で走査（1走査画素 = 7.8125 元画素）
+    expect(mapScanBounds({ x: 10, y: 20, width: 3, height: 2 }, { width: 128, height: 64 }, { x: 0, y: 0, width: 1000, height: 500 })).toEqual({
+      x: 70, // floor((10 - 1) * 7.8125)
+      y: 148, // floor((20 - 1) * 7.8125)
+      width: 40, // ceil((10 + 3 + 1) * 7.8125) = 110, 110 - 70
+      height: 32, // ceil((20 + 2 + 1) * 7.8125) = 180, 180 - 148
+    })
+  })
+
+  it('clamps the padded rect to the source', () => {
+    expect(mapScanBounds({ x: 0, y: 0, width: 128, height: 64 }, { width: 128, height: 64 }, { x: 0, y: 0, width: 1000, height: 500 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 1000,
+      height: 500,
+    })
   })
 })

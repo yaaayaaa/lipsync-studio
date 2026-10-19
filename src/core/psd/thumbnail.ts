@@ -72,6 +72,33 @@ export function opaqueBounds(data: Uint8ClampedArray, width: number, height: num
   return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
 }
 
+/** 重なり。辺が接するだけなら null */
+export function intersectRects(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x)
+  const y = Math.max(a.y, b.y)
+  const right = Math.min(a.x + a.width, b.x + b.width)
+  const bottom = Math.min(a.y + a.height, b.y + b.height)
+  return right > x && bottom > y ? { x, y, width: right - x, height: bottom - y } : null
+}
+
+/**
+ * 元の画像の region を scanSize に縮小した写しで求めた範囲 scan を、元の画素の座標に戻す。
+ * 縮小で端の画素がぼけても欠けないよう走査の1画素ぶん外側に広げ、region の内側に収める。
+ * 縮小していなければ region の位置をずらすだけ。
+ */
+export function mapScanBounds(scan: Rect, scanSize: Size, region: Rect): Rect | null {
+  if (scanSize.width === region.width && scanSize.height === region.height) {
+    return { x: region.x + scan.x, y: region.y + scan.y, width: scan.width, height: scan.height }
+  }
+  const fx = region.width / scanSize.width
+  const fy = region.height / scanSize.height
+  const x0 = Math.max(0, Math.floor((scan.x - 1) * fx))
+  const y0 = Math.max(0, Math.floor((scan.y - 1) * fy))
+  const x1 = Math.min(region.width, Math.ceil((scan.x + scan.width + 1) * fx))
+  const y1 = Math.min(region.height, Math.ceil((scan.y + scan.height + 1) * fy))
+  return x1 > x0 && y1 > y0 ? { x: region.x + x0, y: region.y + y0, width: x1 - x0, height: y1 - y0 } : null
+}
+
 export interface GroupThumbPlan {
   /** 描かれる内容が同じなら同じ値。サムネイルを作り直すかの判定に使う */
   key: string
@@ -99,11 +126,12 @@ const wholeCanvas: LeafBounds = (leaf) => {
  * グループの子孫のうち state で描かれるものの範囲と key。グループ自身や祖先の表示状態は見ない
  * （隠れたグループでも中身が分かるように）。何も描かれなければ null。
  * leafBounds を渡すと各リーフをその範囲（透明な余白を除いた範囲など）に絞る。既定は canvas 全体。
+ * clipTo を渡すと結果をその矩形（PSD のキャンバス）の内側に収める。
  */
 export function groupThumbPlan(
   group: LayerNode,
   state: VisibilityState,
-  leafBounds: LeafBounds = wholeCanvas,
+  { leafBounds = wholeCanvas, clipTo }: { leafBounds?: LeafBounds; clipTo?: Rect } = {},
 ): GroupThumbPlan | null {
   const nodes = indexChildren(group.children)
   const rects: Rect[] = []
@@ -122,6 +150,8 @@ export function groupThumbPlan(
       })
       .join(',')
   const key = walk(buildDrawList(group.children, state))
-  const bounds = unionRects(rects)
+  const union = unionRects(rects)
+  // PSD のキャンバスの外にはみ出た部分は描かれないので範囲に入れない
+  const bounds = union && clipTo ? intersectRects(union, clipTo) : union
   return bounds ? { key, bounds } : null
 }
