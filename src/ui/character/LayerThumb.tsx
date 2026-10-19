@@ -23,11 +23,15 @@ export function LayerThumb({ node, visibility, psdSize }: Props) {
   // グループの外を切り替えても key は変わらず、リーフの key は不変
   const [shown, setShown] = useState({ node, plan: fresh })
   if (shown.node !== node || shown.plan?.key !== fresh?.key) setShown({ node, plan: fresh })
+  // 画素を読んで全部透明と分かった計画。これと同じ間は空の枠を出す
+  const [transparent, setTransparent] = useState<typeof shown | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!shown.node || !shown.plan || !canvas) return
     return requestThumb(shown.node, shown.plan, psdSize, (image) => {
+      setTransparent(image ? null : shown)
+      if (!image) return
       const ctx = canvas.getContext('2d')
       if (!ctx) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -35,6 +39,6 @@ export function LayerThumb({ node, visibility, psdSize }: Props) {
     })
   }, [shown, psdSize])
 
-  if (!fresh) return <span className="layer-thumb empty" aria-hidden />
+  if (!fresh || transparent === shown) return <span className="layer-thumb empty" aria-hidden />
   return <canvas ref={canvasRef} className="layer-thumb" width={THUMB_PX} height={THUMB_PX} aria-hidden />
 }

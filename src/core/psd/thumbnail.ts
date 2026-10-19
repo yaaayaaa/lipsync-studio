@@ -40,6 +40,38 @@ export function unionRects(rects: Rect[]): Rect | null {
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 
+/** 不透明（alpha > 0）な画素の外接矩形。すべて透明なら null。上下は行単位で早く打ち切り、左右は未確定の範囲だけ見る。 */
+export function opaqueBounds(data: Uint8ClampedArray, width: number, height: number): Rect | null {
+  const opaque = (x: number, y: number) => data[(y * width + x) * 4 + 3] > 0
+  const rowHasOpaque = (y: number, from: number, to: number) => {
+    for (let x = from; x <= to; x++) if (opaque(x, y)) return true
+    return false
+  }
+  let top = 0
+  while (top < height && !rowHasOpaque(top, 0, width - 1)) top++
+  if (top === height) return null
+  let bottom = height - 1
+  while (!rowHasOpaque(bottom, 0, width - 1)) bottom--
+  // 左右は、まだ見つかっていない外側の列だけを各行で調べる
+  let left = width
+  let right = -1
+  for (let y = top; y <= bottom; y++) {
+    for (let x = 0; x < left; x++) {
+      if (opaque(x, y)) {
+        left = x
+        break
+      }
+    }
+    for (let x = width - 1; x > right; x--) {
+      if (opaque(x, y)) {
+        right = x
+        break
+      }
+    }
+  }
+  return { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
+}
+
 export interface GroupThumbPlan {
   /** 描かれる内容が同じなら同じ値。サムネイルを作り直すかの判定に使う */
   key: string
@@ -55,11 +87,24 @@ function indexChildren(nodes: LayerNode[], map = new Map<LayerId, LayerNode>()):
   return map
 }
 
+/** リーフの canvas 内で中身のある範囲（canvas の座標）。null なら全部透明 */
+export type LeafBounds = (leaf: LayerNode) => Rect | null
+
+const wholeCanvas: LeafBounds = (leaf) => {
+  const c = leaf.source.canvas
+  return c ? { x: 0, y: 0, width: c.width, height: c.height } : null
+}
+
 /**
  * グループの子孫のうち state で描かれるものの範囲と key。グループ自身や祖先の表示状態は見ない
  * （隠れたグループでも中身が分かるように）。何も描かれなければ null。
+ * leafBounds を渡すと各リーフをその範囲（透明な余白を除いた範囲など）に絞る。既定は canvas 全体。
  */
-export function groupThumbPlan(group: LayerNode, state: VisibilityState): GroupThumbPlan | null {
+export function groupThumbPlan(
+  group: LayerNode,
+  state: VisibilityState,
+  leafBounds: LeafBounds = wholeCanvas,
+): GroupThumbPlan | null {
   const nodes = indexChildren(group.children)
   const rects: Rect[] = []
   const walk = (ops: Op[]): string =>
@@ -67,9 +112,11 @@ export function groupThumbPlan(group: LayerNode, state: VisibilityState): GroupT
       .map((op) => {
         if (op.kind === 'group') return `${op.id}(${walk(op.children)})`
         // clipping は下地の範囲からはみ出して描かれないので範囲に入れない
-        const src = nodes.get(op.id)?.source
-        if (!op.clipping && src?.canvas) {
-          rects.push({ x: src.left ?? 0, y: src.top ?? 0, width: src.canvas.width, height: src.canvas.height })
+        const node = nodes.get(op.id)
+        const local = !op.clipping && node ? leafBounds(node) : null
+        if (node && local) {
+          const { left = 0, top = 0 } = node.source
+          rects.push({ x: left + local.x, y: top + local.y, width: local.width, height: local.height })
         }
         return op.id
       })

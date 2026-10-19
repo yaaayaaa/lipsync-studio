@@ -1,7 +1,7 @@
 import type { Layer } from 'ag-psd'
 import { describe, expect, it } from 'vitest'
 import { buildLayerTree } from '../../../src/core/psd/layerTree'
-import { fitContain, groupThumbPlan, unionRects } from '../../../src/core/psd/thumbnail'
+import { fitContain, groupThumbPlan, opaqueBounds, unionRects } from '../../../src/core/psd/thumbnail'
 import { initialVisibility, setVisible } from '../../../src/core/psd/visibility'
 import { layer } from '../../fixtures/makePsd'
 
@@ -148,5 +148,76 @@ describe('groupThumbPlan', () => {
       groupThumbPlan(tree[0], setVisible(tree, s0, '0/1', false))?.key,
     ])
     expect(keys.size).toBe(3)
+  })
+})
+
+/** width×height の RGBA。opaque の座標だけ不透明にする */
+function rgba(width: number, height: number, opaque: [number, number][], alpha = 255): Uint8ClampedArray {
+  const data = new Uint8ClampedArray(width * height * 4)
+  for (const [x, y] of opaque) {
+    data.set([10, 20, 30, alpha], (y * width + x) * 4)
+  }
+  return data
+}
+
+describe('opaqueBounds', () => {
+  it('returns null for a fully transparent image (even if colour channels are set)', () => {
+    const data = new Uint8ClampedArray(5 * 4 * 4).fill(200)
+    for (let i = 3; i < data.length; i += 4) data[i] = 0
+    expect(opaqueBounds(data, 5, 4)).toBeNull()
+    expect(opaqueBounds(new Uint8ClampedArray(0), 0, 0)).toBeNull()
+  })
+
+  it('finds a single pixel', () => {
+    expect(opaqueBounds(rgba(7, 5, [[3, 2]]), 7, 5)).toEqual({ x: 3, y: 2, width: 1, height: 1 })
+  })
+
+  it('counts any non-zero alpha as opaque', () => {
+    expect(opaqueBounds(rgba(4, 4, [[1, 1]], 1), 4, 4)).toEqual({ x: 1, y: 1, width: 1, height: 1 })
+  })
+
+  it('handles pixels on every edge', () => {
+    expect(opaqueBounds(rgba(6, 4, [[0, 2], [5, 1], [2, 0], [3, 3]]), 6, 4)).toEqual({ x: 0, y: 0, width: 6, height: 4 })
+    expect(opaqueBounds(rgba(6, 4, [[5, 3]]), 6, 4)).toEqual({ x: 5, y: 3, width: 1, height: 1 })
+    expect(opaqueBounds(rgba(6, 4, [[0, 0]]), 6, 4)).toEqual({ x: 0, y: 0, width: 1, height: 1 })
+  })
+
+  it('bounds a typical blob in the middle of a large transparent canvas', () => {
+    const pts: [number, number][] = []
+    // 中心 (70, 90)・半径 20×10 の楕円（x 50〜90, y 80〜100）。行ごとに左右の端が違う
+    for (let y = 0; y <= 40; y++) {
+      for (let x = 0; x <= 40; x++) {
+        if (((x - 20) / 20) ** 2 + ((y - 20) / 10) ** 2 <= 1) pts.push([x + 50, y + 70])
+      }
+    }
+    // 楕円の上端の行より左に離れた1点で、左端だけが広がる
+    pts.push([45, 80])
+    expect(opaqueBounds(rgba(200, 150, pts), 200, 150)).toEqual({ x: 45, y: 80, width: 46, height: 21 })
+  })
+})
+
+describe('groupThumbPlan with opaque leaf bounds', () => {
+  it('unions the leaves\' opaque boxes offset by their left/top', () => {
+    const tree = buildLayerTree([
+      layer('g', { children: [placed('a', 0, 0, 400, 800), placed('b', 10, 20, 100, 100)] }),
+    ])
+    const boxes: Record<string, { x: number; y: number; width: number; height: number } | null> = {
+      '0/0': { x: 180, y: 258, width: 40, height: 6 },
+      '0/1': { x: 5, y: 5, width: 10, height: 10 },
+    }
+    const plan = groupThumbPlan(tree[0], initialVisibility(tree), (n) => boxes[n.id])
+    expect(plan?.bounds).toEqual({ x: 15, y: 25, width: 205, height: 239 })
+  })
+
+  it('skips fully transparent leaves and returns null when all drawn leaves are transparent', () => {
+    const tree = buildLayerTree([layer('g', { children: [placed('a', 0, 0, 10, 10), placed('b', 0, 0, 10, 10)] })])
+    const state = initialVisibility(tree)
+    expect(groupThumbPlan(tree[0], state, (n) => (n.id === '0/0' ? null : { x: 1, y: 2, width: 3, height: 4 }))?.bounds).toEqual({
+      x: 1,
+      y: 2,
+      width: 3,
+      height: 4,
+    })
+    expect(groupThumbPlan(tree[0], state, () => null)).toBeNull()
   })
 })

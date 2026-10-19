@@ -1,55 +1,75 @@
 import { composeTo } from '../../core/psd/compose'
-import { fitContain, groupThumbPlan } from '../../core/psd/thumbnail'
+import { fitContain, groupThumbPlan, opaqueBounds } from '../../core/psd/thumbnail'
+import type { Rect } from '../../core/psd/thumbnail'
 import type { LayerNode, VisibilityState } from '../../core/psd/types'
 import type { PsdSize } from '../usePsd'
 
 /** サムネイルの実ピクセル数（正方形）。表示は 40〜48px なので高密度画面でも粗く見えない大きさにする */
 export const THUMB_PX = 96
 
-/** 何を描くか。null なら空の枠を出す */
-export type ThumbPlan =
-  | { kind: 'leaf'; key: string }
-  | { kind: 'group'; key: string; state: VisibilityState; bounds: { x: number; y: number; width: number; height: number } }
+/**
+ * 何を描くか。null なら空の枠を出す。描画前に同期で決めるので、画素は読まない（安い判定だけ）。
+ * 全部透明かどうかは画素を読むまで分からないので、requestThumb の結果（null）で知らせる。
+ */
+export type ThumbPlan = { kind: 'leaf'; key: string } | { kind: 'group'; key: string; state: VisibilityState }
 
-/** 描画前に同期で決める（安い）。重い合成は requestThumb が後回しにする。 */
 export function planThumb(node: LayerNode, state: VisibilityState): ThumbPlan | null {
   if (!node.isGroup) {
     const c = node.source.canvas
     return c && c.width > 0 && c.height > 0 ? { kind: 'leaf', key: 'leaf' } : null
   }
   const plan = groupThumbPlan(node, state)
-  return plan && { kind: 'group', key: plan.key, state, bounds: plan.bounds }
+  return plan && { kind: 'group', key: plan.key, state }
+}
+
+/* ---- リーフの中身のある範囲：PSD によってはレイヤーがキャンバス全体の大きさで保存されているので、
+   透明な余白を除いてから収めないと口や目が点になる。画素の走査はリーフごとに1回だけ ---- */
+
+const opaqueCache = new WeakMap<LayerNode, Rect | null>()
+
+function leafOpaqueBounds(leaf: LayerNode): Rect | null {
+  if (opaqueCache.has(leaf)) return opaqueCache.get(leaf) ?? null
+  const src = leaf.source.canvas
+  let bounds: Rect | null = null
+  if (src && src.width > 0 && src.height > 0) {
+    const ctx = src.getContext('2d') as CanvasRenderingContext2D | null
+    // 読めない canvas は余白を除かずに全体を使う
+    bounds = ctx
+      ? opaqueBounds(ctx.getImageData(0, 0, src.width, src.height).data, src.width, src.height)
+      : { x: 0, y: 0, width: src.width, height: src.height }
+  }
+  opaqueCache.set(leaf, bounds)
+  return bounds
 }
 
 interface Entry {
   key: string
-  image: ImageBitmap
+  /** null は描くものがない（全部透明） */
+  image: ImageBitmap | null
 }
 
 // レイヤーの節点はキャラごとの PSD 解析キャッシュ（usePsd）が持つので、節点をキーにすると
 // 解析結果が捨てられたときにサムネイルも一緒に捨てられる。グループは最新の key の1枚だけ持つ。
 const cache = new WeakMap<LayerNode, Entry>()
 
-function render(node: LayerNode, plan: ThumbPlan, psdSize: PsdSize): ImageBitmap {
+function render(node: LayerNode, plan: ThumbPlan, psdSize: PsdSize): ImageBitmap | null {
+  const box = { width: THUMB_PX, height: THUMB_PX }
+  // 中身のある範囲（リーフは canvas の座標、グループは PSD の座標）
+  const bounds = plan.kind === 'leaf' ? leafOpaqueBounds(node) : groupThumbPlan(node, plan.state, leafOpaqueBounds)?.bounds
+  const r = bounds ? fitContain(bounds, box) : null
+  if (!bounds || !r) return null
   const canvas = new OffscreenCanvas(THUMB_PX, THUMB_PX)
   const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  const box = { width: THUMB_PX, height: THUMB_PX }
   if (plan.kind === 'leaf') {
-    // ag-psd はレイヤーの canvas をレイヤーの範囲で切り出しているので、そのまま収めれば小さな部品も大きく見える
     const src = node.source.canvas as HTMLCanvasElement
-    const r = fitContain(src, box)
-    if (r) ctx.drawImage(src, r.x, r.y, r.width, r.height)
+    ctx.drawImage(src, bounds.x, bounds.y, bounds.width, bounds.height, r.x, r.y, r.width, r.height)
   } else {
-    const { bounds } = plan
-    const r = fitContain(bounds, box)
-    if (r) {
-      // 合成の規則は本体と同じものを使い、変換行列で範囲の切り出しと縮小を同時に行う
-      const scale = r.width / bounds.width
-      ctx.setTransform(scale, 0, 0, scale, r.x - bounds.x * scale, r.y - bounds.y * scale)
-      composeTo(ctx, node.children, plan.state, psdSize)
-    }
+    // 合成の規則は本体と同じものを使い、変換行列で範囲の切り出しと縮小を同時に行う
+    const scale = r.width / bounds.width
+    ctx.setTransform(scale, 0, 0, scale, r.x - bounds.x * scale, r.y - bounds.y * scale)
+    composeTo(ctx, node.children, plan.state, psdSize)
   }
   return canvas.transferToImageBitmap()
 }
@@ -90,7 +110,8 @@ export function requestThumb(
   node: LayerNode,
   plan: ThumbPlan,
   psdSize: PsdSize,
-  onReady: (image: ImageBitmap) => void,
+  /** null は全部透明で描くものがない */
+  onReady: (image: ImageBitmap | null) => void,
 ): () => void {
   const hit = cache.get(node)
   if (hit && hit.key === plan.key) {
@@ -108,7 +129,7 @@ export function requestThumb(
     }
     const image = render(node, plan, psdSize)
     // 古い版は描き写し済みなので、GPU のメモリを早めに返す
-    cur?.image.close()
+    cur?.image?.close()
     cache.set(node, { key: plan.key, image })
     onReady(image)
   })
