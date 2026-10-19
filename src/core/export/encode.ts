@@ -60,6 +60,8 @@ export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
   const canvas = new OffscreenCanvas(settings.width, settings.height)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('2D canvas context を作れませんでした')
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
   const target = new BufferTarget()
   const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target })
