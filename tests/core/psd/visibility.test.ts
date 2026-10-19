@@ -31,6 +31,13 @@ describe('initialVisibility', () => {
     expect(Object.keys(s).sort()).toEqual(['0', '0/0', '0/1', '0/2', '1', '1/0', '1/1'])
   })
 
+  it('never chooses a flip layer as the visible radio', () => {
+    const tree = buildLayerTree([layer('*a', { hidden: true }), layer('*b', { hidden: true }), layer('*x:flipx')])
+    const s = initialVisibility(tree)
+    expect(s['2']).toBe(false)
+    expect([s['0'], s['1']].filter(Boolean)).toHaveLength(1)
+  })
+
   it('forces ! layers on and flip layers off', () => {
     const tree = buildLayerTree([
       layer('!f', { hidden: true }),

@@ -31,7 +31,7 @@ export function initialVisibility(tree: LayerNode[]): VisibilityState {
     state[node.id] = node.initiallyVisible
   })
   forEachSiblingList(tree, (siblings) => {
-    const radios = siblings.filter((n) => n.kind === 'radio')
+    const radios = siblings.filter((n) => n.kind === 'radio' && !n.flip)
     if (radios.length === 0) return
     const chosen = [...radios].reverse().find((n) => state[n.id]) ?? radios[radios.length - 1]
     for (const r of radios) state[r.id] = r === chosen
