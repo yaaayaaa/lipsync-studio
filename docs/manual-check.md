@@ -7,8 +7,9 @@
 
 ### 1. 口パクのタイムラインを本物のエンジンで照合する
 
-- [ ] VOICEVOX を起動し、`npx tsx scripts/check-timeline.ts` を実行する
+- [x] VOICEVOX を起動し、`npx tsx scripts/check-timeline.ts` を実行する
   - 期待結果：差がすべて 1/30 秒未満
+  - 2026-10-20 実施：VOICEVOX ENGINE 0.25.2（Docker `voicevox/voicevox_engine:cpu-ubuntu22.04-latest`）、ずんだもん（style 3）。4文×話速 0.5/1/2 の12件すべて差 0.00ms（疑問形と「ん」を含む）
   - 「未照合: real VOICEVOX engine not found」と出たら、本物のエンジンに繋がっていない
   - 超えた場合は `src/core/lipsync/timeline.ts` の規則を直し、テストを足す
 
