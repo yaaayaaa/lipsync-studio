@@ -61,6 +61,31 @@ describe('buildDrawList', () => {
   })
 })
 
+describe('buildDrawList clipping bases', () => {
+  const clip = (name: string) => ({ ...layer(name, { image: true }), clipping: true })
+
+  it('excludes clipped leaves whose base is hidden', () => {
+    const tree = buildLayerTree([layer('under', { image: true }), layer('base', { image: true, hidden: true }), clip('c')])
+    expect(buildDrawList(tree, initialVisibility(tree)).map((o) => o.id)).toEqual(['0'])
+  })
+
+  it('excludes clipped leaves whose base has no image', () => {
+    const tree = buildLayerTree([layer('base'), clip('c')])
+    expect(buildDrawList(tree, initialVisibility(tree))).toEqual([])
+  })
+
+  it('keeps clipped leaves under a visible base', () => {
+    const tree = buildLayerTree([layer('base', { image: true }), clip('c')])
+    expect(buildDrawList(tree, initialVisibility(tree)).map((o) => o.id)).toEqual(['0', '1'])
+  })
+
+  it('keeps consecutive clipped leaves attached to the same base', () => {
+    const tree = buildLayerTree([layer('base', { image: true }), clip('c1'), clip('c2')])
+    const list = buildDrawList(tree, initialVisibility(tree))
+    expect(list.map((o) => o.kind === 'layer' && o.clipping)).toEqual([false, true, true])
+  })
+})
+
 describe('blendModeToComposite', () => {
   it('maps supported modes', () => {
     expect(blendModeToComposite('multiply')).toBe('multiply')

@@ -57,22 +57,30 @@ function groupBlend(mode: string | undefined): GlobalCompositeOperation | 'pass-
 /** 下から上の順。非表示・flip・画像なしの葉・描画物のないグループは含めない。 */
 export function buildDrawList(tree: LayerNode[], state: VisibilityState): Op[] {
   const ops: Op[] = []
+  // 直近の非 clipping 兄弟（非表示を含む）が描画対象になったか。ならなければ clipping レイヤーも描かない。
+  let baseEmitted = false
   for (const node of tree) {
-    if (node.flip || state[node.id] !== true) continue
+    const isClipping = !node.isGroup && node.source.clipping === true
+    if (isClipping && !baseEmitted) continue
+    const visible = !node.flip && state[node.id] === true
     const opacity = node.source.opacity ?? 1
-    if (node.isGroup) {
+    let op: Op | null = null
+    if (visible && node.isGroup) {
       const children = buildDrawList(node.children, state)
-      if (children.length === 0) continue
-      ops.push({ kind: 'group', id: node.id, opacity, blend: groupBlend(node.source.blendMode), children })
-    } else if (node.source.canvas) {
-      ops.push({
+      if (children.length > 0) {
+        op = { kind: 'group', id: node.id, opacity, blend: groupBlend(node.source.blendMode), children }
+      }
+    } else if (visible && node.source.canvas) {
+      op = {
         kind: 'layer',
         id: node.id,
         opacity,
         blend: blendModeToComposite(node.source.blendMode) as GlobalCompositeOperation,
-        clipping: node.source.clipping === true,
-      })
+        clipping: isClipping,
+      }
     }
+    if (op) ops.push(op)
+    if (!isClipping) baseEmitted = op !== null
   }
   return ops
 }
@@ -118,15 +126,16 @@ export function composeTo(
     target.drawImage(tmp.canvas, 0, 0)
   }
 
-  const drawOp = (target: Ctx2D, op: Op, blend: GlobalCompositeOperation, opacity: number) => {
-    if (op.kind === 'layer') drawLeaf(target, op, blend, opacity)
+  const drawOp = (target: Ctx2D, op: Op) => {
+    if (op.kind === 'layer') drawLeaf(target, op, op.blend, op.opacity)
     else drawGroup(target, op)
   }
 
   const drawOps = (target: Ctx2D, ops: Op[]) => {
     for (let i = 0; i < ops.length; i++) {
       const base = ops[i]
-      // 直後に続く clipping レイヤーを集める（グループ自体の clipping は未対応）
+      // 直後に続く clipping レイヤーを集める（グループ自体の clipping は未対応）。
+      // buildDrawList が下地のない clipping を除くので、先頭に clipping が来ることはない。
       const clipped: DrawOp[] = []
       while (i + 1 < ops.length) {
         const next = ops[i + 1]
@@ -136,18 +145,16 @@ export function composeTo(
       }
       const prevAlpha = target.globalAlpha
       const prevOp = target.globalCompositeOperation
-      if (clipped.length === 0 || (base.kind === 'layer' && base.clipping)) {
-        // 下地なし（先頭の clipping も含む）または clipping なし: 直接描く
-        if (base.kind === 'layer') drawLeaf(target, base, base.blend, base.opacity)
-        else drawGroup(target, base)
-        for (const c of clipped) drawLeaf(target, c, c.blend, c.opacity)
+      if (clipped.length === 0) {
+        drawOp(target, base)
       } else {
         const tmp = newLayerCanvas()
-        drawOp(tmp.ctx, base, 'source-over', 1)
+        // 下地は不透明度・描画モードを付けずに束ね、結果にだけ付ける（二重適用を避ける）
+        if (base.kind === 'layer') drawLeaf(tmp.ctx, base, 'source-over', 1)
+        else drawOps(tmp.ctx, base.children)
         for (const c of clipped) drawLeaf(tmp.ctx, c, 'source-atop', c.opacity)
         target.globalAlpha = base.opacity
-        target.globalCompositeOperation =
-          base.blend === 'pass-through' ? 'source-over' : base.blend
+        target.globalCompositeOperation = base.blend === 'pass-through' ? 'source-over' : base.blend
         target.drawImage(tmp.canvas, 0, 0)
       }
       target.globalAlpha = prevAlpha
