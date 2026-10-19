@@ -12,6 +12,7 @@ export const PROBLEM_LABELS: Record<LineProblem, string> = {
   'no-character': 'キャラが選ばれていないか、削除されています',
   'no-expression': '表情が選ばれていないか、削除されています',
   'no-voice': 'このキャラには声が設定されていません（キャラ設定で選んでください）',
+  'no-mouth': 'キャラ設定で口グループと口の割り当てをしてください',
   'empty-text': 'セリフが空です',
 }
 
@@ -20,10 +21,15 @@ export interface ReadyLine {
   expression: Expression
 }
 
-/** 合成できる行ならキャラと表情を、できなければ理由を投げる。 */
-export function resolveLine(line: ScriptLine, characters: Character[]): ReadyLine {
+/** 声があれば鳴らせる。口が未設定でも試聴はできる（プレビューと書き出しは不可）。 */
+export function canListen(problem: LineProblem | null): boolean {
+  return problem === null || problem === 'no-mouth'
+}
+
+/** 合成できる行ならキャラと表情を、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
+export function resolveLine(line: ScriptLine, characters: Character[], listenOnly = false): ReadyLine {
   const problem = lineProblem(line, characters)
-  if (problem) throw new Error(PROBLEM_LABELS[problem])
+  if (problem && !(listenOnly && canListen(problem))) throw new Error(PROBLEM_LABELS[problem])
   const character = characters.find((c) => c.id === line.characterId)!
   const expression = character.expressions.find((e) => e.id === line.expressionId)!
   return { character: character as ReadyLine['character'], expression }
@@ -56,6 +62,8 @@ export function drawMouthFrame(
   ctx.fillRect(0, 0, settings.width, settings.height)
   if (!bitmap) return
   const rect = placement(settings, psdSize)
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(bitmap, rect.x, rect.y, rect.width, rect.height)
 }
 

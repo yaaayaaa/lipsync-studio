@@ -1,6 +1,6 @@
 import type { Character, ScriptLine } from '../../core/character/types'
 import type { LineProblem } from '../../core/storage/db'
-import { PROBLEM_LABELS } from './lineJobs'
+import { PROBLEM_LABELS, canListen } from './lineJobs'
 
 export const SPEED_MIN = 0.5
 export const SPEED_MAX = 2.0
@@ -48,7 +48,11 @@ export function LineRow(props: Props) {
         {playing.loading ? '合成中…' : '停止'}
       </button>
     ) : (
-      <button type="button" disabled={problem !== null || locked} onClick={() => props.onPlay(mode)}>
+      <button
+        type="button"
+        disabled={(mode === 'listen' ? !canListen(problem) : problem !== null) || locked}
+        onClick={() => props.onPlay(mode)}
+      >
         {label}
       </button>
     )

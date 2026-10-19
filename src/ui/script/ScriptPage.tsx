@@ -151,7 +151,7 @@ export function ScriptPage({ active }: { active: boolean }) {
     setStatus(line.id, null)
     let ready
     try {
-      ready = resolveLine(line, characters)
+      ready = resolveLine(line, characters, mode === 'listen')
     } catch (e) {
       setStatus(line.id, { state: 'error', message: errorMessage(e) })
       return

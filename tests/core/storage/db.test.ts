@@ -12,8 +12,8 @@ const character = (over: Partial<Character> = {}): Character => ({
   name: 'Zunda',
   psdFileName: 'zunda.psd',
   voice: { styleId: 3, speakerName: 'ずんだもん', styleName: 'ノーマル' },
-  mouthGroupId: null,
-  mouthMap: {},
+  mouthGroupId: 'g',
+  mouthMap: { closed: 'g/0' },
   expressions: [{ id: 'e1', name: 'normal', visibility: {} }],
   ...over,
 })
@@ -125,8 +125,20 @@ describe('lineProblem', () => {
   it('detects a character without voice', () => {
     expect(lineProblem(line(), [character({ voice: null })])).toBe('no-voice')
   })
+  it('detects a character without a mouth group or assignment', () => {
+    expect(lineProblem(line(), [character({ mouthGroupId: null })])).toBe('no-mouth')
+    expect(lineProblem(line(), [character({ mouthMap: {} })])).toBe('no-mouth')
+  })
+  it('accepts a mouth map that resolves at least one vowel', () => {
+    expect(lineProblem(line(), [character({ mouthMap: { a: 'g/1' } })])).toBeNull()
+  })
   it('detects whitespace-only text', () => {
     expect(lineProblem(line({ text: ' \n　 ' }), chars)).toBe('empty-text')
+  })
+  it('reports no-voice before no-mouth, and no-mouth before empty text', () => {
+    const bare = { voice: null, mouthGroupId: null }
+    expect(lineProblem(line({ text: '' }), [character(bare)])).toBe('no-voice')
+    expect(lineProblem(line({ text: '' }), [character({ mouthGroupId: null })])).toBe('no-mouth')
   })
   it('applies precedence: character, expression, voice, text', () => {
     const bad = line({ text: '', expressionId: 'gone' })

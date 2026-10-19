@@ -1,6 +1,7 @@
 import { openDB } from 'idb'
 import type { DBSchema } from 'idb'
-import { DEFAULT_EXPORT_SETTINGS } from '../character/types'
+import { resolveMouthLayer } from '../character/mouth'
+import { DEFAULT_EXPORT_SETTINGS, VOWELS } from '../character/types'
 import type { Character, ExportSettings, ScriptLine } from '../character/types'
 
 export interface AppSettings {
@@ -8,7 +9,7 @@ export interface AppSettings {
   export: ExportSettings
 }
 
-export type LineProblem = 'no-character' | 'no-expression' | 'no-voice' | 'empty-text'
+export type LineProblem = 'no-character' | 'no-expression' | 'no-voice' | 'no-mouth' | 'empty-text'
 
 export interface Store {
   listCharacters(): Promise<Character[]>
@@ -103,12 +104,18 @@ export async function openStore(dbName = 'zunda-lipsync'): Promise<Store> {
   }
 }
 
+/** 口グループが未設定、または全母音が未割り当てだと口が動かない。 */
+function hasMouth(character: Character): boolean {
+  return character.mouthGroupId !== null && VOWELS.some((v) => resolveMouthLayer(character.mouthMap, v) !== null)
+}
+
 /** Why a script line cannot be synthesized, or null when it can. */
 export function lineProblem(line: ScriptLine, characters: Character[]): LineProblem | null {
   const character = characters.find((c) => c.id === line.characterId)
   if (!character) return 'no-character'
   if (!character.expressions.some((e) => e.id === line.expressionId)) return 'no-expression'
   if (!character.voice) return 'no-voice'
+  if (!hasMouth(character)) return 'no-mouth'
   if (line.text.trim() === '') return 'empty-text'
   return null
 }
