@@ -89,10 +89,10 @@ export function LineRow(props: Props) {
           <select
             value={expressionKnown ? (line.expressionId ?? '') : ''}
             disabled={locked || !character}
-            aria-label="表情"
+            aria-label="スタイル"
             onChange={(e) => props.onChange({ expressionId: e.target.value || null })}
           >
-            <option value="">{line.expressionId && character && !expressionKnown ? '（削除された表情）' : '表情を選択'}</option>
+            <option value="">{line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択'}</option>
             {character?.expressions.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.name}

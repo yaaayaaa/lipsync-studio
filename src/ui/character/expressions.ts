@@ -2,12 +2,12 @@ import type { Expression } from '../../core/character/types'
 import { applyFavorite, parsePfv } from '../../core/psd/pfv'
 import type { LayerNode } from '../../core/psd/types'
 
-/** 「表情N」のうち、まだ使われていない最小の N（件数+1 から探す）。 */
+/** 「スタイルN」のうち、まだ使われていない最小の N（件数+1 から探す）。 */
 export function nextExpressionName(expressions: Expression[]): string {
   const used = new Set(expressions.map((e) => e.name))
   let n = expressions.length + 1
-  while (used.has(`表情${n}`)) n++
-  return `表情${n}`
+  while (used.has(`スタイル${n}`)) n++
+  return `スタイル${n}`
 }
 
 export interface PfvImport {
@@ -15,7 +15,7 @@ export interface PfvImport {
   missingPaths: number
 }
 
-/** .pfv の各お気に入りを、その名前の表情にする。PfvFormatError を投げうる。 */
+/** .pfv の各お気に入りを、その名前のスタイルにする。PfvFormatError を投げうる。 */
 export function importPfv(tree: LayerNode[], text: string, newId: () => string): PfvImport {
   let missingPaths = 0
   const expressions = parsePfv(text).map((fav) => {

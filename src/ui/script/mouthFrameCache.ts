@@ -34,7 +34,7 @@ function closeFrames(entry: Entry): void {
 }
 
 /**
- * (キャラ, 表情) ごとに6種の口の画像を1回だけ合成して使い回す。
+ * (キャラ, スタイル) ごとに口の種類ぶんの画像を1回だけ合成して使い回す。
  * 1組で PSD サイズの画像が6枚あるので、持つ組数に上限を設け、古いものから閉じる。
  */
 export class MouthFrameCache {

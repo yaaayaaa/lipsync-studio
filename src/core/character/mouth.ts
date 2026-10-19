@@ -7,7 +7,7 @@ export function resolveMouthLayer(map: MouthMap, vowel: Vowel): LayerId | null {
   return map[vowel] ?? map.closed ?? null
 }
 
-/** 口グループ直下の子を全部消して mouthLayerId だけ表示する（表情側の radio 状態より優先）。 */
+/** 口グループ直下の子を全部消して mouthLayerId だけ表示する（スタイル側の radio 状態より優先）。 */
 export function applyMouth(
   tree: LayerNode[],
   state: VisibilityState,

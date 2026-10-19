@@ -14,7 +14,7 @@ const expressionNameId = (id: string) => `expression-name-${id}`
 interface Props {
   tree: LayerNode[]
   expressions: Expression[]
-  /** いまツリーに読み込まれている表情（なければ null） */
+  /** いまツリーに読み込まれているスタイル（なければ null） */
   selectedId: string | null
   visibility: VisibilityState
   onChange(expressions: Expression[]): void
@@ -50,7 +50,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
   }
 
   const remove = (expression: Expression) => {
-    if (!confirm(`表情「${expression.name}」を削除しますか？`)) return
+    if (!confirm(`スタイル「${expression.name}」を削除しますか？`)) return
     onChange(expressions.filter((e) => e.id !== expression.id))
   }
 
@@ -67,9 +67,9 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
 
   return (
     <section className="panel">
-      <h2>表情</h2>
+      <h2>スタイル</h2>
       {expressions.length === 0 ? (
-        <p className="hint">まだ表情がありません。ツリーで組み合わせを作って保存してください。</p>
+        <p className="hint">まだスタイルがありません。ツリーで組み合わせを作って保存してください。</p>
       ) : (
         <ul className="expression-list">
           {expressions.map((e) => {
@@ -93,7 +93,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
                 )}
                 {renamingId !== e.id && (
                   <RowMenu
-                    label="表情の操作"
+                    label="スタイルの操作"
                     items={[
                       {
                         label: '現在の状態で上書き',

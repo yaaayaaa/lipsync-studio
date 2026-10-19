@@ -6,7 +6,7 @@ import type { LineProblem } from '../../core/storage/db'
 
 export const PROBLEM_LABELS: Record<LineProblem, string> = {
   'no-character': 'キャラが選ばれていないか、削除されています',
-  'no-expression': '表情が選ばれていないか、削除されています',
+  'no-expression': 'スタイルが選ばれていないか、削除されています',
   'no-voice': 'このキャラには声が設定されていません（キャラ設定で選んでください）',
   'no-mouth': 'キャラ設定で口グループと口の割り当てをしてください',
   'empty-text': 'セリフが空です',
@@ -22,7 +22,7 @@ export function canListen(problem: LineProblem | null): boolean {
   return problem === null || problem === 'no-mouth'
 }
 
-/** 合成できる行ならキャラと表情を、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
+/** 合成できる行ならキャラとスタイルを、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
 export function resolveLine(line: ScriptLine, characters: Character[], listenOnly = false): ReadyLine {
   const problem = lineProblem(line, characters)
   if (problem && !(listenOnly && canListen(problem))) throw new Error(PROBLEM_LABELS[problem])

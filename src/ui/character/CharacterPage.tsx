@@ -77,7 +77,7 @@ export function CharacterPage() {
   }
 
   const remove = async (c: Character) => {
-    if (!confirm(`キャラ「${c.name}」を削除しますか？ PSD と表情も消えます。`)) return
+    if (!confirm(`キャラ「${c.name}」を削除しますか？ PSD とスタイルも消えます。`)) return
     try {
       await store.deleteCharacter(c.id)
       forgetPsd(c.id)
@@ -182,7 +182,7 @@ function CharacterEditor({ character, onSave }: EditorProps) {
 }
 
 function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree: LayerNode[]; psdSize: PsdSize }) {
-  // 最初は先頭の表情（なければ PSD の初期状態）をツリーに読み込む
+  // 最初は先頭のスタイル（なければ PSD の初期状態）をツリーに読み込む
   const [visibility, setVisibility] = useState<VisibilityState>(
     () => character.expressions[0]?.visibility ?? initialVisibility(tree),
   )

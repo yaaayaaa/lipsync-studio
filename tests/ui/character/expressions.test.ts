@@ -7,13 +7,13 @@ import { layer } from '../../fixtures/makePsd'
 const expr = (name: string) => ({ id: name, name, visibility: {} })
 
 describe('nextExpressionName', () => {
-  it('starts at 表情1', () => {
-    expect(nextExpressionName([])).toBe('表情1')
+  it('starts at スタイル1', () => {
+    expect(nextExpressionName([])).toBe('スタイル1')
   })
 
   it('uses count+1 and skips names already taken', () => {
-    expect(nextExpressionName([expr('笑顔')])).toBe('表情2')
-    expect(nextExpressionName([expr('表情2'), expr('表情3')])).toBe('表情4')
+    expect(nextExpressionName([expr('笑顔')])).toBe('スタイル2')
+    expect(nextExpressionName([expr('スタイル2'), expr('スタイル3')])).toBe('スタイル4')
   })
 })
 

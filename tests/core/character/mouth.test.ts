@@ -22,7 +22,7 @@ describe('applyMouth', () => {
     layer('y'),
     layer('mouth', { children: [layer('*closed'), layer('*a', { hidden: true }), layer('*i', { hidden: true })] }),
   ])
-  // 表情側で 3/1 が表示中の状態
+  // スタイル側で 3/1 が表示中の状態
   const base: VisibilityState = { ...initialVisibility(tree), '3/0': false, '3/1': true, '3/2': false }
 
   it('shows only the requested mouth, overriding the radio state', () => {
