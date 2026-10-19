@@ -1,16 +1,23 @@
 :root {
-  --bg: #f6f7f5;
+  /* 配色は白黒が基本（ユーザー決定）：背景は白、文字・主要ボタン・選択状態は黒、補助はグレー。
+     有彩色はエラー表示の赤だけ。ほかの画面もこの変数を使う */
+  --bg: #ffffff;
   --surface: #ffffff;
-  --border: #d9ddd6;
-  --text: #20251f;
-  --muted: #687064;
-  --accent: #4f9a3a;
-  --accent-strong: #3d7d2c;
-  --accent-soft: #e6f2e1;
-  --danger: #c0392b;
-  --danger-soft: #fbeceb;
+  --fg: #111111;
+  --muted: #666666;
+  --border: #d4d4d4;
+  --hover-bg: #f2f2f2;
+  --notice-bg: #f2f2f2;
+  --selected-bg: #111111;
+  --selected-fg: #ffffff;
+  --primary-bg: #111111;
+  --primary-hover-bg: #3a3a3a;
+  --primary-fg: #ffffff;
+  --checker: #e6e6e6;
+  --danger: #c62828;
+  --danger-soft: #fdecec;
   --radius: 6px;
-  color: var(--text);
+  color: var(--fg);
   background: var(--bg);
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
   font-size: 14px;
@@ -69,7 +76,7 @@ button,
 
 button:hover:not(:disabled),
 .button:hover:not(.disabled) {
-  border-color: var(--accent);
+  border-color: var(--fg);
 }
 
 button:disabled,
@@ -80,14 +87,15 @@ button:disabled,
 
 button.primary,
 .button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: var(--primary-fg);
 }
 
 button.primary:hover:not(:disabled),
 .button.primary:hover:not(.disabled) {
-  background: var(--accent-strong);
+  background: var(--primary-hover-bg);
+  border-color: var(--primary-hover-bg);
 }
 
 button.danger {
@@ -127,7 +135,7 @@ input[type='text'],
 
 .app-header h1 {
   font-size: 17px;
-  color: var(--accent-strong);
+  color: var(--fg);
 }
 
 .app-tagline {
@@ -186,7 +194,8 @@ input[type='text'],
 
 .character-list li.selected,
 .expression-list li.selected {
-  background: var(--accent-soft);
+  background: var(--selected-bg);
+  color: var(--selected-fg);
 }
 
 .character-name,
@@ -208,6 +217,13 @@ input[type='text'],
 .row-actions button {
   padding: 1px 6px;
   font-size: 12px;
+  /* 選択中の行（黒地）でも読めるよう、文字色を継承しない */
+  color: var(--fg);
+  background: var(--surface);
+}
+
+.row-actions button.danger {
+  color: var(--danger);
 }
 
 li:hover .row-actions,
@@ -235,12 +251,12 @@ li:focus-within .row-actions {
 }
 
 .layer-row:hover {
-  background: var(--accent-soft);
+  background: var(--hover-bg);
 }
 
 .layer-row input {
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--fg);
 }
 
 .layer-row.dimmed .layer-name {
@@ -266,8 +282,8 @@ li:focus-within .row-actions {
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  background: var(--accent);
-  color: #fff;
+  background: var(--selected-bg);
+  color: var(--selected-fg);
 }
 
 /* ---- プレビュー ---- */
@@ -287,9 +303,9 @@ li:focus-within .row-actions {
 }
 
 .vowel-switch button.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--selected-bg);
+  border-color: var(--selected-bg);
+  color: var(--selected-fg);
 }
 
 .preview-stage {
@@ -306,7 +322,7 @@ li:focus-within .row-actions {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  background: repeating-conic-gradient(#e7e9e5 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+  background: repeating-conic-gradient(var(--checker) 0 25%, var(--surface) 0 50%) 0 0 / 16px 16px;
   border: 1px solid var(--border);
 }
 
@@ -366,7 +382,7 @@ li:focus-within .row-actions {
   margin: 0;
   padding: 6px 8px;
   border-radius: var(--radius);
-  background: var(--accent-soft);
+  background: var(--notice-bg);
   font-size: 13px;
 }
 
