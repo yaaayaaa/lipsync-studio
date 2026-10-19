@@ -17,10 +17,13 @@ export class VoicevoxError extends Error {
 export interface VoicevoxClientOptions {
   baseUrl: string
   timeoutMs?: number
+  /** /synthesis だけに使う。遅い CPU エンジンで長いセリフを遅く読むと 30 秒を超える。 */
+  synthesisTimeoutMs?: number
   fetch?: typeof fetch
 }
 
 const DEFAULT_TIMEOUT_MS = 30000
+const DEFAULT_SYNTHESIS_TIMEOUT_MS = 120000
 const MAX_DETAIL_LENGTH = 200
 
 // 出力を 48kHz にするのは、24kHz を受け付けない AAC エンコーダーがあるため。
@@ -54,11 +57,13 @@ async function describeHttpFailure(res: Response): Promise<string> {
 export class VoicevoxClient {
   private readonly baseUrl: string
   private readonly timeoutMs: number
+  private readonly synthesisTimeoutMs: number
   private readonly fetchImpl: typeof fetch
 
   constructor(opts: VoicevoxClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '')
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    this.synthesisTimeoutMs = opts.synthesisTimeoutMs ?? DEFAULT_SYNTHESIS_TIMEOUT_MS
     this.fetchImpl = opts.fetch ?? fetch.bind(globalThis)
   }
 
@@ -88,6 +93,7 @@ export class VoicevoxClient {
         body: JSON.stringify(query),
       },
       (res) => res.arrayBuffer(),
+      this.synthesisTimeoutMs,
     )
   }
 
@@ -107,13 +113,15 @@ export class VoicevoxClient {
   }
 
   // タイムアウトは本文の読み取りまで含めて効かせる。
-  private async request<T>(path: string, init: RequestInit, read: (res: Response) => Promise<T>): Promise<T> {
+  private async request<T>(path: string, init: RequestInit, read: (res: Response) => Promise<T>,
+    timeoutMs = this.timeoutMs,
+  ): Promise<T> {
     const controller = new AbortController()
     let timedOut = false
     const timer = setTimeout(() => {
       timedOut = true
       controller.abort()
-    }, this.timeoutMs)
+    }, timeoutMs)
     try {
       const res = await this.fetchImpl(`${this.baseUrl}${path}`, { ...init, signal: controller.signal })
       if (!res.ok) {
@@ -123,7 +131,7 @@ export class VoicevoxClient {
     } catch (e) {
       if (e instanceof VoicevoxError && !timedOut) throw e
       if (timedOut) {
-        throw new VoicevoxError('timeout', `VOICEVOX エンジンの応答がタイムアウトしました (${this.timeoutMs / 1000}秒)`)
+        throw new VoicevoxError('timeout', `VOICEVOX エンジンの応答がタイムアウトしました (${timeoutMs / 1000}秒)`)
       }
       if (e instanceof TypeError) {
         throw new VoicevoxError('unreachable', `VOICEVOX エンジンに接続できません (${this.baseUrl})`)

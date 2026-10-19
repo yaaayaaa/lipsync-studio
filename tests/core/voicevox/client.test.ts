@@ -105,6 +105,34 @@ describe('VoicevoxClient', () => {
     expect(err.message).toContain('VOICEVOX')
   })
 
+  it('gives /synthesis its own, longer timeout', async () => {
+    const hang = (_url: string, init: RequestInit) =>
+      new Promise<Response>((resolve, reject) => {
+        init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+        setTimeout(() => resolve(new Response(new ArrayBuffer(4))), 60)
+      })
+    const client = new VoicevoxClient({
+      baseUrl: BASE,
+      timeoutMs: 10,
+      synthesisTimeoutMs: 500,
+      fetch: hang as never,
+    })
+    const wav = await client.synthesis({ accent_phrases: [] } as never, 1)
+    expect(wav.byteLength).toBe(4)
+    const err = await catchError(client.audioQuery('a', 1))
+    expect(err.kind).toBe('timeout')
+  })
+
+  it('times out /synthesis after synthesisTimeoutMs', async () => {
+    const hang = (_url: string, init: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+      })
+    const client = new VoicevoxClient({ baseUrl: BASE, synthesisTimeoutMs: 10, fetch: hang as never })
+    const err = await catchError(client.synthesis({ accent_phrases: [] } as never, 1))
+    expect(err.kind).toBe('timeout')
+  })
+
   it('maps non-array /speakers to invalid-response', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ nope: true }))
     const client = new VoicevoxClient({ baseUrl: BASE, fetch: fetchMock })
