@@ -127,6 +127,18 @@ input {
   color: inherit;
 }
 
+/* キーボード操作の現在地。ブラウザ標準の青い枠をやめ、白黒の配色に合わせる */
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+/* 選択中の行（反転した地）の中では、外側に出すと地に溶けるので内側に文字色で描く */
+li.selected :focus-visible {
+  outline-color: currentColor;
+  outline-offset: -2px;
+}
+
 /* アイコン（Lucide の svg）は縮ませず、文字と同じ色にする */
 button svg,
 .button svg {
@@ -330,20 +342,10 @@ li:focus-within .row-menu-button,
   background: var(--hover-bg);
 }
 
-.row-menu-button:focus-visible {
-  outline: 2px solid var(--selected-bg);
-  outline-offset: 1px;
-}
-
 /* 選択中の行（反転した地）の上でも、押せる地の色に合わせてアイコンを通常の文字色にする */
 li.selected .row-menu-button:hover:not(:disabled),
 li.selected .row-menu-button[aria-expanded='true'] {
   color: var(--fg);
-}
-
-li.selected .row-menu-button:focus-visible {
-  outline-color: currentColor;
-  outline-offset: -2px;
 }
 
 .row-menu-list {
@@ -584,11 +586,6 @@ li.selected .row-menu-button:focus-visible {
 
 .layer-select-button:hover:not(:disabled) {
   background: var(--hover-bg);
-}
-
-.layer-select-button:focus-visible {
-  outline: 2px solid var(--selected-bg);
-  outline-offset: 1px;
 }
 
 .layer-select-button[aria-expanded='true'] {
