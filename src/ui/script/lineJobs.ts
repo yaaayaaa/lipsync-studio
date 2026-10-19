@@ -1,0 +1,80 @@
+import type { Character, Expression, ExportSettings, ScriptLine, Vowel } from '../../core/character/types'
+import { placement } from '../../core/export/frames'
+import type { MouthFrames } from '../../core/export/frames'
+import { buildMouthTimeline } from '../../core/lipsync/timeline'
+import type { MouthTimeline } from '../../core/lipsync/timeline'
+import { lineProblem } from '../../core/storage/db'
+import type { LineProblem } from '../../core/storage/db'
+import { prepareQuery } from '../../core/voicevox/client'
+import type { VoicevoxClient } from '../../core/voicevox/client'
+
+export const PROBLEM_LABELS: Record<LineProblem, string> = {
+  'no-character': 'キャラが選ばれていないか、削除されています',
+  'no-expression': '表情が選ばれていないか、削除されています',
+  'no-voice': 'このキャラには声が設定されていません（キャラ設定で選んでください）',
+  'empty-text': 'セリフが空です',
+}
+
+export interface ReadyLine {
+  character: Character & { voice: NonNullable<Character['voice']> }
+  expression: Expression
+}
+
+/** 合成できる行ならキャラと表情を、できなければ理由を投げる。 */
+export function resolveLine(line: ScriptLine, characters: Character[]): ReadyLine {
+  const problem = lineProblem(line, characters)
+  if (problem) throw new Error(PROBLEM_LABELS[problem])
+  const character = characters.find((c) => c.id === line.characterId)!
+  const expression = character.expressions.find((e) => e.id === line.expressionId)!
+  return { character: character as ReadyLine['character'], expression }
+}
+
+/**
+ * audio_query → speedScale を行の値に → synthesis。タイムラインは合成に使ったクエリから作る。
+ * 疑問形の語尾上げ（enable_interrogative_upspeak）はエンジンの既定のままにする（タイムラインがそれを前提にしている）。
+ */
+export async function synthesizeLine(
+  client: VoicevoxClient,
+  line: ScriptLine,
+  styleId: number,
+): Promise<{ wav: ArrayBuffer; timeline: MouthTimeline }> {
+  const query = prepareQuery(await client.audioQuery(line.text, styleId), line.speedScale)
+  const wav = await client.synthesis(query, styleId)
+  return { wav, timeline: buildMouthTimeline(query) }
+}
+
+/** 書き出しと同じ配置で1フレームを描く（プレビュー用）。 */
+export function drawMouthFrame(
+  ctx: CanvasRenderingContext2D,
+  frames: MouthFrames,
+  vowel: Vowel,
+  psdSize: { width: number; height: number },
+  settings: ExportSettings,
+): void {
+  const bitmap = frames.get(vowel)
+  ctx.fillStyle = settings.background
+  ctx.fillRect(0, 0, settings.width, settings.height)
+  if (!bitmap) return
+  const rect = placement(settings, psdSize)
+  ctx.drawImage(bitmap, rect.x, rect.y, rect.width, rect.height)
+}
+
+/** Blob をファイルとして保存させる。URL はダウンロードが始まってから解放する。 */
+export function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.append(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+export function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
+export function isAbortError(e: unknown): boolean {
+  return e instanceof DOMException && e.name === 'AbortError'
+}

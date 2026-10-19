@@ -405,3 +405,269 @@ li:focus-within .row-actions {
   flex-direction: column;
   gap: 6px;
 }
+
+/* ---- タブと上部の案内 ---- */
+
+[hidden] {
+  display: none !important;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  align-self: center;
+}
+
+.tabs button {
+  border-color: transparent;
+}
+
+.tabs button.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page > * {
+  flex: 1;
+}
+
+.engine-banner,
+.support-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--notice-bg);
+  font-size: 13px;
+}
+
+.engine-banner.error,
+.support-banner {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.engine-banner p,
+.support-banner p {
+  margin: 0;
+}
+
+.engine-banner .detail,
+.support-banner .detail {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.engine-status {
+  color: var(--muted);
+}
+
+.engine-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.engine-url label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.engine-url input {
+  width: 240px;
+  color: var(--fg);
+}
+
+.engine-url button {
+  color: var(--fg);
+}
+
+.url-error {
+  flex-basis: 100%;
+  text-align: right;
+  color: var(--danger);
+}
+
+/* ---- セリフ画面 ---- */
+
+.script-page {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(480px, 1fr) minmax(320px, 420px);
+}
+
+.script-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.script-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.script-toolbar h2 {
+  margin-bottom: 0;
+}
+
+.script-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.export-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+progress {
+  accent-color: var(--fg);
+}
+
+.line-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.line-row.has-problem {
+  border-color: var(--danger);
+}
+
+.line-index {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  padding-top: 4px;
+}
+
+.line-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.line-text {
+  width: 100%;
+  resize: vertical;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+}
+
+.line-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.line-controls select {
+  width: auto;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+input[type='range'] {
+  accent-color: var(--fg);
+}
+
+.value {
+  min-width: 2.6em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.line-problem {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.line-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.line-order {
+  display: flex;
+  gap: 2px;
+}
+
+.line-order button {
+  flex: 1;
+  padding: 2px 6px;
+}
+
+.add-line {
+  align-self: flex-start;
+}
+
+.script-side .panel {
+  flex: none;
+}
+
+.line-preview-canvas {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+}
+
+.color-text {
+  width: 7em;
+}
+
+input[type='color'] {
+  width: 40px;
+  height: 28px;
+  padding: 0 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}

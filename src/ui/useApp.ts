@@ -11,6 +11,8 @@ export interface AppContextValue {
   reloadCharacters(): Promise<void>
   /** 画面には即座に反映し、IndexedDB に保存する。保存に失敗したら保存済みの内容に戻して例外を投げる。 */
   saveCharacter(c: Character, psd?: Blob): Promise<void>
+  /** 画面には即座に反映し、IndexedDB に保存する。保存に失敗したら保存済みの内容に戻して例外を投げる。エンジン URL が変われば client も作り直される。 */
+  saveSettings(s: AppSettings): Promise<void>
 }
 
 /** 値は AppProvider（AppContext.tsx）が入れる。 */

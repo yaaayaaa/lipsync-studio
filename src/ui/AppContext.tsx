@@ -56,15 +56,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [store, reloadCharacters],
   )
 
+  const saveSettings = useCallback(
+    async (settings: AppSettings) => {
+      if (!store) throw new Error('保存先がまだ開かれていません')
+      setLoaded((prev) => prev && { ...prev, settings })
+      try {
+        await store.saveSettings(settings)
+      } catch (e) {
+        const saved = await store.loadSettings()
+        setLoaded((prev) => prev && { ...prev, settings: saved })
+        throw e
+      }
+    },
+    [store],
+  )
+
   const engineUrl = loaded?.settings.engineUrl
   const client = useMemo(() => (engineUrl ? new VoicevoxClient({ baseUrl: engineUrl }) : null), [engineUrl])
 
   const value = useMemo<AppContextValue | null>(
     () =>
       loaded && client
-        ? { store: loaded.store, settings: loaded.settings, client, characters, reloadCharacters, saveCharacter }
+        ? {
+            store: loaded.store,
+            settings: loaded.settings,
+            client,
+            characters,
+            reloadCharacters,
+            saveCharacter,
+            saveSettings,
+          }
         : null,
-    [loaded, client, characters, reloadCharacters, saveCharacter],
+    [loaded, client, characters, reloadCharacters, saveCharacter, saveSettings],
   )
 
   if (error) return <p className="app-message error">保存領域（IndexedDB）を開けませんでした: {error}</p>

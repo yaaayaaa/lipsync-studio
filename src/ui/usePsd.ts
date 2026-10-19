@@ -2,6 +2,7 @@ import { readPsd } from 'ag-psd'
 import { useEffect, useState } from 'react'
 import { buildLayerTree } from '../core/psd/layerTree'
 import type { LayerNode } from '../core/psd/types'
+import type { Store } from '../core/storage/db'
 import { useApp } from './useApp'
 
 export interface PsdSize {
@@ -45,6 +46,24 @@ export function afterPaint(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
 }
 
+/** キャッシュにあればそれを、なければ保存済みの PSD を解析して返す（フックの外からも使う）。 */
+export function loadParsedPsd(store: Store, characterId: string): Promise<ParsedPsd> {
+  let pending = cache.get(characterId)
+  if (!pending) {
+    pending = (async () => {
+      const blob = await store.loadPsd(characterId)
+      if (!blob) throw new Error('保存された PSD が見つかりません')
+      const buffer = await blob.arrayBuffer()
+      await afterPaint()
+      return parsePsd(buffer)
+    })()
+    cache.set(characterId, pending)
+    // 失敗は覚えておかない（次に開いたときに再試行する）
+    pending.catch(() => cache.delete(characterId))
+  }
+  return pending
+}
+
 const EMPTY_SIZE: PsdSize = { width: 0, height: 0 }
 
 export function usePsd(characterId: string): PsdState {
@@ -58,20 +77,7 @@ export function usePsd(characterId: string): PsdState {
 
   useEffect(() => {
     let cancelled = false
-    let pending = cache.get(characterId)
-    if (!pending) {
-      pending = (async () => {
-        const blob = await store.loadPsd(characterId)
-        if (!blob) throw new Error('保存された PSD が見つかりません')
-        const buffer = await blob.arrayBuffer()
-        await afterPaint()
-        return parsePsd(buffer)
-      })()
-      cache.set(characterId, pending)
-      // 失敗は覚えておかない（次に開いたときに再試行する）
-      pending.catch(() => cache.delete(characterId))
-    }
-    pending.then(
+    loadParsedPsd(store, characterId).then(
       (parsed) => {
         if (!cancelled) setState({ id: characterId, ...parsed, status: 'ready' })
       },
