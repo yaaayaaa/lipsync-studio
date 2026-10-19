@@ -75,6 +75,45 @@ describe('setVisible', () => {
     expect(setVisible(tree, s0, '3', false)['3']).toBe(true)
     expect(setVisible(tree, s0, '4', true)['4']).toBe(false)
   })
+
+  describe('showing a layer inside hidden groups', () => {
+    const nested = buildLayerTree([
+      layer('体'),
+      layer('表情', {
+        hidden: true,
+        children: [layer('目', { hidden: true, children: [layer('*普通'), layer('*笑い')] }), layer('頬')],
+      }),
+    ])
+
+    it('also shows every hidden ancestor so the choice is visible', () => {
+      const s = setVisible(nested, initialVisibility(nested), '1/0/0', true)
+      expect([s['1'], s['1/0'], s['1/0/0'], s['1/0/1']]).toEqual([true, true, true, false])
+      expect(isEffectivelyVisible(nested, s, '1/0/0')).toBe(true)
+    })
+
+    it('leaves siblings of the ancestors untouched', () => {
+      const s0 = setVisible(nested, initialVisibility(nested), '1/1', false)
+      const s = setVisible(nested, s0, '1/0/0', true)
+      expect([s['0'], s['1/1']]).toEqual([true, false])
+    })
+
+    it('selects a radio ancestor among its siblings', () => {
+      const radios = buildLayerTree([
+        layer('*服A', { children: [layer('袖')] }),
+        layer('*服B', { children: [layer('袖', { hidden: true })] }),
+      ])
+      const s0 = initialVisibility(radios)
+      expect([s0['0'], s0['1']]).toEqual([false, true])
+      const s = setVisible(radios, s0, '0/0', true)
+      expect([s['0'], s['1']]).toEqual([true, false])
+    })
+
+    it('does not touch ancestors when hiding', () => {
+      const s0 = setVisible(nested, initialVisibility(nested), '1/0/0', true)
+      const s = setVisible(nested, s0, '1/1', false)
+      expect([s['1'], s['1/0']]).toEqual([true, true])
+    })
+  })
 })
 
 describe('isEffectivelyVisible', () => {

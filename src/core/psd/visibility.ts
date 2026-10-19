@@ -39,7 +39,21 @@ export function initialVisibility(tree: LayerNode[]): VisibilityState {
   return enforceFixedRules(tree, state)
 }
 
-/** 新しい state を返す。radio は true にすると兄弟 radio が消え、false にしても変わらない。 */
+/** next の中で node を表示にする。radio なら兄弟 radio を消す。 */
+function show(tree: LayerNode[], next: VisibilityState, node: LayerNode): void {
+  next[node.id] = true
+  if (node.kind !== 'radio') return
+  const pid = parentId(node.id)
+  const siblings = pid === null ? tree : (findNode(tree, pid)?.children ?? [])
+  for (const s of siblings) {
+    if (s.kind === 'radio' && s.id !== node.id) next[s.id] = false
+  }
+}
+
+/**
+ * 新しい state を返す。radio は true にすると兄弟 radio が消え、false にしても変わらない。
+ * 表示にするときは祖先も表示にする（PSDTool と同じく、選んだものが必ず見えるように）。
+ */
 export function setVisible(
   tree: LayerNode[],
   state: VisibilityState,
@@ -49,13 +63,14 @@ export function setVisible(
   const node = findNode(tree, id)
   if (!node) return state
   if (node.kind === 'radio' && !visible) return { ...state }
-  const next = { ...state, [id]: visible }
-  if (node.kind === 'radio') {
-    const pid = parentId(id)
-    const siblings = pid === null ? tree : (findNode(tree, pid)?.children ?? [])
-    for (const s of siblings) {
-      if (s.kind === 'radio' && s.id !== id) next[s.id] = false
-    }
+  const next = { ...state }
+  if (!visible) {
+    next[id] = false
+    return enforceFixedRules(tree, next)
+  }
+  for (let cur: LayerId | null = id; cur !== null; cur = parentId(cur)) {
+    const target = findNode(tree, cur)
+    if (target) show(tree, next, target)
   }
   return enforceFixedRules(tree, next)
 }
