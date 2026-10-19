@@ -10,10 +10,16 @@ export const FPS = 30
 
 type Size = { width: number; height: number }
 
-/** 各フレームの口。フレーム数は ceil(duration * fps)、i 番目は区間の中央 (i+0.5)/fps の口。 */
-export function frameSchedule(timeline: MouthTimeline, fps: number = FPS): Vowel[] {
+/**
+ * 各フレームの口。フレーム数は ceil(max(タイムラインの長さ, minDuration) * fps)、
+ * i 番目は区間の中央 (i+0.5)/fps の口。タイムラインより後のフレームは closed。
+ * minDuration には音声の長さを渡す：映像が音声より先に終わると、編集ソフトで重ねたときに
+ * 声だけ残って立ち絵が消えるため。
+ */
+export function frameSchedule(timeline: MouthTimeline, fps: number = FPS, minDuration = 0): Vowel[] {
+  const duration = Math.max(timeline.duration, minDuration)
   // 浮動小数の誤差（例: 1.0000000000000002 * 30）で1フレーム増えないよう微小量を引く
-  const count = Math.ceil(timeline.duration * fps - 1e-9)
+  const count = Math.ceil(duration * fps - 1e-9)
   return Array.from({ length: Math.max(0, count) }, (_, i) => mouthAt(timeline, (i + 0.5) / fps))
 }
 

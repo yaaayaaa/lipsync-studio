@@ -53,7 +53,8 @@ export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
 
   // decodeAudioData は渡した ArrayBuffer を detach するので、呼び出し側の wav は複製を渡す
   const audio = await new OfflineAudioContext(1, 1, AUDIO_SAMPLE_RATE).decodeAudioData(wav.slice(0))
-  const schedule = frameSchedule(timeline)
+  // WAV がタイムラインより長くても、映像が音声の最後まで続くようにする
+  const schedule = frameSchedule(timeline, FPS, audio.duration)
   const rect = placement(settings, psdSize)
 
   const canvas = new OffscreenCanvas(settings.width, settings.height)
@@ -69,7 +70,7 @@ export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
     output.addAudioTrack(audioSource)
     await output.start()
 
-    // 音声は先に全量を渡す。映像の長さはフレーム予定で決まる（WAV と数 ms ずれてよい）
+    // 音声は先に全量を渡す。映像は音声の長さ以上になる（端数は最後のフレームの分だけ長い）
     await audioSource.add(audio)
 
     for (let i = 0; i < schedule.length; i++) {

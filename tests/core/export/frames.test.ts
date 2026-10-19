@@ -23,6 +23,21 @@ describe('frameSchedule', () => {
     expect(frames[15]).toBe('closed')
   })
 
+  it('covers audio that outlasts the timeline, padding with closed', () => {
+    const tl: MouthTimeline = { segments: [{ start: 0, end: 0.8, vowel: 'a' }], duration: 0.8 }
+    const frames = frameSchedule(tl, 30, 0.874667)
+    expect(frames).toHaveLength(Math.ceil(0.874667 * 30))
+    expect(frames).toHaveLength(27)
+    expect(frames.slice(0, 24).every((v) => v === 'a')).toBe(true)
+    expect(frames.slice(24)).toEqual(['closed', 'closed', 'closed'])
+  })
+
+  it('keeps the timeline length when the audio is shorter', () => {
+    const tl: MouthTimeline = { segments: [{ start: 0, end: 1.0, vowel: 'a' }], duration: 1.0 }
+    expect(frameSchedule(tl, 30, 0.9)).toEqual(frameSchedule(tl))
+    expect(frameSchedule(tl, 30, 0.9)).toHaveLength(30)
+  })
+
   it('is empty for an empty timeline', () => {
     expect(frameSchedule({ segments: [], duration: 0 })).toEqual([])
   })
