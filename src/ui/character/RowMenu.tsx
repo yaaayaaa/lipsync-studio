@@ -13,6 +13,10 @@ export interface RowMenuItem {
   icon?: LucideIcon
   /** 削除などの取り返しのつかない操作。区切り線の後に赤で出す */
   danger?: boolean
+  /** いまは押せない項目。薄く表示し、キーボードの移動対象からも外す */
+  disabled?: boolean
+  /** 無効な理由などの補足。マウスを乗せたときとキーボード操作時に読み上げる */
+  hint?: string
   onSelect(): void
 }
 
@@ -37,12 +41,15 @@ export function RowMenu({ label, items }: Props) {
   const [state, setState] = useState({ open: false, active: 0 })
   const [position, setPosition] = useState<CSSProperties | null>(null)
   const { open, active } = state
+  const disabled = items.map((i) => i.disabled === true)
+  /** 無効な項目の説明を、押せないことをはっきり伝えるため先に付ける */
+  const labelFor = (item: RowMenuItem) => (item.disabled && item.hint ? `${item.hint}（${item.label}）` : (item.hint ?? item.label))
   // Safari はボタンをクリックしてもフォーカスしないので、押した瞬間にフォーカスが外れたように見える。
   // その間はフォーカス離脱で閉じない（閉じた直後のクリックで開き直してしまうため）
   const pointerOnButton = useRef(false)
 
   const dispatch = (event: MenuEvent) => {
-    const result = menuReduce(state, event)
+    const result = menuReduce(state, event, disabled)
     setState(result.state)
     // 項目の実行より先にボタンへ戻す。名前の変更は編集欄が後からフォーカスを取る
     if (result.focusButton) buttonRef.current?.focus()
@@ -133,7 +140,7 @@ export function RowMenu({ label, items }: Props) {
         onPointerLeave={() => {
           pointerOnButton.current = false
         }}
-        onClick={() => dispatch({ type: 'toggle' })}
+        onClick={() => dispatch({ type: 'toggle', count: items.length })}
         onKeyDown={onKeyDown}
       >
         <EllipsisVertical {...iconProps} />
@@ -161,7 +168,11 @@ export function RowMenu({ label, items }: Props) {
                   id={`${id}-item-${i}`}
                   role="menuitem"
                   tabIndex={-1}
-                  className={`row-menu-item${item.danger ? ' danger' : ''}`}
+                  aria-disabled={item.disabled || undefined}
+                  // 押せない理由は スクリーンリーダーで読めるテキストにも残す（薄い色だけでは伝わらない）
+                  aria-label={labelFor(item)}
+                  title={item.hint}
+                  className={`row-menu-item${item.danger ? ' danger' : ''}${item.disabled ? ' disabled' : ''}`}
                   onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
                   onClick={() => dispatch({ type: 'click', index: i })}
                 >

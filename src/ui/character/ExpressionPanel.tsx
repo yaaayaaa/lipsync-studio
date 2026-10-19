@@ -2,6 +2,7 @@ import { Pencil, Save, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Expression } from '../../core/character/types'
 import type { LayerNode, VisibilityState } from '../../core/psd/types'
+import { sameVisibility } from '../../core/psd/visibility'
 import { newId } from '../../core/id'
 import { importPfv, nextExpressionName, pfvImportMessage } from './expressions'
 import { InlineName } from './InlineName'
@@ -71,34 +72,44 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
         <p className="hint">まだ表情がありません。ツリーで組み合わせを作って保存してください。</p>
       ) : (
         <ul className="expression-list">
-          {expressions.map((e) => (
-            <li key={e.id} className={e.id === selectedId ? 'selected' : undefined}>
-              {renamingId === e.id ? (
-                <InlineName name={e.name} onRename={(name) => rename(e.id, name)} onCancel={() => endRename(e.id)} />
-              ) : (
-                <button
-                  type="button"
-                  id={expressionNameId(e.id)}
-                  className="expression-name"
-                  title={`${e.name} — クリックでツリーに読み込む / ダブルクリックで名前を変更`}
-                  onClick={() => onSelect(e)}
-                  onDoubleClick={() => setRenamingId(e.id)}
-                >
-                  {e.name}
-                </button>
-              )}
-              {renamingId !== e.id && (
-                <RowMenu
-                  label="表情の操作"
-                  items={[
-                    { label: '現在の状態で上書き', icon: Save, onSelect: () => overwrite(e) },
-                    { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(e.id) },
-                    { label: '削除', icon: Trash2, danger: true, onSelect: () => remove(e) },
-                  ]}
-                />
-              )}
-            </li>
-          ))}
+          {expressions.map((e) => {
+            // すでに同じ表示状態なら上書きする内容が無いので、項目を押せないようにする
+            const same = sameVisibility(e.visibility, visibility)
+            return (
+              <li key={e.id} className={e.id === selectedId ? 'selected' : undefined}>
+                {renamingId === e.id ? (
+                  <InlineName name={e.name} onRename={(name) => rename(e.id, name)} onCancel={() => endRename(e.id)} />
+                ) : (
+                  <button
+                    type="button"
+                    id={expressionNameId(e.id)}
+                    className="expression-name"
+                    title={`${e.name} — クリックでツリーに読み込む / ダブルクリックで名前を変更`}
+                    onClick={() => onSelect(e)}
+                    onDoubleClick={() => setRenamingId(e.id)}
+                  >
+                    {e.name}
+                  </button>
+                )}
+                {renamingId !== e.id && (
+                  <RowMenu
+                    label="表情の操作"
+                    items={[
+                      {
+                        label: '現在の状態で上書き',
+                        icon: Save,
+                        disabled: same,
+                        hint: same ? 'いま表示しているのと同じ状態' : undefined,
+                        onSelect: () => overwrite(e),
+                      },
+                      { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(e.id) },
+                      { label: '削除', icon: Trash2, danger: true, onSelect: () => remove(e) },
+                    ]}
+                  />
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
       <div className="button-row">

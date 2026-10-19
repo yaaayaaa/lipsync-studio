@@ -3,6 +3,7 @@ import { buildLayerTree } from '../../../src/core/psd/layerTree'
 import {
   initialVisibility,
   isEffectivelyVisible,
+  sameVisibility,
   setVisible,
 } from '../../../src/core/psd/visibility'
 import { layer } from '../../fixtures/makePsd'
@@ -123,5 +124,25 @@ describe('isEffectivelyVisible', () => {
     expect(s['0/0']).toBe(true)
     expect(isEffectivelyVisible(tree, s, '0/0')).toBe(false)
     expect(isEffectivelyVisible(tree, setVisible(tree, s, '0', true), '0/0')).toBe(true)
+  })
+})
+
+describe('sameVisibility', () => {
+  it('reports equal states as the same', () => {
+    expect(sameVisibility({ a: true, b: false }, { a: true, b: false })).toBe(true)
+  })
+
+  it('treats a missing key as hidden, so states built differently still compare equal', () => {
+    expect(sameVisibility({ a: true, b: false }, { a: true })).toBe(true)
+    expect(sameVisibility({ a: true }, { a: true, b: false })).toBe(true)
+  })
+
+  it('catches a single layer difference in either direction', () => {
+    expect(sameVisibility({ a: true, b: true }, { a: true, b: false })).toBe(false)
+    expect(sameVisibility({ a: true }, { a: true, b: true })).toBe(false)
+  })
+
+  it('two empty states are the same', () => {
+    expect(sameVisibility({}, {})).toBe(true)
   })
 })

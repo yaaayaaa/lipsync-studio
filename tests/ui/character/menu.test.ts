@@ -77,3 +77,59 @@ describe('menuReduce: inside the open menu', () => {
     expect(menuReduce(openAt(1), { type: 'close' })).toEqual({ state: { open: false, active: 1 }, handled: true })
   })
 })
+
+describe('menuReduce: disabled items', () => {
+  // 0 と 2 を無効にした 3 項目のメニュー
+  const D = [true, false, true]
+
+  it('opens on the first usable item instead of a disabled one', () => {
+    expect(menuReduce(closed, { type: 'toggle', count: 3 }, D)).toEqual({ state: openAt(1), handled: true })
+    expect(menuReduce(closed, key('ArrowUp', 3), D)).toEqual({ state: openAt(1), handled: true })
+  })
+
+  it('jumps over disabled items when moving, and still wraps', () => {
+    expect(menuReduce(openAt(0), key('ArrowDown', 3), D).state).toEqual(openAt(1))
+    expect(menuReduce(openAt(1), key('ArrowDown', 3), D).state).toEqual(openAt(1)) // 自分自身へ戻る(次も無効)
+    expect(menuReduce(openAt(1), key('ArrowUp', 3), D).state).toEqual(openAt(1))
+  })
+
+  it('Home/End land on the usable ends', () => {
+    expect(menuReduce(openAt(1), key('Home', 3), D).state).toEqual(openAt(1))
+    expect(menuReduce(openAt(1), key('End', 3), D).state).toEqual(openAt(1))
+  })
+
+  it.each(['Enter', ' '])('%j on a disabled item keeps the menu open and activates nothing', (k) => {
+    expect(menuReduce(openAt(2), key(k, 3), D)).toEqual({ state: openAt(2), handled: true })
+  })
+
+  it('clicking a disabled item keeps the menu open and activates nothing', () => {
+    expect(menuReduce(openAt(0), { type: 'click', index: 2 }, D)).toEqual({ state: openAt(0), handled: true })
+  })
+
+  it('hovering a disabled item leaves the highlight where it was', () => {
+    expect(menuReduce(openAt(1), { type: 'hover', index: 2 }, D)).toEqual({ state: openAt(1), handled: true })
+  })
+
+  it('a disabled item is still closable by Escape', () => {
+    expect(menuReduce(openAt(2), key('Escape', 3), D)).toEqual({
+      state: { open: false, active: 2 },
+      focusButton: true,
+      handled: true,
+    })
+  })
+
+  it('all-disabled menus stay put instead of looping forever', () => {
+    const all = [true, true, true]
+    expect(menuReduce(closed, { type: 'toggle', count: 3 }, all).state.active).toBe(0)
+    expect(menuReduce(openAt(1), key('ArrowDown', 3), all).state).toEqual(openAt(1))
+  })
+
+  it('an enabled item behaves exactly as before', () => {
+    expect(menuReduce(openAt(1), key('Enter', 3), [false, false, true])).toEqual({
+      state: { open: false, active: 1 },
+      activate: 1,
+      focusButton: true,
+      handled: true,
+    })
+  })
+})

@@ -75,6 +75,18 @@ export function setVisible(
   return enforceFixedRules(tree, next)
 }
 
+/**
+ * 二つの表示状態が同じか。未登録のキーは「非表示」として扱うので、
+ * 後から作った状態と .pfv から作った状態（キーの有無が異なる）も正しく比較できる。
+ */
+export function sameVisibility(a: VisibilityState, b: VisibilityState): boolean {
+  const ids = new Set([...Object.keys(a), ...Object.keys(b)])
+  for (const id of ids) {
+    if (!!a[id] !== !!b[id]) return false
+  }
+  return true
+}
+
 /** 自分と祖先がすべて表示中か。 */
 export function isEffectivelyVisible(
   _tree: LayerNode[],

@@ -376,6 +376,16 @@ li.selected .row-menu-button:focus-visible {
   color: var(--danger);
 }
 
+/* 押せない項目は淡くして、ホカスしても強調しない */
+.row-menu-item.disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.row-menu-item.disabled:focus {
+  background: none;
+}
+
 /* 削除は強調中も赤のまま、地だけ淡い赤にする */
 .row-menu-item.danger:focus {
   background: var(--danger-soft);
