@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { VOWELS } from '../../core/character/types'
 import type { Character, MouthMap, Vowel } from '../../core/character/types'
-import { buildMouthTimeline, mouthAt } from '../../core/lipsync/timeline'
+import { buildMouthTimeline } from '../../core/lipsync/timeline'
 import { findNode } from '../../core/psd/layerTree'
 import type { LayerId, LayerNode } from '../../core/psd/types'
 import { prepareQuery } from '../../core/voicevox/client'
 import { useApp } from '../useApp'
 import { VOWEL_LABELS } from './labels'
+import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
+import type { PlaybackHandle } from './samplePlayback'
 
 const SAMPLE_TEXT = 'あいうえお'
 
@@ -108,45 +110,46 @@ function SamplePlayer({ styleId, disabledReason, onPlaybackMouth }: PlayerProps)
   const { client } = useApp()
   const [status, setStatus] = useState<'idle' | 'synthesizing' | 'playing'>('idle')
   const [error, setError] = useState<string | null>(null)
-  const stopRef = useRef<(() => void) | null>(null)
+  // 進行中の再生。画面を離れたら null にしてから取り消し、終わった再生が状態を触らないようにする
+  const handleRef = useRef<PlaybackHandle | null>(null)
 
-  // 画面を離れたら再生を止める
-  useEffect(() => () => stopRef.current?.(), [])
+  useEffect(
+    () => () => {
+      const handle = handleRef.current
+      handleRef.current = null
+      handle?.cancel()
+    },
+    [],
+  )
 
-  const play = async () => {
+  const stop = () => handleRef.current?.cancel()
+
+  const play = () => {
     if (styleId === null) return
-    stopRef.current?.()
+    handleRef.current?.cancel()
     setError(null)
     setStatus('synthesizing')
-    try {
-      const query = prepareQuery(await client.audioQuery(SAMPLE_TEXT, styleId), 1.0)
-      const wav = await client.synthesis(query, styleId)
-      const timeline = buildMouthTimeline(query)
-      const url = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }))
-      const audio = new Audio(url)
-      let frame = 0
-      const stop = () => {
-        cancelAnimationFrame(frame)
-        audio.pause()
-        URL.revokeObjectURL(url)
-        stopRef.current = null
-        onPlaybackMouth(null)
-        setStatus('idle')
-      }
-      const tick = () => {
-        onPlaybackMouth(mouthAt(timeline, audio.currentTime))
-        frame = requestAnimationFrame(tick)
-      }
-      audio.addEventListener('ended', stop)
-      stopRef.current = stop
-      await audio.play()
-      setStatus('playing')
-      tick()
-    } catch (e) {
-      stopRef.current?.()
+    const handle = startSamplePlayback(
+      async () => {
+        const query = prepareQuery(await client.audioQuery(SAMPLE_TEXT, styleId), 1.0)
+        const wav = await client.synthesis(query, styleId)
+        return { wav, timeline: buildMouthTimeline(query) }
+      },
+      browserPlaybackEnv,
+      { onMouth: onPlaybackMouth, onPlaying: () => setStatus('playing') },
+    )
+    handleRef.current = handle
+    const settle = (message: string | null) => {
+      if (handleRef.current !== handle) return
+      handleRef.current = null
+      onPlaybackMouth(null)
       setStatus('idle')
-      setError(e instanceof Error ? e.message : String(e))
+      setError(message)
     }
+    handle.done.then(
+      () => settle(null),
+      (e: unknown) => settle(e instanceof Error ? e.message : String(e)),
+    )
   }
 
   return (
@@ -154,7 +157,7 @@ function SamplePlayer({ styleId, disabledReason, onPlaybackMouth }: PlayerProps)
       <button
         type="button"
         className="primary"
-        onClick={status === 'playing' ? () => stopRef.current?.() : play}
+        onClick={status === 'playing' ? stop : play}
         disabled={disabledReason !== null || status === 'synthesizing'}
         title={disabledReason ?? undefined}
       >
