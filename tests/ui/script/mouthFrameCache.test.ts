@@ -54,8 +54,8 @@ describe('MouthFrameCache', () => {
     cache.acquire({ ...c, mouthMap: { a: 'm-a2' } }, c.expressions[0]!).release()
     await flush()
     expect(render).toHaveBeenCalledTimes(2)
-    expect(bitmaps.slice(0, 6).every((b) => b.close.mock.calls.length === 1)).toBe(true)
-    expect(bitmaps.slice(6).every((b) => b.close.mock.calls.length === 0)).toBe(true)
+    expect(bitmaps.slice(0, VOWELS.length).every((b) => b.close.mock.calls.length === 1)).toBe(true)
+    expect(bitmaps.slice(VOWELS.length).every((b) => b.close.mock.calls.length === 0)).toBe(true)
   })
 
   it('does not close bitmaps that are still in use until they are released', async () => {
@@ -71,7 +71,7 @@ describe('MouthFrameCache', () => {
     lease.release()
     lease.release() // 2回目は無視される
     await flush()
-    expect(bitmaps.slice(0, 6).every((b) => b.close.mock.calls.length === 1)).toBe(true)
+    expect(bitmaps.slice(0, VOWELS.length).every((b) => b.close.mock.calls.length === 1)).toBe(true)
   })
 
   it('closes everything on dispose', async () => {
@@ -81,7 +81,7 @@ describe('MouthFrameCache', () => {
     cache.acquire(c, c.expressions[0]!).release()
     cache.dispose()
     await flush()
-    expect(bitmaps).toHaveLength(6)
+    expect(bitmaps).toHaveLength(VOWELS.length)
     expect(bitmaps.every((b) => b.close.mock.calls.length === 1)).toBe(true)
   })
 

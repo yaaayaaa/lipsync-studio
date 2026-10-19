@@ -18,7 +18,7 @@ export interface MouthTimeline {
   duration: number
 }
 
-/** 無声化母音（A,I,U,E,O）は小文字の母音。N・cl・pau・sil などは closed。 */
+/** 無声化母音（A,I,U,E,O）は小文字の母音。N（ん）は n。cl・pau・sil などは closed。 */
 export function vowelToMouth(vowel: string): Vowel {
   switch (vowel.toLowerCase()) {
     case 'a':
@@ -27,6 +27,8 @@ export function vowelToMouth(vowel: string): Vowel {
     case 'e':
     case 'o':
       return vowel.toLowerCase() as Vowel
+    case 'n':
+      return 'n'
     default:
       return 'closed'
   }

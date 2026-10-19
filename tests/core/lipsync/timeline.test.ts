@@ -8,7 +8,7 @@ describe('vowelToMouth', () => {
   it.each([
     ['a', 'a'], ['i', 'i'], ['u', 'u'], ['e', 'e'], ['o', 'o'],
     ['A', 'a'], ['I', 'i'], ['U', 'u'], ['E', 'e'], ['O', 'o'],
-    ['N', 'closed'], ['cl', 'closed'], ['pau', 'closed'], ['sil', 'closed'], ['', 'closed'],
+    ['N', 'n'], ['cl', 'closed'], ['pau', 'closed'], ['sil', 'closed'], ['', 'closed'],
   ])('%s -> %s', (v, expected) => {
     expect(vowelToMouth(v)).toBe(expected)
   })
@@ -22,8 +22,8 @@ describe('buildMouthTimeline', () => {
 
   it('maps consonants to the mouth of their mora vowel and merges equal neighbours', () => {
     const tl = buildMouthTimeline(konnichiwaQuery())
-    // pre(closed) k+o(o) N(closed) n+i(i) ch+I(i, merged) w+a(a) pau+post(closed, merged)
-    expect(tl.segments.map((s) => s.vowel)).toEqual(['closed', 'o', 'closed', 'i', 'a', 'closed'])
+    // pre(closed) k+o(o) N(n) n+i(i) ch+I(i, merged) w+a(a) pau+post(closed, merged)
+    expect(tl.segments.map((s) => s.vowel)).toEqual(['closed', 'o', 'n', 'i', 'a', 'closed'])
     const i = tl.segments[3]!
     expect(i.end - i.start).toBeCloseTo((f(0.05) + f(0.1) + f(0.07) + f(0.08)) / ENGINE_FRAME_RATE, 10)
   })
@@ -123,13 +123,15 @@ describe('interrogative upspeak', () => {
     expect(buildMouthTimeline(q).duration).toBe(buildMouthTimeline(konnichiwaQuery()).duration)
   })
 
-  it('places the extra mora before the pause mora (closed N mouth stays closed)', () => {
+  it('repeats the ん mouth when the phrase ends with N', () => {
     const q = interrogative(1)
     q.accent_phrases[0]!.moras = [
       { text: 'ン', consonant: null, consonant_length: null, vowel: 'N', vowel_length: 0.1, pitch: 5 },
     ]
     const tl = buildMouthTimeline(q)
-    expect(tl.segments.map((s) => s.vowel)).toEqual(['closed'])
+    expect(tl.segments.map((s) => s.vowel)).toEqual(['closed', 'n', 'closed'])
+    const n = tl.segments[1]!
+    expect(n.end - n.start).toBeCloseTo((f(0.1) + f(0.15)) / ENGINE_FRAME_RATE)
   })
 })
 

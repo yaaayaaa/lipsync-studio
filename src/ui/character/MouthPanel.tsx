@@ -121,7 +121,7 @@ export function MouthPanel({
       ) : (
         <p className="hint">口グループを選ぶと、母音ごとに口を選べます。</p>
       )}
-      <p className="hint">未設定の母音は「閉じ」の口を使います。</p>
+      <p className="hint">未設定の口は「閉じ」の口を使います。</p>
       <SamplePlayer
         styleId={voice?.styleId ?? null}
         disabledReason={!voice ? '先に声を選んでください' : !mouthGroup ? '先に口グループを選んでください' : null}

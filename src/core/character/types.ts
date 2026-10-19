@@ -1,8 +1,9 @@
 import type { LayerId, VisibilityState } from '../psd/types'
 
-export type Vowel = 'a' | 'i' | 'u' | 'e' | 'o' | 'closed'
+/** 口の形。n は「ん」（未設定なら closed と同じ口） */
+export type Vowel = 'a' | 'i' | 'u' | 'e' | 'o' | 'n' | 'closed'
 
-export const VOWELS: readonly Vowel[] = ['a', 'i', 'u', 'e', 'o', 'closed']
+export const VOWELS: readonly Vowel[] = ['a', 'i', 'u', 'e', 'o', 'n', 'closed']
 
 export type MouthMap = Partial<Record<Vowel, LayerId>>
 

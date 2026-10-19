@@ -33,8 +33,8 @@ describe('previewModeAfter', () => {
 })
 
 describe('PREVIEW_MODES', () => {
-  it('puts the default 閉じ first, then あいうえお', () => {
-    expect(PREVIEW_MODES).toEqual(['closed', 'a', 'i', 'u', 'e', 'o'])
+  it('puts the default 閉じ first, then あいうえおん', () => {
+    expect(PREVIEW_MODES).toEqual(['closed', 'a', 'i', 'u', 'e', 'o', 'n'])
   })
 })
 

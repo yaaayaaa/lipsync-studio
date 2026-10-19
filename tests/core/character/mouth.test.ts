@@ -9,6 +9,8 @@ describe('resolveMouthLayer', () => {
   it('returns the mapped layer, falls back to closed, then null', () => {
     expect(resolveMouthLayer({ a: '3/1', closed: '3/0' }, 'a')).toBe('3/1')
     expect(resolveMouthLayer({ closed: '3/0' }, 'a')).toBe('3/0')
+    expect(resolveMouthLayer({ closed: '3/0' }, 'n')).toBe('3/0')
+    expect(resolveMouthLayer({ n: '3/2', closed: '3/0' }, 'n')).toBe('3/2')
     expect(resolveMouthLayer({}, 'a')).toBeNull()
   })
 })
