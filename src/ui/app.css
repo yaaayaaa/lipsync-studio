@@ -376,7 +376,7 @@ li.selected .row-menu-button:focus-visible {
   color: var(--danger);
 }
 
-/* 押せない項目は淡くして、ホカスしても強調しない */
+/* 押せない項目は淡くして、フォーカスしても強調しない */
 .row-menu-item.disabled {
   color: var(--muted);
   cursor: default;
