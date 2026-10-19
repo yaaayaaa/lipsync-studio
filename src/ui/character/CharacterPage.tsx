@@ -232,7 +232,7 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
               disabled={character.mouthGroupId === null}
               onClick={() => follow({ type: 'manual', mode: v })}
             >
-              {VOWEL_LABELS[v]}
+              {v === DEFAULT_PREVIEW_MODE ? 'デフォルト' : VOWEL_LABELS[v]}
             </button>
           ))}
         </div>
