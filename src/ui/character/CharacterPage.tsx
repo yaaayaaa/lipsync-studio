@@ -14,10 +14,13 @@ import { VOWEL_LABELS } from './labels'
 import { MouthPanel } from './MouthPanel'
 import { Preview } from './Preview'
 import { RowMenu } from './RowMenu'
+import { useRefocus } from './useRefocus'
 import { previewModeAfter, previewMouthLayer } from './previewMode'
 import type { LiveMouth, PreviewEvent, PreviewMode } from './previewMode'
 import { VoicePanel } from './VoicePanel'
 import { newId } from '../../core/id'
+
+const characterNameId = (id: string) => `character-name-${id}`
 
 function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
@@ -31,6 +34,11 @@ export function CharacterPage() {
   const [error, setError] = useState<string | null>(null)
 
   const selected = characters.find((c) => c.id === selectedId) ?? null
+  const refocus = useRefocus()
+  const endRename = (id: string) => {
+    setRenamingId(null)
+    refocus(characterNameId(id))
+  }
 
   const save = (c: Character, psd?: Blob) =>
     saveCharacter(c, psd).catch((e: unknown) => setError(`保存できませんでした: ${errorMessage(e)}`))
@@ -91,16 +99,17 @@ export function CharacterPage() {
                 <InlineName
                   name={c.name}
                   onRename={(name) => {
-                    setRenamingId(null)
+                    endRename(c.id)
                     void save({ ...c, name })
                   }}
-                  onCancel={() => setRenamingId(null)}
+                  onCancel={() => endRename(c.id)}
                 />
               ) : (
                 <button
                   type="button"
+                  id={characterNameId(c.id)}
                   className="character-name"
-                  title={c.name}
+                  title={`${c.name} — ダブルクリックで名前を変更`}
                   onClick={() => setSelectedId(c.id)}
                   onDoubleClick={() => setRenamingId(c.id)}
                 >

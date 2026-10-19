@@ -29,6 +29,9 @@ export function RowMenu({ label, items }: Props) {
   const [state, setState] = useState({ open: false, active: 0 })
   const [position, setPosition] = useState<CSSProperties | null>(null)
   const { open, active } = state
+  // Safari はボタンをクリックしてもフォーカスしないので、押した瞬間にフォーカスが外れたように見える。
+  // その間はフォーカス離脱で閉じない（閉じた直後のクリックで開き直してしまうため）
+  const pointerOnButton = useRef(false)
 
   const dispatch = (event: MenuEvent) => {
     const result = menuReduce(state, event)
@@ -101,6 +104,7 @@ export function RowMenu({ label, items }: Props) {
       className="row-menu"
       // フォーカスがボタンとメニューの両方から離れたら閉じる（別のウィンドウやタブへ移ったときも）
       onBlur={(e) => {
+        if (pointerOnButton.current) return
         if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) setState((s) => ({ ...s, open: false }))
       }}
     >
@@ -112,6 +116,15 @@ export function RowMenu({ label, items }: Props) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? `${id}-menu` : undefined}
+        onPointerDown={() => {
+          pointerOnButton.current = true
+        }}
+        onPointerUp={() => {
+          pointerOnButton.current = false
+        }}
+        onPointerLeave={() => {
+          pointerOnButton.current = false
+        }}
         onClick={() => dispatch({ type: 'toggle' })}
         onKeyDown={onKeyDown}
       >
@@ -125,8 +138,10 @@ export function RowMenu({ label, items }: Props) {
           role="menu"
           aria-label={label}
           // 置き場所が決まるまでは透明にしておく（visibility: hidden だとフォーカスを受け取れない）
-          style={{ position: 'fixed', ...(position ?? { opacity: 0, top: 0, left: 0 }) }}
+          style={{ position: 'fixed', ...(position ?? { opacity: 0, pointerEvents: 'none', top: 0, left: 0 }) }}
           onKeyDown={onKeyDown}
+          // 項目を押してもフォーカスがメニューの外（body）へ逃げないようにする（Safari）
+          onMouseDown={(e) => e.preventDefault()}
         >
           {items.map((item, i) => (
             <li

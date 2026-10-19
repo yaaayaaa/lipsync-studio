@@ -5,6 +5,9 @@ import { newId } from '../../core/id'
 import { importPfv, nextExpressionName, pfvImportMessage } from './expressions'
 import { InlineName } from './InlineName'
 import { RowMenu } from './RowMenu'
+import { useRefocus } from './useRefocus'
+
+const expressionNameId = (id: string) => `expression-name-${id}`
 
 interface Props {
   tree: LayerNode[]
@@ -33,9 +36,15 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
     onSelect(updated)
   }
 
+  const refocus = useRefocus()
+  const endRename = (id: string) => {
+    setRenamingId(null)
+    refocus(expressionNameId(id))
+  }
+
   const rename = (id: string, name: string) => {
     onChange(expressions.map((e) => (e.id === id ? { ...e, name } : e)))
-    setRenamingId(null)
+    endRename(id)
   }
 
   const remove = (expression: Expression) => {
@@ -64,12 +73,13 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
           {expressions.map((e) => (
             <li key={e.id} className={e.id === selectedId ? 'selected' : undefined}>
               {renamingId === e.id ? (
-                <InlineName name={e.name} onRename={(name) => rename(e.id, name)} onCancel={() => setRenamingId(null)} />
+                <InlineName name={e.name} onRename={(name) => rename(e.id, name)} onCancel={() => endRename(e.id)} />
               ) : (
                 <button
                   type="button"
+                  id={expressionNameId(e.id)}
                   className="expression-name"
-                  title={e.name}
+                  title={`${e.name} — クリックでツリーに読み込む / ダブルクリックで名前を変更`}
                   onClick={() => onSelect(e)}
                   onDoubleClick={() => setRenamingId(e.id)}
                 >
@@ -80,7 +90,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
                 <RowMenu
                   label="表情の操作"
                   items={[
-                    { label: '上書き', onSelect: () => overwrite(e) },
+                    { label: '現在の状態で上書き', onSelect: () => overwrite(e) },
                     { label: '名前を変更', onSelect: () => setRenamingId(e.id) },
                     { label: '削除', danger: true, onSelect: () => remove(e) },
                   ]}

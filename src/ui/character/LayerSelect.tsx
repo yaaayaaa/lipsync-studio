@@ -49,6 +49,8 @@ export function LayerSelect({
   const listRef = useRef<HTMLUListElement>(null)
   const [active, setActive] = useState(0)
   const [position, setPosition] = useState<CSSProperties | null>(null)
+  // Safari はボタンをクリックしてもフォーカスしないので、押している間はフォーカス離脱で閉じない
+  const pointerOnButton = useRef(false)
 
   // 先頭（0）は「未設定」
   const items: { id: LayerId | null; name: string; node: LayerNode | null }[] = [
@@ -149,6 +151,7 @@ export function LayerSelect({
       className="layer-select"
       // フォーカスがボタンと一覧の両方から離れたら閉じる（別のウィンドウやタブへ移ったときも）
       onBlur={(e) => {
+        if (pointerOnButton.current) return
         if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) onOpenChange(false)
       }}
     >
@@ -160,6 +163,15 @@ export function LayerSelect({
         aria-expanded={open}
         aria-controls={open ? `${id}-list` : undefined}
         aria-label={`${label}: ${current?.name ?? '未設定'}`}
+        onPointerDown={() => {
+          pointerOnButton.current = true
+        }}
+        onPointerUp={() => {
+          pointerOnButton.current = false
+        }}
+        onPointerLeave={() => {
+          pointerOnButton.current = false
+        }}
         onClick={() => dispatch({ type: 'toggle', selected })}
         onKeyDown={onKeyDown}
       >
@@ -179,7 +191,7 @@ export function LayerSelect({
           tabIndex={-1}
           aria-activedescendant={optionId(active)}
           // 置き場所が決まるまでは透明にしておく（visibility: hidden だとフォーカスを受け取れない）
-          style={{ position: 'fixed', ...(position ?? { opacity: 0, top: 0, left: 0 }) }}
+          style={{ position: 'fixed', ...(position ?? { opacity: 0, pointerEvents: 'none', top: 0, left: 0 }) }}
           onKeyDown={onKeyDown}
         >
           {items.map((it, i) => (
