@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   name: string
@@ -11,6 +11,9 @@ export function InlineName({ name, onRename, onCancel }: Props) {
   const [draft, setDraft] = useState(name)
   // 確定・取り消しの後、要素が外れるときの blur で二重に呼ばないため
   const finished = useRef(false)
+  // 開いたときは名前全体を選んでおき、そのまま打てば置き換えられるようにする
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => inputRef.current?.select(), [])
   const finish = (fn: () => void) => {
     if (finished.current) return
     finished.current = true
@@ -22,6 +25,7 @@ export function InlineName({ name, onRename, onCancel }: Props) {
   }
   return (
     <input
+      ref={inputRef}
       className="inline-name"
       value={draft}
       autoFocus
