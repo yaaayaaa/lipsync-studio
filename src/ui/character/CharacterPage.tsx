@@ -14,6 +14,7 @@ import { VOWEL_LABELS } from './labels'
 import { MouthPanel } from './MouthPanel'
 import { Preview } from './Preview'
 import { VoicePanel } from './VoicePanel'
+import { newId } from '../../core/id'
 
 function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
@@ -45,7 +46,7 @@ export function CharacterPage() {
         return
       }
       const character: Character = {
-        id: crypto.randomUUID(),
+        id: newId(),
         name: file.name.replace(/\.psd$/i, ''),
         psdFileName: file.name,
         voice: null,

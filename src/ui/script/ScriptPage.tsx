@@ -3,6 +3,7 @@ import { prerenderMouthFrames } from '../../core/export/frames'
 import { renderLineMp4 } from '../../core/export/encode'
 import { exportLines, zipResults } from '../../core/export/exportAll'
 import { creditText, lineFileName } from '../../core/export/naming'
+import { newId } from '../../core/id'
 import type { ScriptLine } from '../../core/character/types'
 import { lineProblem } from '../../core/storage/db'
 import { browserPlaybackEnv, startSamplePlayback } from '../character/samplePlayback'
@@ -323,7 +324,7 @@ export function ScriptPage({ active }: { active: boolean }) {
         last && character?.id === last.characterId ? last.expressionId : (character?.expressions[0]?.id ?? null)
       return [
         ...prev,
-        { id: crypto.randomUUID(), text: '', characterId: character?.id ?? null, expressionId, speedScale: 1.0 },
+        { id: newId(), text: '', characterId: character?.id ?? null, expressionId, speedScale: 1.0 },
       ]
     })
 

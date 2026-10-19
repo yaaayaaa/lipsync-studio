@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Expression } from '../../core/character/types'
 import type { LayerNode, VisibilityState } from '../../core/psd/types'
+import { newId } from '../../core/id'
 import { importPfv, nextExpressionName, pfvImportMessage } from './expressions'
 import { InlineName } from './InlineName'
 
@@ -19,7 +20,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
 
   const saveNew = () => {
-    const expression = { id: crypto.randomUUID(), name: nextExpressionName(expressions), visibility }
+    const expression = { id: newId(), name: nextExpressionName(expressions), visibility }
     onChange([...expressions, expression])
     onSelect(expression)
     setRenamingId(expression.id)
@@ -43,7 +44,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
 
   const loadPfv = async (file: File) => {
     try {
-      const result = importPfv(tree, await file.text(), () => crypto.randomUUID())
+      const result = importPfv(tree, await file.text(), newId)
       onChange([...expressions, ...result.expressions])
       setMessage({ text: pfvImportMessage(result), error: false })
     } catch (e) {
