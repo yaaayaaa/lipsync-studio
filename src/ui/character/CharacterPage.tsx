@@ -54,7 +54,7 @@ export function CharacterPage() {
         expressions: [],
       }
       cachePsd(character.id, parsed)
-      await saveCharacter(character, file)
+      await saveCharacter(character, new Blob([buffer], { type: file.type }))
       setSelectedId(character.id)
     } catch (e) {
       setError(`キャラを追加できませんでした: ${errorMessage(e)}`)
