@@ -36,8 +36,9 @@ export function dropdownReduce(state: DropdownState, event: DropdownEvent): Drop
   const closed = { open: false, active: state.active }
   switch (event.type) {
     case 'toggle':
+      // ボタンで閉じたらフォーカスをボタンに戻す（Safari はクリックでボタンにフォーカスしないため明示する）
       return state.open
-        ? { state: closed, handled: true }
+        ? { state: closed, focusButton: true, handled: true }
         : { state: { open: true, active: Math.max(0, event.selected) }, handled: true }
     case 'close':
       return { state: closed, handled: true }
@@ -67,11 +68,47 @@ export function dropdownReduce(state: DropdownState, event: DropdownEvent): Drop
         case 'Escape':
           return { state: closed, focusButton: true, handled: true }
         case 'Tab':
-          // 閉じるだけで、フォーカスは次の部品へ普通に進ませる
-          return { state: closed, handled: false }
+          // 閉じてボタンにフォーカスを戻し、そこから次（Shift なら前）の部品へ普通に進ませる
+          return { state: closed, focusButton: true, handled: false }
         default:
           return { state, handled: false }
       }
     }
   }
+}
+
+export interface PopoverPlacement {
+  left: number
+  width: number
+  top?: number
+  bottom?: number
+  maxHeight: number
+}
+
+const POPOVER_MAX_HEIGHT = 280
+const POPOVER_MIN_HEIGHT = 96
+const POPOVER_MIN_WIDTH = 200
+const SCREEN_MARGIN = 8
+
+/**
+ * 一覧を画面に固定して置く位置。ボタンの下に置き、下より上の方が広ければ上に出す。横は画面内に収める。
+ * ボタンが画面の外へスクロールしたら null（閉じる）。高さは中でスクロールするので、狭くても最小値は保つ。
+ */
+export function placePopover(
+  anchor: { x: number; y: number; width: number; height: number },
+  viewport: { width: number; height: number },
+  needed: number,
+): PopoverPlacement | null {
+  const bottomEdge = anchor.y + anchor.height
+  const rightEdge = anchor.x + anchor.width
+  if (bottomEdge <= 0 || anchor.y >= viewport.height || rightEdge <= 0 || anchor.x >= viewport.width) return null
+  const below = viewport.height - bottomEdge - SCREEN_MARGIN
+  const above = anchor.y - SCREEN_MARGIN
+  const downward = below >= Math.min(needed, POPOVER_MAX_HEIGHT) || below >= above
+  const maxHeight = Math.max(POPOVER_MIN_HEIGHT, Math.min(POPOVER_MAX_HEIGHT, downward ? below : above))
+  const width = Math.max(anchor.width, POPOVER_MIN_WIDTH)
+  const left = Math.max(SCREEN_MARGIN, Math.min(anchor.x, viewport.width - width - SCREEN_MARGIN))
+  return downward
+    ? { left, width, top: bottomEdge + 2, maxHeight }
+    : { left, width, bottom: viewport.height - anchor.y + 2, maxHeight }
 }

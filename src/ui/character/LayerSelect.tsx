@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import type { PsdSize } from '../usePsd'
-import { dropdownReduce } from './dropdown'
+import { dropdownReduce, placePopover } from './dropdown'
 import type { DropdownEvent } from './dropdown'
 import { LayerThumb } from './LayerThumb'
 
@@ -26,9 +26,6 @@ interface Props {
   psdSize: PsdSize
 }
 
-const POPOVER_MAX_HEIGHT = 280
-const POPOVER_MIN_WIDTH = 200
-const SCREEN_MARGIN = 8
 
 /**
  * レイヤーを選ぶ縮小画像付きのドロップダウン（標準の select は画像を出せないため自作）。口グループと母音の口で使う。
@@ -63,39 +60,47 @@ export function LayerSelect({ label, options, value, open, onOpenChange, onChang
     if (dispatch({ type: 'key', key: e.key, selected, count: items.length }).handled) e.preventDefault()
   }
 
+  // 閉じる処理は位置合わせの効果からも呼ぶ。毎回変わる関数で効果をやり直さない（一覧へのフォーカスが動く）よう最新を参照で持つ
+  const onOpenChangeRef = useRef(onOpenChange)
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  })
+
   // 一覧はパネルの枠で切れないよう画面に固定して置き、下に入らなければ上に出す
   useLayoutEffect(() => {
     if (!open) return
+    let frame = 0
     const place = () => {
+      frame = 0
       const button = buttonRef.current
       const list = listRef.current
       if (!button || !list) return
       const r = button.getBoundingClientRect()
-      const needed = Math.min(list.scrollHeight, POPOVER_MAX_HEIGHT)
-      const below = window.innerHeight - r.bottom - SCREEN_MARGIN
-      const above = r.top - SCREEN_MARGIN
-      const downward = below >= needed || below >= above
-      const maxHeight = Math.min(POPOVER_MAX_HEIGHT, downward ? below : above)
-      const width = Math.max(r.width, POPOVER_MIN_WIDTH)
-      const left = Math.max(SCREEN_MARGIN, Math.min(r.left, window.innerWidth - width - SCREEN_MARGIN))
-      setPosition({
-        left,
-        width,
-        maxHeight,
-        ...(downward ? { top: r.bottom + 2 } : { bottom: window.innerHeight - r.top + 2 }),
-      })
+      const placement = placePopover(
+        { x: r.left, y: r.top, width: r.width, height: r.height },
+        { width: window.innerWidth, height: window.innerHeight },
+        list.scrollHeight,
+      )
+      // ボタンが画面の外へ出たら、宙に浮いた一覧を残さず閉じる
+      if (!placement) onOpenChangeRef.current(false)
+      else setPosition(placement)
+    }
+    // スクロールやサイズ変更が続いても、置き直しは1フレームに1回にまとめる
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(place)
     }
     place()
     listRef.current?.focus({ preventScroll: true })
     // 親の列がスクロールしたり画面の大きさが変わったら置き直す（一覧の中のスクロールは除く）
     const onScroll = (e: Event) => {
-      if (!listRef.current?.contains(e.target as Node)) place()
+      if (!listRef.current?.contains(e.target as Node)) schedule()
     }
     window.addEventListener('scroll', onScroll, true)
-    window.addEventListener('resize', place)
+    window.addEventListener('resize', schedule)
     return () => {
+      cancelAnimationFrame(frame)
       window.removeEventListener('scroll', onScroll, true)
-      window.removeEventListener('resize', place)
+      window.removeEventListener('resize', schedule)
     }
   }, [open])
 
@@ -118,7 +123,13 @@ export function LayerSelect({ label, options, value, open, onOpenChange, onChang
   }, [open, activeOptionId])
 
   return (
-    <div className="layer-select">
+    <div
+      className="layer-select"
+      // フォーカスがボタンと一覧の両方から離れたら閉じる（別のウィンドウやタブへ移ったときも）
+      onBlur={(e) => {
+        if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) onOpenChange(false)
+      }}
+    >
       <button
         ref={buttonRef}
         type="button"

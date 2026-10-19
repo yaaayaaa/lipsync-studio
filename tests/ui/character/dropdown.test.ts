@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dropdownReduce } from '../../../src/ui/character/dropdown'
+import { dropdownReduce, placePopover } from '../../../src/ui/character/dropdown'
 import type { DropdownState } from '../../../src/ui/character/dropdown'
 
 const closed: DropdownState = { open: false, active: 0 }
@@ -9,7 +9,12 @@ const key = (k: string, selected = 2, count = 5) => ({ type: 'key' as const, key
 describe('dropdownReduce: toggle and close', () => {
   it('opens on the selected option and closes again', () => {
     expect(dropdownReduce(closed, { type: 'toggle', selected: 3 })).toEqual({ state: openAt(3), handled: true })
-    expect(dropdownReduce(openAt(1), { type: 'toggle', selected: 3 })).toEqual({ state: { open: false, active: 1 }, handled: true })
+    // ボタンで閉じたらフォーカスをボタンに戻す（Safari はクリックでボタンにフォーカスしない）
+    expect(dropdownReduce(openAt(1), { type: 'toggle', selected: 3 })).toEqual({
+      state: { open: false, active: 1 },
+      focusButton: true,
+      handled: true,
+    })
   })
 
   it('opens on the first option when nothing valid is selected', () => {
@@ -61,8 +66,12 @@ describe('dropdownReduce: keys while open', () => {
     })
   })
 
-  it('Tab closes but lets focus move on', () => {
-    expect(dropdownReduce(openAt(3), key('Tab'))).toEqual({ state: { open: false, active: 3 }, handled: false })
+  it('Tab closes, puts focus back on the button and lets the browser move on from there', () => {
+    expect(dropdownReduce(openAt(3), key('Tab'))).toEqual({
+      state: { open: false, active: 3 },
+      focusButton: true,
+      handled: false,
+    })
   })
 
   it('ignores other keys', () => {
@@ -78,5 +87,37 @@ describe('dropdownReduce: keys while open', () => {
 describe('dropdownReduce: hover', () => {
   it('moves the active option to the hovered one while open', () => {
     expect(dropdownReduce(openAt(0), { type: 'hover', index: 3 })).toEqual({ state: openAt(3), handled: true })
+  })
+})
+
+describe('placePopover', () => {
+  const viewport = { width: 1000, height: 800 }
+  const anchor = (x: number, y: number, width = 150, height = 30) => ({ x, y, width, height })
+
+  it('opens below with the needed height when it fits, at least as wide as the button or the minimum', () => {
+    expect(placePopover(anchor(100, 100), viewport, 200)).toEqual({ left: 100, width: 200, top: 132, maxHeight: 280 })
+    expect(placePopover(anchor(100, 100, 300), viewport, 200)?.width).toBe(300)
+  })
+
+  it('opens above when there is more room above than below', () => {
+    expect(placePopover(anchor(100, 700), viewport, 280)).toEqual({ left: 100, width: 200, bottom: 102, maxHeight: 280 })
+  })
+
+  it('keeps the popover inside the viewport horizontally', () => {
+    expect(placePopover(anchor(900, 100), viewport, 100)?.left).toBe(792)
+    expect(placePopover(anchor(-20, 100), viewport, 100)?.left).toBe(8)
+  })
+
+  it('never returns a negative or tiny max height', () => {
+    // 画面が低くて上下とも余白がほとんどない
+    const p = placePopover(anchor(100, 5, 150, 30), { width: 1000, height: 40 }, 200)
+    expect(p?.maxHeight).toBe(96)
+  })
+
+  it('returns null when the button has scrolled out of the viewport', () => {
+    expect(placePopover(anchor(100, -40), viewport, 100)).toBeNull()
+    expect(placePopover(anchor(100, 800), viewport, 100)).toBeNull()
+    expect(placePopover(anchor(-200, 100), viewport, 100)).toBeNull()
+    expect(placePopover(anchor(1000, 100), viewport, 100)).toBeNull()
   })
 })
