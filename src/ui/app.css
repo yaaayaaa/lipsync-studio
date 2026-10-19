@@ -1,6 +1,7 @@
 :root {
   /* 配色は白黒が基本（ユーザー決定）：背景は白、文字・主要ボタン・選択状態は黒、補助はグレー。
-     有彩色はエラー表示の赤だけ。ほかの画面もこの変数を使う */
+     有彩色はエラー表示の赤だけ。色はこの変数だけで指定し、部品に直接書かない。
+     ダークの値は下の2か所（OS の設定に従う場合と data-theme="dark"）で同じ変数を上書きする */
   --bg: #ffffff;
   --surface: #ffffff;
   --fg: #111111;
@@ -17,11 +18,57 @@
   --danger: #c62828;
   --danger-soft: #fdecec;
   --radius: 6px;
+  /* フォームやスクロールバーなどブラウザ標準の部品も同じ明暗にする */
+  color-scheme: light;
   color: var(--fg);
   background: var(--bg);
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* ダーク：背景は黒、文字は白、選択状態は白地に黒文字。2か所の値は同じに保つこと。
+   既定は OS の設定に従い、data-theme で明示されたらそちらを優先する（切り替え UI はまだない） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #000000;
+    --surface: #000000;
+    --fg: #f5f5f5;
+    --muted: #a3a3a3;
+    --border: #3d3d3d;
+    --hover-bg: #1c1c1c;
+    --notice-bg: #1c1c1c;
+    --selected-bg: #f5f5f5;
+    --selected-fg: #000000;
+    --primary-bg: #f5f5f5;
+    --primary-hover-bg: #cfcfcf;
+    --primary-fg: #000000;
+    --checker: #262626;
+    /* 黒地で読めるよう明るめの赤にする */
+    --danger: #ff6b6b;
+    --danger-soft: #2b1313;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #000000;
+  --fg: #f5f5f5;
+  --muted: #a3a3a3;
+  --border: #3d3d3d;
+  --hover-bg: #1c1c1c;
+  --notice-bg: #1c1c1c;
+  --selected-bg: #f5f5f5;
+  --selected-fg: #000000;
+  --primary-bg: #f5f5f5;
+  --primary-hover-bg: #cfcfcf;
+  --primary-fg: #000000;
+  --checker: #262626;
+  /* 黒地で読めるよう明るめの赤にする */
+  --danger: #ff6b6b;
+  --danger-soft: #2b1313;
+  color-scheme: dark;
 }
 
 * {
