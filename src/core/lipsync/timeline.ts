@@ -4,6 +4,9 @@ import type { AudioQuery, Mora } from '../voicevox/types'
 /** エンジンの音声フレームレート（24000 Hz / 256 サンプル）。 */
 export const ENGINE_FRAME_RATE = 93.75
 
+/** エンジンの UPSPEAK_LENGTH。疑問形アクセント句の末尾に足されるモーラの長さ（秒、speedScale 適用前）。 */
+export const UPSPEAK_LENGTH = 0.15
+
 export interface MouthSegment {
   start: number
   end: number
@@ -23,7 +26,6 @@ export function vowelToMouth(vowel: string): Vowel {
     case 'u':
     case 'e':
     case 'o':
-      // N・cl は小文字化しても上の5つには一致しない
       return vowel.toLowerCase() as Vowel
     default:
       return 'closed'
@@ -65,6 +67,7 @@ function moraRuns(mora: Mora, speedScale: number): Run[] {
 /**
  * VOICEVOX エンジン（tts_engine.py の _query_to_decoder_feature）と同じ順序で
  * pre → 各モーラ → pause_mora → post を音素単位でフレーム化し、口のタイムラインにする。
+ * 疑問形アクセント句の末尾モーラ追加（upspeak）も含む。
  * pauseLength / pauseLengthScale は pause_mora にだけ効き、前後の無音には効かない。
  */
 export function buildMouthTimeline(query: AudioQuery): MouthTimeline {
@@ -77,6 +80,12 @@ export function buildMouthTimeline(query: AudioQuery): MouthTimeline {
   const runs: Run[] = [silence(query.prePhonemeLength, speedScale)]
   for (const phrase of query.accent_phrases) {
     for (const mora of phrase.moras) runs.push(...moraRuns(mora, speedScale))
+    const lastMora = phrase.moras.at(-1)
+    // /synthesis は enable_interrogative_upspeak=true が既定。疑問形かつ末尾が有声のときだけ、
+    // 末尾と同じ母音で UPSPEAK_LENGTH 秒のモーラが付く（pause_mora の前）。
+    if (phrase.is_interrogative && lastMora && lastMora.pitch > 0) {
+      runs.push({ frames: toFrames(UPSPEAK_LENGTH, speedScale), vowel: vowelToMouth(lastMora.vowel) })
+    }
     if (phrase.pause_mora) {
       const base = query.pauseLength ?? phrase.pause_mora.vowel_length
       runs.push(silence(base * pauseScale, speedScale))

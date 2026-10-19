@@ -9,6 +9,8 @@ const TOLERANCE_SEC = 1 / 30
 const TEXTS = [
   'こんにちは、今日はいい天気ですね。',
   'ずんだもんなのだ！ぼくは東北の妖精なのだ。',
+  // 疑問形（？）は /synthesis が語尾モーラを足す（enable_interrogative_upspeak 既定 true）ので必ず含める
+  'ずんだもんなのだ？',
   '吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。',
 ]
 const SPEEDS = [0.5, 1.0, 2.0]

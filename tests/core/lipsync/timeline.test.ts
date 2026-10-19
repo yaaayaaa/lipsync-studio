@@ -86,6 +86,53 @@ describe('buildMouthTimeline', () => {
   })
 })
 
+describe('interrogative upspeak', () => {
+  // konnichiwaQuery の末尾モーラ（ワ, a）は pitch 5 > 0
+  const interrogative = (speedScale: number) => {
+    const q = konnichiwaQuery({ speedScale })
+    q.accent_phrases[0]!.is_interrogative = true
+    return q
+  }
+
+  it.each([1, 2])('adds a 0.15s mora with the last vowel mouth at speedScale %d', (speed) => {
+    const base = buildMouthTimeline(konnichiwaQuery({ speedScale: speed }))
+    const tl = buildMouthTimeline(interrogative(speed))
+    const added = Math.round((0.15 / speed) * ENGINE_FRAME_RATE)
+    expect(tl.duration).toBe(base.duration + added / ENGINE_FRAME_RATE)
+    // ワ(a) の直後に a が延びる。pause 以降は変わらない
+    const a = tl.segments.find((s) => s.vowel === 'a')!
+    const baseA = base.segments.find((s) => s.vowel === 'a')!
+    expect(a.end - a.start).toBeCloseTo(baseA.end - baseA.start + added / ENGINE_FRAME_RATE, 10)
+  })
+
+  it('adds nothing when the last mora is unvoiced (pitch 0)', () => {
+    const q = interrogative(1)
+    q.accent_phrases[0]!.moras.at(-1)!.pitch = 0
+    expect(buildMouthTimeline(q).duration).toBe(buildMouthTimeline(konnichiwaQuery()).duration)
+  })
+
+  it('adds nothing when the phrase is not interrogative', () => {
+    const q = konnichiwaQuery()
+    q.accent_phrases[0]!.is_interrogative = false
+    expect(buildMouthTimeline(q).duration).toBe(buildMouthTimeline(konnichiwaQuery()).duration)
+  })
+
+  it('adds nothing for a phrase without moras', () => {
+    const q = konnichiwaQuery()
+    q.accent_phrases.push({ moras: [], accent: 1, pause_mora: null, is_interrogative: true })
+    expect(buildMouthTimeline(q).duration).toBe(buildMouthTimeline(konnichiwaQuery()).duration)
+  })
+
+  it('places the extra mora before the pause mora (closed N mouth stays closed)', () => {
+    const q = interrogative(1)
+    q.accent_phrases[0]!.moras = [
+      { text: 'ン', consonant: null, consonant_length: null, vowel: 'N', vowel_length: 0.1, pitch: 5 },
+    ]
+    const tl = buildMouthTimeline(q)
+    expect(tl.segments.map((s) => s.vowel)).toEqual(['closed'])
+  })
+})
+
 describe('mouthAt', () => {
   it('returns closed outside the range', () => {
     const tl = buildMouthTimeline(konnichiwaQuery())
