@@ -1,0 +1,73 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import type { Character } from '../core/character/types'
+import { openStore } from '../core/storage/db'
+import type { AppSettings, Store } from '../core/storage/db'
+import { VoicevoxClient } from '../core/voicevox/client'
+import { AppContext } from './useApp'
+import type { AppContextValue } from './useApp'
+
+interface Loaded {
+  store: Store
+  settings: AppSettings
+}
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const store = await openStore()
+      const [settings, list] = await Promise.all([store.loadSettings(), store.listCharacters()])
+      if (cancelled) return
+      setCharacters(list)
+      setLoaded({ store, settings })
+    })().catch((e: unknown) => {
+      if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const store = loaded?.store
+  const reloadCharacters = useCallback(async () => {
+    if (!store) return
+    setCharacters(await store.listCharacters())
+  }, [store])
+
+  const saveCharacter = useCallback(
+    async (c: Character, psd?: Blob) => {
+      if (!store) throw new Error('保存先がまだ開かれていません')
+      setCharacters((prev) => {
+        const i = prev.findIndex((p) => p.id === c.id)
+        return i < 0 ? [...prev, c] : prev.map((p) => (p.id === c.id ? c : p))
+      })
+      try {
+        await store.saveCharacter(c, psd)
+      } catch (e) {
+        await reloadCharacters()
+        throw e
+      }
+    },
+    [store, reloadCharacters],
+  )
+
+  const engineUrl = loaded?.settings.engineUrl
+  const client = useMemo(() => (engineUrl ? new VoicevoxClient({ baseUrl: engineUrl }) : null), [engineUrl])
+
+  const value = useMemo<AppContextValue | null>(
+    () =>
+      loaded && client
+        ? { store: loaded.store, settings: loaded.settings, client, characters, reloadCharacters, saveCharacter }
+        : null,
+    [loaded, client, characters, reloadCharacters, saveCharacter],
+  )
+
+  if (error) return <p className="app-message error">保存領域（IndexedDB）を開けませんでした: {error}</p>
+  if (!value) return <p className="app-message">読み込み中…</p>
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+}

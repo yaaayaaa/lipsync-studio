@@ -1,0 +1,391 @@
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --border: #d9ddd6;
+  --text: #20251f;
+  --muted: #687064;
+  --accent: #4f9a3a;
+  --accent-strong: #3d7d2c;
+  --accent-soft: #e6f2e1;
+  --danger: #c0392b;
+  --danger-soft: #fbeceb;
+  --radius: 6px;
+  color: var(--text);
+  background: var(--bg);
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+.button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled),
+.button:hover:not(.disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled,
+.button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary,
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.primary:hover:not(:disabled),
+.button.primary:hover:not(.disabled) {
+  background: var(--accent-strong);
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+select,
+input[type='text'],
+.inline-name {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+/* ---- レイアウト ---- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  font-size: 17px;
+  color: var(--accent-strong);
+}
+
+.app-tagline {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.app-message {
+  padding: 24px;
+}
+
+.character-page {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 200px minmax(220px, 280px) minmax(300px, 1fr) minmax(300px, 340px);
+}
+
+.column {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  border-right: 1px solid var(--border);
+}
+
+.column:last-child {
+  border-right: none;
+}
+
+.empty-state {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  padding: 24px;
+}
+
+/* ---- キャラ一覧 ---- */
+
+.character-list {
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-list li,
+.expression-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: var(--radius);
+}
+
+.character-list li.selected,
+.expression-list li.selected {
+  background: var(--accent-soft);
+}
+
+.character-name,
+.expression-name {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-color: transparent;
+  background: transparent;
+}
+
+.row-actions {
+  display: none;
+  gap: 2px;
+}
+
+.row-actions button {
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+li:hover .row-actions,
+li.selected .row-actions,
+li:focus-within .row-actions {
+  display: inline-flex;
+}
+
+/* ---- レイヤーツリー ---- */
+
+.layer-tree ul {
+  padding-left: 18px;
+  border-left: 1px dotted var(--border);
+  margin-left: 7px;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.layer-row:hover {
+  background: var(--accent-soft);
+}
+
+.layer-row input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.layer-row.dimmed .layer-name {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.layer-name.group {
+  font-weight: 600;
+}
+
+.layer-forced {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, var(--border) 0 2px, transparent 2px 4px);
+}
+
+.badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---- プレビュー ---- */
+
+.preview-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.vowel-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.vowel-switch button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.preview-stage {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 透明部分が分かるように市松模様にする */
+.preview-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background: repeating-conic-gradient(#e7e9e5 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--border);
+}
+
+/* ---- 右列のパネル ---- */
+
+.panel-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel h2 {
+  margin-bottom: 0;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field > span {
+  flex: none;
+  min-width: 2.5em;
+  color: var(--muted);
+}
+
+.vowel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.notice {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+
+.notice.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.notice p {
+  margin: 0 0 4px;
+}
+
+.notice .detail {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.sample-player {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
