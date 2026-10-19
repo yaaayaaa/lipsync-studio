@@ -13,6 +13,7 @@ import { LayerTree } from './LayerTree'
 import { VOWEL_LABELS } from './labels'
 import { MouthPanel } from './MouthPanel'
 import { Preview } from './Preview'
+import { RowMenu } from './RowMenu'
 import { previewModeAfter, previewMouthLayer } from './previewMode'
 import type { LiveMouth, PreviewEvent, PreviewMode } from './previewMode'
 import { VoicePanel } from './VoicePanel'
@@ -96,18 +97,25 @@ export function CharacterPage() {
                   onCancel={() => setRenamingId(null)}
                 />
               ) : (
-                <button type="button" className="character-name" onClick={() => setSelectedId(c.id)}>
+                <button
+                  type="button"
+                  className="character-name"
+                  title={c.name}
+                  onClick={() => setSelectedId(c.id)}
+                  onDoubleClick={() => setRenamingId(c.id)}
+                >
                   {c.name}
                 </button>
               )}
-              <span className="row-actions">
-                <button type="button" onClick={() => setRenamingId(c.id)}>
-                  名前
-                </button>
-                <button type="button" className="danger" onClick={() => void remove(c)}>
-                  削除
-                </button>
-              </span>
+              {renamingId !== c.id && (
+                <RowMenu
+                  label="キャラの操作"
+                  items={[
+                    { label: '名前を変更', onSelect: () => setRenamingId(c.id) },
+                    { label: '削除', danger: true, onSelect: () => void remove(c) },
+                  ]}
+                />
+              )}
             </li>
           ))}
         </ul>

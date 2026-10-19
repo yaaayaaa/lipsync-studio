@@ -178,7 +178,8 @@ export function LayerSelect({
           aria-label={label}
           tabIndex={-1}
           aria-activedescendant={optionId(active)}
-          style={{ position: 'fixed', ...(position ?? { visibility: 'hidden', top: 0, left: 0 }) }}
+          // 置き場所が決まるまでは透明にしておく（visibility: hidden だとフォーカスを受け取れない）
+          style={{ position: 'fixed', ...(position ?? { opacity: 0, top: 0, left: 0 }) }}
           onKeyDown={onKeyDown}
         >
           {items.map((it, i) => (

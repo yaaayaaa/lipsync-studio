@@ -4,6 +4,7 @@ import type { LayerNode, VisibilityState } from '../../core/psd/types'
 import { newId } from '../../core/id'
 import { importPfv, nextExpressionName, pfvImportMessage } from './expressions'
 import { InlineName } from './InlineName'
+import { RowMenu } from './RowMenu'
 
 interface Props {
   tree: LayerNode[]
@@ -65,21 +66,26 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
               {renamingId === e.id ? (
                 <InlineName name={e.name} onRename={(name) => rename(e.id, name)} onCancel={() => setRenamingId(null)} />
               ) : (
-                <button type="button" className="expression-name" onClick={() => onSelect(e)} title="ツリーに読み込む">
+                <button
+                  type="button"
+                  className="expression-name"
+                  title={e.name}
+                  onClick={() => onSelect(e)}
+                  onDoubleClick={() => setRenamingId(e.id)}
+                >
                   {e.name}
                 </button>
               )}
-              <span className="row-actions">
-                <button type="button" onClick={() => overwrite(e)} title="現在の状態で上書き">
-                  上書き
-                </button>
-                <button type="button" onClick={() => setRenamingId(e.id)}>
-                  名前
-                </button>
-                <button type="button" className="danger" onClick={() => remove(e)}>
-                  削除
-                </button>
-              </span>
+              {renamingId !== e.id && (
+                <RowMenu
+                  label="表情の操作"
+                  items={[
+                    { label: '上書き', onSelect: () => overwrite(e) },
+                    { label: '名前を変更', onSelect: () => setRenamingId(e.id) },
+                    { label: '削除', danger: true, onSelect: () => remove(e) },
+                  ]}
+                />
+              )}
             </li>
           ))}
         </ul>

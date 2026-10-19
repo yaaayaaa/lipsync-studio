@@ -98,6 +98,8 @@ export function placePopover(
   anchor: { x: number; y: number; width: number; height: number },
   viewport: { width: number; height: number },
   needed: number,
+  /** align: 'end' なら右端をボタンにそろえる（行の右端にあるメニューボタン向け） */
+  { align = 'start', minWidth = POPOVER_MIN_WIDTH }: { align?: 'start' | 'end'; minWidth?: number } = {},
 ): PopoverPlacement | null {
   const bottomEdge = anchor.y + anchor.height
   const rightEdge = anchor.x + anchor.width
@@ -106,8 +108,9 @@ export function placePopover(
   const above = anchor.y - SCREEN_MARGIN
   const downward = below >= Math.min(needed, POPOVER_MAX_HEIGHT) || below >= above
   const maxHeight = Math.max(POPOVER_MIN_HEIGHT, Math.min(POPOVER_MAX_HEIGHT, downward ? below : above))
-  const width = Math.max(anchor.width, POPOVER_MIN_WIDTH)
-  const left = Math.max(SCREEN_MARGIN, Math.min(anchor.x, viewport.width - width - SCREEN_MARGIN))
+  const width = Math.max(anchor.width, minWidth)
+  const preferred = align === 'end' ? rightEdge - width : anchor.x
+  const left = Math.max(SCREEN_MARGIN, Math.min(preferred, viewport.width - width - SCREEN_MARGIN))
   return downward
     ? { left, width, top: bottomEdge + 2, maxHeight }
     : { left, width, bottom: viewport.height - anchor.y + 2, maxHeight }

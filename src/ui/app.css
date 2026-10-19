@@ -255,34 +255,77 @@ input[type='text'],
 .expression-name {
   flex: 1;
   min-width: 0;
-  justify-content: flex-start;
+  /* 名前は行の幅いっぱいに使い、入りきらないときだけ省略する（全文は title） */
+  display: block;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: left;
   border-color: transparent;
   background: transparent;
 }
 
-.row-actions {
-  display: none;
-  gap: 2px;
-}
+/* ---- 行の「…」メニュー ---- */
 
-.row-actions button {
-  padding: 1px 6px;
-  font-size: 12px;
-  /* 選択中の行（黒地）でも読めるよう、文字色を継承しない */
-  color: var(--fg);
-  background: var(--surface);
-}
-
-.row-actions button.danger {
-  color: var(--danger);
-}
-
-li:hover .row-actions,
-li.selected .row-actions,
-li:focus-within .row-actions {
+.row-menu {
+  flex: none;
   display: inline-flex;
+}
+
+.row-menu-button {
+  width: 26px;
+  padding: 1px 0;
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+  letter-spacing: 0.05em;
+  /* 見えるのは行にマウスが乗っているか、選択中か、フォーカスがあるときだけ。
+     透明にするだけなので Tab では常に届く */
+  opacity: 0;
+}
+
+li:hover .row-menu-button,
+li.selected .row-menu-button,
+li:focus-within .row-menu-button,
+.row-menu-button[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.row-menu-button:hover:not(:disabled) {
+  border-color: currentColor;
+}
+
+.row-menu-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.row-menu-list {
+  z-index: 10;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--fg);
+  border-radius: var(--radius);
+}
+
+.row-menu-item {
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.row-menu-item:focus {
+  outline: none;
+  background: var(--hover-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.row-menu-item.danger {
+  color: var(--danger);
 }
 
 /* ---- レイヤーツリー ---- */

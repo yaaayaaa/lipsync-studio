@@ -121,3 +121,21 @@ describe('placePopover', () => {
     expect(placePopover(anchor(1000, 100), viewport, 100)).toBeNull()
   })
 })
+
+describe('placePopover options for menus', () => {
+  const viewport = { width: 1000, height: 800 }
+
+  it("can align the popover's right edge with the button and use a smaller minimum width", () => {
+    // ボタン x 170〜194、幅 140 のメニューは右端をボタンにそろえる（左端 54）
+    expect(placePopover({ x: 170, y: 100, width: 24, height: 24 }, viewport, 80, { align: 'end', minWidth: 140 })).toEqual({
+      left: 54,
+      width: 140,
+      top: 126,
+      maxHeight: 280,
+    })
+  })
+
+  it('still keeps an end-aligned popover on screen', () => {
+    expect(placePopover({ x: 20, y: 100, width: 24, height: 24 }, viewport, 80, { align: 'end', minWidth: 140 })?.left).toBe(8)
+  })
+})
