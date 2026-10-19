@@ -8,6 +8,7 @@ import { prepareQuery } from '../../core/voicevox/client'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
+import { groupChoicePatch } from './mouthGroup'
 import type { LayerOption } from './LayerSelect'
 import { VOWEL_LABELS } from './labels'
 import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
@@ -72,16 +73,15 @@ export function MouthPanel({
   const openProps = (key: Vowel | 'group') => ({
     open: openSelect === key,
     onOpenChange: (open: boolean) => {
-      setOpenSelect(open ? key : null)
+      // 閉じる知らせが、すでに開いた別のドロップダウンを閉じないようにする
+      setOpenSelect((cur) => (open ? key : cur === key ? null : cur))
       if (open && key !== 'group') onVowelOpen(key)
     },
   })
 
   const chooseGroup = (id: LayerId | null) => {
-    // 同じグループを押し直しただけで割り当てを消さない
-    if (id === (mouthGroup ? mouthGroup.id : null)) return
-    // グループを変えたら、前のグループの子を指す割り当ては意味を失うので消す
-    onChange({ mouthGroupId: id, mouthMap: {} })
+    const patch = groupChoicePatch(mouthGroupId, id)
+    if (patch) onChange(patch)
   }
 
   return (

@@ -85,6 +85,8 @@ export function LayerSelect({
   useEffect(() => {
     onActiveChangeRef.current?.(activeItemId)
   }, [activeItemId])
+  // 開いたまま消えても（口グループの変更など）、試し見せの候補を残さない
+  useEffect(() => () => onActiveChangeRef.current?.(undefined), [])
 
   // 一覧はパネルの枠で切れないよう画面に固定して置き、下に入らなければ上に出す
   useLayoutEffect(() => {
@@ -130,11 +132,11 @@ export function LayerSelect({
     const onPointerDown = (e: PointerEvent) => {
       const t = e.target as Node
       if (buttonRef.current?.contains(t) || listRef.current?.contains(t)) return
-      onOpenChange(false)
+      onOpenChangeRef.current(false)
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [open, onOpenChange])
+  }, [open])
 
   // 強調中の選択肢を見える位置に保つ
   const activeOptionId = optionId(active)
