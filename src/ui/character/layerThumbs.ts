@@ -32,6 +32,7 @@ const MAX_SCAN_PASSES = 4
 
 const opaqueCache = new WeakMap<LayerNode, Rect | null>()
 let scanCtx: OffscreenCanvasRenderingContext2D | null = null
+let scanFailureLogged = false
 
 /** src の region を長辺 SCAN_PX 以下に縮小して走査し、中身のある範囲を元の座標で返す */
 function scanRegion(src: CanvasImageSource, region: Rect): Rect | null {
@@ -55,13 +56,23 @@ function scanRegion(src: CanvasImageSource, region: Rect): Rect | null {
 /**
  * リーフの canvas 内で中身のある範囲（PSD のキャンバス内に限る）を求めて覚える。全部透明なら null。
  * 全体を粗く走査し、見つかった範囲だけをもう一度細かく走査することを等倍になるまで繰り返す。
+ * 走査に失敗したらレイヤー全体を範囲として覚える（再試行はしない）。
  */
 function scanLeaf(leaf: LayerNode, psdSize: PsdSize): void {
   if (opaqueCache.has(leaf)) return
   const src = leaf.source.canvas
-  let bounds: Rect | null = null
-  if (src && src.width > 0 && src.height > 0) {
-    let region: Rect | null = { x: 0, y: 0, width: src.width, height: src.height }
+  if (!src || src.width <= 0 || src.height <= 0) {
+    opaqueCache.set(leaf, null)
+    return
+  }
+  const { left = 0, top = 0 } = leaf.source
+  // PSD のキャンバスの外にはみ出た部分は描かれないので除く（canvas の座標に直して重ねる）
+  const clamp = (r: Rect | null) => r && intersectRects(r, { x: -left, y: -top, width: psdSize.width, height: psdSize.height })
+  const whole = { x: 0, y: 0, width: src.width, height: src.height }
+  // 失敗しても必ず結果を覚える。覚えないと、このリーフを待つグループの仕事が走査を積み直し続けて終わらない
+  let bounds = clamp(whole)
+  try {
+    let region: Rect | null = whole
     for (let pass = 0; pass < MAX_SCAN_PASSES && region; pass++) {
       const next = scanRegion(src as CanvasImageSource, region)
       // 2回目以降に見つからないのは縮小のぼけで拾った画素なので、広い方の範囲のままにする（欠けない側に倒す）
@@ -74,11 +85,16 @@ function scanLeaf(leaf: LayerNode, psdSize: PsdSize): void {
       region = next
       if (exact || same) break
     }
-    // PSD のキャンバスの外にはみ出た部分は描かれないので除く（canvas の座標に直して重ねる）
-    const { left = 0, top = 0 } = leaf.source
-    bounds = region && intersectRects(region, { x: -left, y: -top, width: psdSize.width, height: psdSize.height })
+    bounds = clamp(region)
+  } catch (e) {
+    // 読めないときは余白を除かずレイヤー全体を使う（控えめな範囲）。同じ原因で全リーフが失敗しがちなので1回だけ知らせる
+    if (!scanFailureLogged) {
+      scanFailureLogged = true
+      console.error('Failed to scan a layer for its thumbnail bounds; using the whole layer', e)
+    }
+  } finally {
+    opaqueCache.set(leaf, bounds)
   }
-  opaqueCache.set(leaf, bounds)
 }
 
 /** plan を描くのに必要で、まだ走査していないリーフ */
