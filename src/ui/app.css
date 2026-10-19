@@ -115,6 +115,12 @@ input {
   color: inherit;
 }
 
+/* アイコン（Lucide の svg）は縮ませず、文字と同じ色にする */
+button svg,
+.button svg {
+  flex: none;
+}
+
 button,
 .button {
   display: inline-flex;
@@ -280,7 +286,6 @@ input[type='text'],
   border-color: transparent;
   background: transparent;
   color: inherit;
-  letter-spacing: 0.05em;
   /* 見えるのは行にマウスが乗っているか、選択中か、フォーカスがあるときだけ。
      透明にするだけなので Tab では常に届く */
   opacity: 0;
@@ -536,7 +541,6 @@ li:focus-within .row-menu-button,
 .layer-select-caret {
   flex: none;
   color: var(--muted);
-  font-size: 11px;
 }
 
 .layer-select-list {

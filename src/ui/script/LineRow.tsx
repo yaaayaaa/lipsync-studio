@@ -1,3 +1,5 @@
+import { ArrowDown, ArrowUp } from 'lucide-react'
+import { iconProps } from '../icons'
 import type { Character, ScriptLine } from '../../core/character/types'
 import type { LineProblem } from '../../core/storage/db'
 import { PROBLEM_LABELS, canListen } from './lineJobs'
@@ -134,7 +136,7 @@ export function LineRow(props: Props) {
         </button>
         <span className="line-order">
           <button type="button" disabled={locked || index === 0} aria-label="上へ" onClick={() => props.onMove(-1)}>
-            ↑
+            <ArrowUp {...iconProps} />
           </button>
           <button
             type="button"
@@ -142,7 +144,7 @@ export function LineRow(props: Props) {
             aria-label="下へ"
             onClick={() => props.onMove(1)}
           >
-            ↓
+            <ArrowDown {...iconProps} />
           </button>
           <button type="button" className="danger" disabled={locked} onClick={props.onRemove}>
             削除

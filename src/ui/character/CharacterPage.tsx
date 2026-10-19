@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { iconProps } from '../icons'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
 import { VOWELS } from '../../core/character/types'
 import type { Character, Expression, Vowel } from '../../core/character/types'
@@ -129,7 +131,14 @@ export function CharacterPage() {
           ))}
         </ul>
         <label className={`button primary${adding ? ' disabled' : ''}`}>
-          {adding ? 'PSD を読み込み中…' : '＋ PSD からキャラを追加'}
+          {adding ? (
+            'PSD を読み込み中…'
+          ) : (
+            <>
+              <Plus {...iconProps} />
+              PSD からキャラを追加
+            </>
+          )}
           <input
             type="file"
             accept=".psd"

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { iconProps } from '../icons'
 import { prerenderMouthFrames } from '../../core/export/frames'
 import { renderLineMp4 } from '../../core/export/encode'
 import { exportLines, zipResults } from '../../core/export/exportAll'
@@ -432,7 +434,8 @@ export function ScriptPage({ active }: { active: boolean }) {
           ))}
         </ol>
         <button type="button" className="add-line" disabled={locked} onClick={addLine}>
-          ＋ 行を追加
+          <Plus {...iconProps} />
+          行を追加
         </button>
       </section>
       <aside className="column panel-column script-side">

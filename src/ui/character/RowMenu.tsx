@@ -1,4 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { EllipsisVertical } from 'lucide-react'
+import { iconProps } from '../icons'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { placePopover } from './dropdown'
 import { menuReduce } from './menu'
@@ -128,7 +130,7 @@ export function RowMenu({ label, items }: Props) {
         onClick={() => dispatch({ type: 'toggle' })}
         onKeyDown={onKeyDown}
       >
-        …
+        <EllipsisVertical {...iconProps} />
       </button>
       {open && (
         <ul

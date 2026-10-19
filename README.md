@@ -57,3 +57,7 @@ VOICEVOX で作った音声を公開するときは、クレジット表記が�
 ## ライセンス
 
 MIT
+
+### 使っている素材のライセンス
+
+- アイコン：[Lucide](https://lucide.dev/)（`lucide-react`）。ISC ライセンス、Copyright (c) 2026 Lucide Icons and Contributors。全文は `node_modules/lucide-react/LICENSE` と https://lucide.dev/license にあります

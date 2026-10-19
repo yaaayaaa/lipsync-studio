@@ -1,4 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { iconProps } from '../icons'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import type { PsdSize } from '../usePsd'
@@ -177,9 +179,7 @@ export function LayerSelect({
       >
         <LayerThumb node={current?.node ?? null} visibility={visibility} psdSize={psdSize} />
         <span className="layer-select-name">{current?.name ?? '未設定'}</span>
-        <span className="layer-select-caret" aria-hidden>
-          ▾
-        </span>
+        <ChevronDown className="layer-select-caret" {...iconProps} />
       </button>
       {open && (
         <ul
