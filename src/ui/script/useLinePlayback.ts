@@ -81,7 +81,7 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
     const handle = startSamplePlayback(
       async () => {
         const [prepared, sample] = await Promise.all([lease?.frames, speak(line, character.voice.styleId)])
-        if (prepared && isCurrent()) setPreview({ lineNumber, prepared, vowel: 'closed' })
+        if (prepared && isCurrent()) setPreview({ lineNumber, prepared, key: { vowel: 'closed', eye: 'open' } })
         return sample
       },
       browserPlaybackEnv,
@@ -89,7 +89,7 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
         onPlaying: () => isCurrent() && setPlaying({ lineId: line.id, mode, loading: false }),
         onMouth: (vowel) => {
           if (mode === 'preview' && isCurrent()) {
-            setPreview((prev) => (prev && prev.vowel !== vowel ? { ...prev, vowel } : prev))
+            setPreview((prev) => (prev && prev.key.vowel !== vowel ? { ...prev, key: { ...prev.key, vowel } } : prev))
           }
         },
       },
@@ -104,7 +104,7 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
         if (!isCurrent()) return
         playbackRef.current = null
         setPlaying(null)
-        setPreview((prev) => prev && { ...prev, vowel: 'closed' })
+        setPreview((prev) => prev && { ...prev, key: { ...prev.key, vowel: 'closed' } })
       })
   }
 

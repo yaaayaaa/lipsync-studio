@@ -1,6 +1,6 @@
-import type { Character, Expression, ExportSettings, LineTuning, ScriptLine, Vowel } from '../../core/character/types'
+import type { Character, Expression, ExportSettings, LineTuning, ScriptLine } from '../../core/character/types'
 import { placement } from '../../core/export/frames'
-import type { MouthFrames } from '../../core/export/frames'
+import type { FrameKey, FrameStore } from '../../core/export/frames'
 import { lineProblem } from '../../core/storage/db'
 import type { LineProblem } from '../../core/storage/db'
 
@@ -58,18 +58,18 @@ export function appendLine(lines: ScriptLine[], characters: Character[], id: str
   return [...lines, { id, text: '', characterId: character?.id ?? null, expressionId, speedScale: 1.0 }]
 }
 
-/** 書き出しと同じ配置で1フレームを描く（プレビュー用）。 */
+/** 書き出しと同じ配置で1フレームを描く（プレビュー用）。まだ合成していない組み合わせは背景だけ。 */
 export function drawMouthFrame(
   ctx: CanvasRenderingContext2D,
-  frames: MouthFrames,
-  vowel: Vowel,
+  frames: FrameStore,
+  key: FrameKey,
   psdSize: { width: number; height: number },
   settings: ExportSettings,
 ): void {
-  const bitmap = frames.get(vowel)
   ctx.fillStyle = settings.background
   ctx.fillRect(0, 0, settings.width, settings.height)
-  if (!bitmap) return
+  if (!frames.has(key)) return
+  const bitmap = frames.get(key)
   const rect = placement(settings, psdSize)
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'

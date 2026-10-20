@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ScriptLine } from '../../core/character/types'
-import { prerenderMouthFrames } from '../../core/export/frames'
+import { createFrameStore } from '../../core/export/frames'
 import { useApp } from '../useApp'
 import { loadParsedPsd } from '../usePsd'
 import { errorMessage } from './lineJobs'
@@ -76,7 +76,7 @@ export function ScriptProvider({ onOpenLineEditor, children }: { onOpenLineEdito
     () =>
       new MouthFrameCache(async (character, expression) => {
         const { tree, psdSize } = await loadParsedPsd(store, character.id)
-        const frames = await prerenderMouthFrames(tree, expression.visibility, character, psdSize)
+        const frames = await createFrameStore(tree, expression.visibility, character, psdSize)
         return { frames, psdSize }
       }),
     [store],

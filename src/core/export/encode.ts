@@ -10,8 +10,8 @@ import {
 } from 'mediabunny'
 import type { ExportSettings } from '../character/types'
 import type { MouthTimeline } from '../lipsync/timeline'
-import { FPS, frameSchedule, placement } from './frames'
-import type { MouthFrames } from './frames'
+import { FPS, frameSchedule, lineFrameKeys, placement } from './frames'
+import type { FrameStore } from './frames'
 
 /** VOICEVOX へ要求する出力サンプリングレート（Task 6 の prepareQuery と揃える）。 */
 const AUDIO_SAMPLE_RATE = 48000
@@ -32,9 +32,13 @@ export async function checkEncodeSupport(settings: ExportSettings): Promise<Enco
 export interface RenderLineInput {
   wav: ArrayBuffer
   timeline: MouthTimeline
-  frames: MouthFrames
+  frames: FrameStore
   psdSize: { width: number; height: number }
   settings: ExportSettings
+  /** 喋り終わったあと立ち絵を映し続ける秒数（音は入れない） */
+  tailSeconds: number
+  /** 瞬きの位置を決める種（行の ID）。同じ種なら同じ位置で瞬きする */
+  blinkSeed: string
   onProgress?: (ratio: number) => void
   signal?: AbortSignal
 }
@@ -45,7 +49,7 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
 
 /** 1セリフ分の mp4（H.264 + AAC、30fps）を作る。 */
 export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
-  const { wav, timeline, frames, psdSize, settings, onProgress, signal } = input
+  const { wav, timeline, frames, psdSize, settings, tailSeconds, blinkSeed, onProgress, signal } = input
   if (settings.width % 2 !== 0 || settings.height % 2 !== 0) {
     throw new Error(`H.264 の解像度は偶数でなければなりません: ${settings.width}x${settings.height}`)
   }
@@ -53,8 +57,12 @@ export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
 
   // decodeAudioData は渡した ArrayBuffer を detach するので、呼び出し側の wav は複製を渡す
   const audio = await new OfflineAudioContext(1, 1, AUDIO_SAMPLE_RATE).decodeAudioData(wav.slice(0))
-  // WAV がタイムラインより長くても、映像が音声の最後まで続くようにする
-  const schedule = frameSchedule(timeline, FPS, audio.duration)
+  // WAV がタイムラインより長くても、映像が音声の最後まで続くようにする。終端の分はそのあとに足す
+  const vowels = frameSchedule(timeline, FPS, audio.duration, tailSeconds)
+  const blink = frames.blink && { seed: blinkSeed, hasHalf: frames.blink.half !== null }
+  const schedule = lineFrameKeys(vowels, blink)
+  await frames.prepare(schedule)
+  throwIfAborted(signal)
   const rect = placement(settings, psdSize)
 
   const canvas = new OffscreenCanvas(settings.width, settings.height)
@@ -72,13 +80,12 @@ export async function renderLineMp4(input: RenderLineInput): Promise<Blob> {
     output.addAudioTrack(audioSource)
     await output.start()
 
-    // 音声は先に全量を渡す。映像は音声の長さ以上になる（端数は最後のフレームの分だけ長い）
+    // 音声は先に全量を渡す。映像は音声の長さ以上になる（端数は最後のフレームの分と終端の分だけ長い）
     await audioSource.add(audio)
 
     for (let i = 0; i < schedule.length; i++) {
       throwIfAborted(signal)
       const mouth = frames.get(schedule[i]!)
-      if (!mouth) throw new Error(`口「${schedule[i]}」の画像がありません`)
       ctx.fillStyle = settings.background
       ctx.fillRect(0, 0, settings.width, settings.height)
       ctx.drawImage(mouth, rect.x, rect.y, rect.width, rect.height)

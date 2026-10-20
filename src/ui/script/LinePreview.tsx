@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
-import type { ExportSettings, Vowel } from '../../core/character/types'
+import type { ExportSettings } from '../../core/character/types'
+import type { FrameKey } from '../../core/export/frames'
 import type { PreparedFrames } from './mouthFrameCache'
 import { drawMouthFrame } from './lineJobs'
 
 export interface PreviewFrame {
   lineNumber: number
   prepared: PreparedFrames
-  vowel: Vowel
+  key: FrameKey
 }
 
 interface Props {
@@ -31,7 +32,7 @@ export function LinePreview({
     const ctx = canvasRef.current?.getContext('2d')
     if (!ctx) return
     if (frame) {
-      drawMouthFrame(ctx, frame.prepared.frames, frame.vowel, frame.prepared.psdSize, settings)
+      drawMouthFrame(ctx, frame.prepared.frames, frame.key, frame.prepared.psdSize, settings)
     } else {
       ctx.fillStyle = settings.background
       ctx.fillRect(0, 0, settings.width, settings.height)

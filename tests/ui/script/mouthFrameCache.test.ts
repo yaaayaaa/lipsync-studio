@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Character, Expression } from '../../../src/core/character/types'
-import { VOWELS } from '../../../src/core/character/types'
-import type { MouthFrames } from '../../../src/core/export/frames'
+import type { FrameStore } from '../../../src/core/export/frames'
 import { MouthFrameCache } from '../../../src/ui/script/mouthFrameCache'
 import type { PreparedFrames } from '../../../src/ui/script/mouthFrameCache'
 
@@ -18,18 +17,15 @@ const character = (id: string, patch: Partial<Character> = {}): Character => ({
   ...patch,
 })
 
+/** 画像の持ち主は FrameStore なので、閉じられたかだけを見る偽物を返す */
 function fakeRender() {
-  const bitmaps: { close: ReturnType<typeof vi.fn> }[] = []
+  const stores: { close: ReturnType<typeof vi.fn> }[] = []
   const render = vi.fn(async (): Promise<PreparedFrames> => {
-    const frames = new Map() as MouthFrames
-    for (const v of VOWELS) {
-      const bitmap = { close: vi.fn() }
-      bitmaps.push(bitmap)
-      frames.set(v, bitmap as unknown as ImageBitmap)
-    }
-    return { frames, psdSize: { width: 10, height: 20 } }
+    const store = { close: vi.fn() }
+    stores.push(store)
+    return { frames: store as unknown as FrameStore, psdSize: { width: 10, height: 20 } }
   })
-  return { render, bitmaps }
+  return { render, stores }
 }
 
 const flush = () => new Promise((r) => setTimeout(r, 0))
@@ -46,7 +42,7 @@ describe('MouthFrameCache', () => {
   })
 
   it('re-renders and closes the old bitmaps when the mouth settings change', async () => {
-    const { render, bitmaps } = fakeRender()
+    const { render, stores } = fakeRender()
     const cache = new MouthFrameCache(render)
     const c = character('c1')
     cache.acquire(c, c.expressions[0]!).release()
@@ -54,12 +50,27 @@ describe('MouthFrameCache', () => {
     cache.acquire({ ...c, mouthMap: { a: 'm-a2' } }, c.expressions[0]!).release()
     await flush()
     expect(render).toHaveBeenCalledTimes(2)
-    expect(bitmaps.slice(0, VOWELS.length).every((b) => b.close.mock.calls.length === 1)).toBe(true)
-    expect(bitmaps.slice(VOWELS.length).every((b) => b.close.mock.calls.length === 0)).toBe(true)
+    expect(stores[0]!.close).toHaveBeenCalledTimes(1)
+    expect(stores[1]!.close).not.toHaveBeenCalled()
+  })
+
+  it('re-renders when only the eye settings change', async () => {
+    const { render, stores } = fakeRender()
+    const cache = new MouthFrameCache(render)
+    const c = character('c1')
+    cache.acquire(c, c.expressions[0]!).release()
+    await flush()
+    cache.acquire({ ...c, eyeGroupId: 'eyes' }, c.expressions[0]!).release()
+    await flush()
+    cache.acquire({ ...c, eyeGroupId: 'eyes', eyeMap: { closed: 'e-closed' } }, c.expressions[0]!).release()
+    await flush()
+    expect(render).toHaveBeenCalledTimes(3)
+    expect(stores.slice(0, 2).every((s) => s.close.mock.calls.length === 1)).toBe(true)
+    expect(stores[2]!.close).not.toHaveBeenCalled()
   })
 
   it('does not close bitmaps that are still in use until they are released', async () => {
-    const { render, bitmaps } = fakeRender()
+    const { render, stores } = fakeRender()
     const cache = new MouthFrameCache(render, 1)
     const c1 = character('c1')
     const c2 = character('c2')
@@ -67,27 +78,27 @@ describe('MouthFrameCache', () => {
     await lease.frames
     cache.acquire(c2, c2.expressions[0]!).release() // c1 を上限で追い出す
     await flush()
-    expect(bitmaps[0]!.close).not.toHaveBeenCalled()
+    expect(stores[0]!.close).not.toHaveBeenCalled()
     lease.release()
     lease.release() // 2回目は無視される
     await flush()
-    expect(bitmaps.slice(0, VOWELS.length).every((b) => b.close.mock.calls.length === 1)).toBe(true)
+    expect(stores[0]!.close).toHaveBeenCalledTimes(1)
   })
 
   it('closes everything on dispose', async () => {
-    const { render, bitmaps } = fakeRender()
+    const { render, stores } = fakeRender()
     const cache = new MouthFrameCache(render)
     const c = character('c1')
     cache.acquire(c, c.expressions[0]!).release()
     cache.dispose()
     await flush()
-    expect(bitmaps).toHaveLength(VOWELS.length)
-    expect(bitmaps.every((b) => b.close.mock.calls.length === 1)).toBe(true)
+    expect(stores).toHaveLength(1)
+    expect(stores[0]!.close).toHaveBeenCalledTimes(1)
   })
 
   it('forgets a failed render so the next use retries', async () => {
     const render = vi.fn().mockRejectedValueOnce(new Error('PSD がありません')).mockResolvedValue({
-      frames: new Map(),
+      frames: { close: vi.fn() },
       psdSize: { width: 1, height: 1 },
     })
     const cache = new MouthFrameCache(render)

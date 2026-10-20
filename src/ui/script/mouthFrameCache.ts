@@ -1,8 +1,8 @@
 import type { Character, Expression } from '../../core/character/types'
-import type { MouthFrames } from '../../core/export/frames'
+import type { FrameStore } from '../../core/export/frames'
 
 export interface PreparedFrames {
-  frames: MouthFrames
+  frames: FrameStore
   psdSize: { width: number; height: number }
 }
 
@@ -21,21 +21,27 @@ interface Entry {
   retired: boolean
 }
 
-/** 口の画像を左右するものだけで版を作る。どれかが変われば作り直す。 */
+/** 立ち絵の画像を左右するもの（口・目の割り当てとスタイル）だけで版を作る。どれかが変われば作り直す。 */
 function versionOf(character: Character, expression: Expression): string {
-  return JSON.stringify([character.mouthGroupId, character.mouthMap, expression.visibility])
+  return JSON.stringify([
+    character.mouthGroupId,
+    character.mouthMap,
+    character.eyeGroupId ?? null,
+    character.eyeMap ?? null,
+    expression.visibility,
+  ])
 }
 
 function closeFrames(entry: Entry): void {
   entry.frames.then(
-    ({ frames }) => frames.forEach((bitmap) => bitmap.close()),
+    ({ frames }) => frames.close(),
     () => {},
   )
 }
 
 /**
- * (キャラ, スタイル) ごとに口の種類ぶんの画像を1回だけ合成して使い回す。
- * 1組で PSD サイズの画像が6枚あるので、持つ組数に上限を設け、古いものから閉じる。
+ * (キャラ, スタイル) ごとに立ち絵の画像（FrameStore）を1回だけ用意して使い回す。
+ * 1組で PSD サイズの画像が口の種類ぶん以上あるので、持つ組数に上限を設け、古いものから閉じる。
  */
 export class MouthFrameCache {
   private readonly entries = new Map<string, Entry>()

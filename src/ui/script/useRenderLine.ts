@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import type { ScriptLine } from '../../core/character/types'
 import { renderLineMp4 } from '../../core/export/encode'
+import { effectiveTail } from '../../core/export/tail'
 import { creditText, singleFileName } from '../../core/export/naming'
 import { newId } from '../../core/id'
 import { useApp } from '../useApp'
@@ -36,7 +37,17 @@ export function useRenderLine(speak: SpeakLine) {
           lease.frames,
           speak(line, character.voice.styleId, onRefreshed),
         ])
-        const blob = await renderLineMp4({ wav, timeline, frames, psdSize, settings: exportSettings, onProgress, signal })
+        const blob = await renderLineMp4({
+          wav,
+          timeline,
+          frames,
+          psdSize,
+          settings: exportSettings,
+          tailSeconds: effectiveTail(line, exportSettings),
+          blinkSeed: line.id,
+          onProgress,
+          signal,
+        })
         return { blob, characterName: character.name, speakerName: character.voice.speakerName }
       } finally {
         lease.release()
