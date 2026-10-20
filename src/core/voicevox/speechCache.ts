@@ -1,7 +1,10 @@
 import { buildMouthTimeline } from '../lipsync/timeline'
 import type { MouthTimeline } from '../lipsync/timeline'
+import type { LineTuning, ScriptLine } from '../character/types'
 import { prepareQuery } from './client'
 import type { VoicevoxClient } from './client'
+import { isTuningStale, queryFromTuning, resolveTuning } from './tuning'
+import type { AudioQuery } from './types'
 
 export interface Speech {
   /** 共有されるので書き換えないこと（decodeAudioData などに渡すときは複製する） */
@@ -27,8 +30,14 @@ export async function synthesizeSpeech(
   return { wav, timeline: buildMouthTimeline(query) }
 }
 
+export interface SpeechSynthesizers {
+  synthesizeText: (text: string, styleId: number, speedScale: number) => Promise<Speech>
+  /** 作り込み済みのクエリをそのまま合成する（prepareQuery 済みであること） */
+  synthesizeQuery: (query: AudioQuery, styleId: number) => Promise<Speech>
+}
+
 /**
- * 同じ（文・声・話速）の合成結果を使い回す。再生し直すたびや、試聴の後の書き出しで合成を待たずに済ませるため。
+ * 同じ（文・声・話速、または作り込み済みクエリ・声）の合成結果を使い回す。再生し直すたびや、試聴の後の書き出しで合成を待たずに済ませるため。
  * 合成中の同じ依頼は1つにまとめ、失敗した結果は覚えない。上限を超えたら古く使ったものから捨てる。
  * エンジン URL ごとに client が作り直されるので、キャッシュも client と一緒に作り直す。
  * エンジン側のユーザー辞書を変えても、覚えている分は再読み込みまで古い読みのまま（既知の制限）。
@@ -37,23 +46,40 @@ export class SpeechCache {
   private readonly entries = new Map<string, Promise<Speech>>()
   private readonly sizes = new Map<string, number>()
   private totalBytes = 0
-  private readonly synthesize: (text: string, styleId: number, speedScale: number) => Promise<Speech>
+  private readonly synthesizers: SpeechSynthesizers
   private readonly maxBytes: number
 
-  constructor(
-    synthesize: (text: string, styleId: number, speedScale: number) => Promise<Speech>,
-    maxBytes = DEFAULT_MAX_BYTES,
-  ) {
-    this.synthesize = synthesize
+  constructor(synthesizers: SpeechSynthesizers, maxBytes = DEFAULT_MAX_BYTES) {
+    this.synthesizers = synthesizers
     this.maxBytes = maxBytes
   }
 
   static forClient(client: VoicevoxClient, maxBytes?: number): SpeechCache {
-    return new SpeechCache((text, styleId, speedScale) => synthesizeSpeech(client, text, styleId, speedScale), maxBytes)
+    return new SpeechCache(
+      {
+        synthesizeText: (text, styleId, speedScale) => synthesizeSpeech(client, text, styleId, speedScale),
+        synthesizeQuery: async (query, styleId) => ({
+          wav: await client.synthesis(query, styleId),
+          timeline: buildMouthTimeline(query),
+        }),
+      },
+      maxBytes,
+    )
   }
 
+  /** 作り込みなしの行。鍵の先頭の種別で、文の鍵とクエリの鍵が混ざらないようにする */
   speak(text: string, styleId: number, speedScale: number): Promise<Speech> {
-    const key = JSON.stringify([styleId, speedScale, text])
+    return this.lookup(JSON.stringify(['text', styleId, speedScale, text]), () =>
+      this.synthesizers.synthesizeText(text, styleId, speedScale),
+    )
+  }
+
+  /** 作り込み済みのクエリ。1モーラの高さが 0.01 違っても別の合成になる */
+  speakQuery(query: AudioQuery, styleId: number): Promise<Speech> {
+    return this.lookup(JSON.stringify(['query', styleId, query]), () => this.synthesizers.synthesizeQuery(query, styleId))
+  }
+
+  private lookup(key: string, synthesize: () => Promise<Speech>): Promise<Speech> {
     const cached = this.entries.get(key)
     if (cached) {
       // 使った順に並べ直す（Map は挿入順なので、入れ直すと最後になる）
@@ -61,7 +87,7 @@ export class SpeechCache {
       this.entries.set(key, cached)
       return cached
     }
-    const pending = this.synthesize(text, styleId, speedScale)
+    const pending = synthesize()
     this.entries.set(key, pending)
     pending.then(
       (speech) => {
@@ -89,4 +115,22 @@ export class SpeechCache {
       this.totalBytes -= size
     }
   }
+}
+
+/**
+ * 1行ぶんの音声。作り込みがあって文と合っていればそれを使い、なければ文から合成する。
+ * 声が違って高さと長さを取り直したときだけ `tuning` を返す（呼び出し側が保存する）。
+ */
+export async function speakLine(
+  cache: SpeechCache,
+  client: Pick<VoicevoxClient, 'moraData'>,
+  line: ScriptLine,
+  styleId: number,
+): Promise<{ speech: Speech; tuning?: LineTuning }> {
+  if (!line.tuning || isTuningStale(line.tuning, line.text)) {
+    return { speech: await cache.speak(line.text, styleId, line.speedScale) }
+  }
+  const { tuning, refreshed } = await resolveTuning(client, line.tuning, styleId)
+  const speech = await cache.speakQuery(queryFromTuning(tuning, line.speedScale), styleId)
+  return refreshed ? { speech, tuning } : { speech }
 }

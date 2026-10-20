@@ -5,11 +5,22 @@ function sanitize(s: string): string {
   return s.replace(FORBIDDEN_IN_FILE_NAME, '_').trim()
 }
 
+/** 禁則文字を置換してから先頭 TITLE_LENGTH 文字を取る（Array.from でサロゲートペアを割らない）。 */
+function titleOf(text: string): string {
+  return sanitize(Array.from(sanitize(text)).slice(0, TITLE_LENGTH).join(''))
+}
+
 /** `001_キャラ名_本文先頭10文字.mp4`。禁則文字を置換してから先頭を取る（Array.from でサロゲートペアを割らない）。 */
 export function lineFileName(index: number, characterName: string, text: string): string {
   const number = String(index + 1).padStart(3, '0')
-  const title = sanitize(Array.from(sanitize(text)).slice(0, TITLE_LENGTH).join(''))
-  return `${number}_${sanitize(characterName)}_${title}.mp4`
+  return `${number}_${sanitize(characterName)}_${titleOf(text)}.mp4`
+}
+
+const ID_LENGTH = 8
+
+/** 単体ダウンロード: `本文先頭10文字_ID英数字8文字.mp4`。ID は書き出すたびに作り直して渡す。 */
+export function singleFileName(text: string, id: string): string {
+  return `${titleOf(text)}_${id.replace(/[^A-Za-z0-9]/g, '').slice(0, ID_LENGTH)}.mp4`
 }
 
 /** VOICEVOX の利用規約に沿ったクレジット表記。重複は除き、出現順。 */
