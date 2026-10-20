@@ -221,6 +221,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
               key={line.id}
               phrases={canTune ? (tuning.shown?.accentPhrases ?? null) : null}
               disabled={locked || !canTune}
+              loadError={tuning.queryError}
+              onRetry={tuning.retryQuery}
               onChange={(fn) => tuning.changeTuning((t) => ({ ...t, accentPhrases: fn(t.accentPhrases) }))}
               onChangeAsync={tuning.changePhrases}
             />
@@ -306,7 +308,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
           status={
             tuning.stale
               ? '作り込みが文と合っていないため変えられません'
-              : (tuning.error ?? (canTune && !tuning.shown ? '数値を取得中…' : null))
+              : (tuning.error ?? tuning.queryError ?? (canTune && !tuning.shown ? '数値を取得中…' : null))
           }
           onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
           onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}

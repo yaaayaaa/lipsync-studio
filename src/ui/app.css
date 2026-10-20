@@ -909,6 +909,13 @@ progress {
   color: var(--fg);
 }
 
+.phrase-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .line-main {
   display: flex;
   flex-direction: column;

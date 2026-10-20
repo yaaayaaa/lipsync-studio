@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { iconProps } from '../icons'
 import type { AccentPhrase } from '../../core/voicevox/types'
 import { errorMessage } from '../script/lineJobs'
 import { AccentTab } from './AccentTab'
@@ -31,13 +33,16 @@ interface Props {
   phrases: AccentPhrase[] | null
   /** 書き出し中・声がない・文が空など */
   disabled: boolean
+  /** 句を取得できなかった理由。あれば「取得中」の代わりに出し、onRetry で取り直す */
+  loadError: string | null
+  onRetry(): void
   /** その場で決まる変更（高さ・長さ・無音） */
   onChange(fn: (phrases: AccentPhrase[]) => AccentPhrase[]): void
   onChangeAsync: ChangePhrasesAsync
 }
 
 /** アクセント句の編集欄（アクセント・区切り・読み／高さ／長さ）。行を変えたら作り直す（key に行 ID を渡す） */
-export function PhraseEditor({ phrases, disabled, onChange, onChangeAsync }: Props) {
+export function PhraseEditor({ phrases, disabled, loadError, onRetry, onChange, onChangeAsync }: Props) {
   const [tab, setTab] = useState<Tab>('accent')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,8 +96,20 @@ export function PhraseEditor({ phrases, disabled, onChange, onChangeAsync }: Pro
         </p>
       )}
       <div id="phrase-tab-panel" role="tabpanel" aria-labelledby={`phrase-tab-${tab}`}>
-        {phrases === null ? (
-          <p className="hint">{disabled ? 'セリフと声があると編集できます' : 'アクセント句を取得中…'}</p>
+        {phrases === null && disabled ? (
+          <p className="hint">セリフと声があると編集できます</p>
+        ) : phrases === null && loadError ? (
+          <div className="phrase-load-error">
+            <p className="notice error" role="alert">
+              {loadError}
+            </p>
+            <button type="button" onClick={onRetry}>
+              <RefreshCw {...iconProps} />
+              再試行
+            </button>
+          </div>
+        ) : phrases === null ? (
+          <p className="hint">アクセント句を取得中…</p>
         ) : tab === 'accent' ? (
           <AccentTab phrases={phrases} disabled={off} onChangeAsync={runAsync} />
         ) : tab === 'pitch' ? (

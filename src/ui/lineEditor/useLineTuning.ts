@@ -57,6 +57,14 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     return new Map<string, AudioQuery>()
   }, [client])
   const [, queryArrived] = useReducer((n: number) => n + 1, 0)
+  // 表示用の /audio_query が失敗した文と声。同じ文と声は「再試行」を押すまで取り直さない
+  // （エンジンが起動する前に開いたときなど。押さないと、別の行を開くまで取得中のまま止まってしまう）
+  const [queryFailure, setQueryFailure] = useState<{ key: string; message: string } | null>(null)
+  const [retryCount, bumpRetry] = useReducer((n: number) => n + 1, 0)
+  const retryQuery = useCallback(() => {
+    setQueryFailure(null)
+    bumpRetry()
+  }, [])
 
   const lineId = line?.id ?? null
   // 別の行を開いたら、前の行の知らせとエラーは消す（戻ってきても出さない）
@@ -87,17 +95,18 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
           queries.set(key, q)
           if (!cancelled) {
             setError(null)
+            setQueryFailure(null)
             queryArrived()
           }
         },
-        (e: unknown) => !cancelled && setError(`数値を取得できませんでした: ${errorMessage(e)}`),
+        (e: unknown) => !cancelled && setQueryFailure({ key, message: `数値を取得できませんでした: ${errorMessage(e)}` }),
       )
     }, QUERY_DEBOUNCE_MS)
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [needsQuery, key, text, styleId, client, queries, setError])
+  }, [needsQuery, key, text, styleId, client, queries, setError, retryCount])
 
   // 開いた行の作り込みが別の声のものなら、高さと長さをすぐ取り直して保存する
   const resolving = useRef<LineTuning | null>(null)
@@ -207,6 +216,9 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     /** 作り込みが今の文と合っていない */
     stale,
     error: errorState !== null && errorState.lineId === lineId ? errorState.message : null,
+    /** 表示用の数値を取得できなかった理由（今の文と声のもの）。retryQuery で取り直す */
+    queryError: needsQuery && !shown && queryFailure?.key === key ? queryFailure.message : null,
+    retryQuery,
     refreshed: lineId !== null && refreshedLineId === lineId && line?.tuning !== undefined,
     markRefreshed: setRefreshedLineId,
     /** エンジンを待っている変更がある */
