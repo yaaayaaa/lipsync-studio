@@ -701,6 +701,32 @@ li.selected .row-menu-button[aria-expanded='true'] {
   color: var(--muted);
 }
 
+.dismissible-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.dismissible-hint > p {
+  flex: 1;
+  margin: 0;
+}
+
+/* 説明の文字に並ぶ小さな×。枠は付けず、触れたときだけ地を出す */
+.hint-close {
+  flex: none;
+  padding: 2px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.hint-close:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--hover-bg);
+  color: var(--fg);
+}
+
 .notice {
   margin: 0;
   padding: 6px 8px;

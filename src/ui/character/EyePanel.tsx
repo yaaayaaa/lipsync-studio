@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Character, EyeMap } from '../../core/character/types'
 import { findNode } from '../../core/psd/layerTree'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
+import { DismissibleHint } from '../DismissibleHint'
 import { ToggleSwitch } from '../ToggleSwitch'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
@@ -118,9 +119,9 @@ export function EyePanel({ tree, character, visibility, psdSize, onChange, onBli
           ) : (
             <p className="hint">目のグループを選ぶと、閉じ目と半目を選べます。</p>
           )}
-          <p className="hint">
+          <DismissibleHint id="eye-panel">
             閉じ目を選ぶと、書き出しとプレビューで瞬きします。開いた目はスタイルの表示のまま使います。
-          </p>
+          </DismissibleHint>
         </>
       )}
     </section>
