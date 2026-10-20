@@ -27,7 +27,8 @@ export const browserPlaybackEnv: PlaybackEnv = {
 }
 
 export interface PlaybackCallbacks {
-  onMouth(vowel: Vowel): void
+  /** time は再生位置（audio.currentTime、秒） */
+  onMouth(vowel: Vowel, time: number): void
   /** audio.play() が通り、口を動かし始めたとき */
   onPlaying(): void
 }
@@ -79,7 +80,8 @@ export function startSamplePlayback(load: LoadSample, env: PlaybackEnv, cb: Play
     cb.onPlaying()
     const tick = () => {
       if (cancelled) return
-      cb.onMouth(mouthAt(timeline, audio.currentTime))
+      const time = audio.currentTime
+      cb.onMouth(mouthAt(timeline, time), time)
       frame = env.requestFrame(tick)
     }
     tick()
