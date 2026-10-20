@@ -1,8 +1,9 @@
 // 実エンジンで buildMouthTimeline の duration と合成 WAV の長さを照合する。
 // 使い方: VOICEVOX_URL=http://localhost:50021 npx tsx scripts/check-timeline.ts
 import { buildMouthTimeline } from '../src/core/lipsync/timeline'
-import { VoicevoxClient, prepareQuery } from '../src/core/voicevox/client'
+import { VoicevoxClient } from '../src/core/voicevox/client'
 import { joinPhrases, refetchPhrases, splitPhrase } from '../src/core/voicevox/phraseEdit'
+import { queryFromTuning, tuningFromQuery } from '../src/core/voicevox/tuning'
 import type { AccentPhrase, AudioQuery } from '../src/core/voicevox/types'
 
 const BASE_URL = process.env.VOICEVOX_URL ?? 'http://localhost:50021'
@@ -159,13 +160,15 @@ async function main(): Promise<void> {
   }
   let total = TEXTS.length * SPEEDS.length
 
-  // 手で変えたクエリ。prepareQuery 経由（48kHz・モノラル）で合成する。アプリと同じ経路
+  // 手で変えたクエリ。アプリと同じ経路で合成する：作り込みとして持ち（tuningFromQuery）、
+  // 合成の直前にクエリへ戻す（queryFromTuning：pauseLength は null、prepareQuery で 48kHz・モノラル）
   const client = new VoicevoxClient({ baseUrl: BASE_URL })
   const baseQuery = await client.audioQuery(TUNED_TEXT, STYLE_ID)
   for (const tuned of TUNED_CASES) {
     for (const speed of TUNED_SPEEDS) {
       total++
-      const q = prepareQuery(await tuned.build(structuredClone(baseQuery), client), speed)
+      const built = await tuned.build(structuredClone(baseQuery), client)
+      const q = queryFromTuning(tuningFromQuery(built, TUNED_TEXT, STYLE_ID), speed)
       const actual = wavDurationSec(await synthesize(q))
       const predicted = buildMouthTimeline(q).duration
       const diff = Math.abs(actual - predicted)
