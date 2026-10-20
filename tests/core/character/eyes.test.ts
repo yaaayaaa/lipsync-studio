@@ -60,4 +60,18 @@ describe('applyEyes', () => {
   it('returns the state as is when the group is not in the tree', () => {
     expect(applyEyes(tree, base, { ...spec, groupId: '99' }, 'closed')).toEqual(base)
   })
+  it('leaves the eyes open when the closed eye is not a child of the group (stale PSD)', () => {
+    // '1/9' はもうない、'0' はあるが目のグループの子ではない
+    for (const closed of ['1/9', '0']) {
+      for (const eye of ['closed', 'half'] as const) {
+        expect(applyEyes(tree, base, { ...spec, closed }, eye)).toEqual(base)
+      }
+    }
+  })
+  it('uses the closed eye when the half eye is not a child of the group', () => {
+    for (const half of ['1/9', '0']) {
+      const s = applyEyes(tree, base, { ...spec, half }, 'half')
+      expect([s['0'], s['1/0'], s['1/1'], s['1/2']]).toEqual([true, true, false, false])
+    }
+  })
 })

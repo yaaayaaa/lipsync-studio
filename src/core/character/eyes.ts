@@ -1,3 +1,4 @@
+import { findNode } from '../psd/layerTree'
 import type { LayerId, LayerNode, VisibilityState } from '../psd/types'
 import { showOnlyChild } from './mouth'
 import type { Character, EyeState } from './types'
@@ -23,14 +24,23 @@ export function eyeLayer(spec: BlinkSpec, eye: EyeState): LayerId | null {
   return spec.closed
 }
 
+/**
+ * 瞬きの目を当てた表示状態。PSD を差し替えて割り当てたレイヤーが目のグループの子でなくなっていたら、
+ * 目を全部消してしまわないよう、閉じ目がなければ瞬きを諦めて（状態はそのまま）、半目がなければ閉じ目で代用する。
+ */
 export function applyEyes(
   tree: LayerNode[],
   state: VisibilityState,
   spec: BlinkSpec | null,
   eye: EyeState,
 ): VisibilityState {
-  if (spec === null) return state
-  const layerId = eyeLayer(spec, eye)
+  if (spec === null || eye === 'open') return state
+  const group = findNode(tree, spec.groupId)
+  if (!group) return state
+  const isChild = (id: LayerId | null) => id !== null && group.children.some((child) => child.id === id)
+  if (!isChild(spec.closed)) return state
+  const live: BlinkSpec = { ...spec, half: isChild(spec.half) ? spec.half : null }
+  const layerId = eyeLayer(live, eye)
   if (layerId === null) return state
   return showOnlyChild(tree, state, spec.groupId, layerId)
 }
