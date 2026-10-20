@@ -7,7 +7,22 @@ export function resolveMouthLayer(map: MouthMap, vowel: Vowel): LayerId | null {
   return map[vowel] ?? map.closed ?? null
 }
 
-/** 口グループ直下の子を全部消して mouthLayerId だけ表示する（スタイル側の radio 状態より優先）。 */
+/** グループ直下の子を全部消して layerId だけ表示する（スタイル側の radio 状態より優先）。グループが木になければそのまま返す。 */
+export function showOnlyChild(
+  tree: LayerNode[],
+  state: VisibilityState,
+  groupId: LayerId,
+  layerId: LayerId,
+): VisibilityState {
+  const group = findNode(tree, groupId)
+  if (!group) return state
+  const next = { ...state }
+  for (const child of group.children) next[child.id] = false
+  next[layerId] = true
+  return next
+}
+
+/** 口グループ直下の子を全部消して mouthLayerId だけ表示する。 */
 export function applyMouth(
   tree: LayerNode[],
   state: VisibilityState,
@@ -15,10 +30,5 @@ export function applyMouth(
   mouthLayerId: LayerId | null,
 ): VisibilityState {
   if (mouthGroupId === null || mouthLayerId === null) return state
-  const group = findNode(tree, mouthGroupId)
-  if (!group) return state
-  const next = { ...state }
-  for (const child of group.children) next[child.id] = false
-  next[mouthLayerId] = true
-  return next
+  return showOnlyChild(tree, state, mouthGroupId, mouthLayerId)
 }

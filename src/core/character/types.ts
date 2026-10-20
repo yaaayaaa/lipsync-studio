@@ -8,6 +8,17 @@ export const VOWELS: readonly Vowel[] = ['a', 'i', 'u', 'e', 'o', 'n', 'closed']
 
 export type MouthMap = Partial<Record<Vowel, LayerId>>
 
+/** 目の状態。open は割り当てず、スタイルの表示のまま */
+export type EyeState = 'open' | 'half' | 'closed'
+
+export const EYE_STATES: readonly EyeState[] = ['open', 'half', 'closed']
+
+/** 瞬きに使う目のレイヤー。half 未設定なら半目の場面は closed で代用する */
+export interface EyeMap {
+  closed?: LayerId
+  half?: LayerId
+}
+
 export interface Expression {
   id: string
   name: string
@@ -27,6 +38,9 @@ export interface Character {
   voice: VoiceRef | null
   mouthGroupId: LayerId | null
   mouthMap: MouthMap
+  /** 古い保存データにはない（未設定は瞬きしない） */
+  eyeGroupId?: LayerId | null
+  eyeMap?: EyeMap
   expressions: Expression[]
 }
 
