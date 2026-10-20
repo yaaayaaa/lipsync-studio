@@ -142,9 +142,12 @@ export class FrameStore {
     const withMouth = applyMouth(this.tree, this.expression, mouthGroupId, resolveMouthLayer(mouthMap, vowel))
     composeTo(ctx, this.tree, applyEyes(this.tree, withMouth, this.blink, eye), this.psdSize)
     const bitmap = await createImageBitmap(canvas)
-    // 合成を待つ間に閉じられたら、覚えずに閉じる
-    if (this.closed) bitmap.close()
-    else this.bitmaps.set(id, bitmap)
+    // 合成を待つ間に閉じられたら、覚えずに閉じる。prepare が成功したように見えて get で落ちないよう失敗にする
+    if (this.closed) {
+      bitmap.close()
+      throw new Error('閉じた立ち絵の画像は作れません')
+    }
+    this.bitmaps.set(id, bitmap)
   }
 }
 
