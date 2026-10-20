@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_EXPORT_SETTINGS } from '../../../src/core/character/types'
 import type { Character, ScriptLine } from '../../../src/core/character/types'
 import { lineProblem, openStore } from '../../../src/core/storage/db'
+import { tuningFromQuery } from '../../../src/core/voicevox/tuning'
+import { konnichiwaQuery } from '../../fixtures/audioQuery'
 
 let counter = 0
-const freshStore = () => openStore(`test-db-${++counter}`)
+const dbName = () => `test-db-${++counter}`
+const freshStore = () => openStore(dbName())
 
 const character = (over: Partial<Character> = {}): Character => ({
   id: 'c1',
@@ -74,6 +77,22 @@ describe('Store script and settings', () => {
     expect(await store.loadScript()).toEqual([])
     await store.saveScript([line(), line({ id: 'l2', text: 'b' })])
     expect(await store.loadScript()).toEqual([line(), line({ id: 'l2', text: 'b' })])
+  })
+
+  // 作り込み（句の null の子音長・pause_mora・手で変えた数値を含む）が、開き直した後もそのまま読めること。
+  // 作り込みのない行は tuning の項目を持たないまま読めること（古い保存データと同じ形）
+  it('round-trips a line with tuning and a line without across a reopen', async () => {
+    const name = dbName()
+    const tuning = { ...tuningFromQuery(konnichiwaQuery(), 'こんにちは', 3), pitchScale: 0.12, pauseLengthScale: 1.5 }
+    const tuned = line({ tuning, speedScale: 1.4 })
+    const plain = line({ id: 'l2', text: 'b' })
+    await (await openStore(name)).saveScript([tuned, plain])
+
+    const loaded = await (await openStore(name)).loadScript()
+    expect(loaded).toEqual([tuned, plain])
+    expect(loaded[0]!.tuning!.accentPhrases[0]!.moras[1]!.consonant_length).toBeNull()
+    expect(loaded[0]!.tuning!.accentPhrases[0]!.pause_mora?.vowel_length).toBe(0.3)
+    expect('tuning' in loaded[1]!).toBe(false)
   })
 
   it('returns defaults when settings were never saved, as a fresh copy', async () => {
