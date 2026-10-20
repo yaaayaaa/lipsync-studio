@@ -50,7 +50,8 @@ export function ScriptPage({ active }: { active: boolean }) {
   /** 行の作り込みを使って合成する。声が変わって取り直した作り込みは、その行へ保存する */
   const speakFor = async (line: ScriptLine, styleId: number): Promise<Speech> => {
     const { speech: spoken, tuning } = await speakLine(speech, client, line, styleId)
-    if (tuning) update((prev) => saveRefreshedTuning(prev, line.id, tuning))
+    const used = line.tuning
+    if (tuning && used) update((prev) => saveRefreshedTuning(prev, line.id, used, tuning))
     return spoken
   }
 

@@ -33,12 +33,17 @@ export function resolveLine(line: ScriptLine, characters: Character[], listenOnl
 
 /**
  * 声が変わって取り直した作り込みを、その行へ書き戻す（speakLine が tuning を返したとき）。
- * 合成を待つ間に文を変えて作り込みが別の文のものになった（または消えた・行が消えた）なら、取り直した値は捨てる。
- * 作り込みは、使われた時点で文と合っていたので、取り直した値の text が合成した文になる。
+ * 合成を待つ間に作り込みが変わった（文の変更で捨てられた・1行編集で動かした）なら、取り直した値は捨てる。
+ * 行は書き換えのたびに作り直されるので、合成に使った作り込みと同じオブジェクトのままかで判断する。
  */
-export function saveRefreshedTuning(lines: ScriptLine[], lineId: string, refreshed: LineTuning): ScriptLine[] {
+export function saveRefreshedTuning(
+  lines: ScriptLine[],
+  lineId: string,
+  used: LineTuning,
+  refreshed: LineTuning,
+): ScriptLine[] {
   const current = lines.find((l) => l.id === lineId)
-  if (current?.tuning?.text !== refreshed.text) return lines
+  if (!current || current.tuning !== used) return lines
   return lines.map((l) => (l === current ? { ...l, tuning: refreshed } : l))
 }
 
