@@ -191,6 +191,7 @@ export async function replaceReading(
   if (replaced.length === 0 || !replaced.every((p) => Array.isArray(p?.moras) && p.moras.length > 0)) {
     throw new VoicevoxError('invalid-response', 'VOICEVOX エンジンが読みからアクセント句を作れませんでした')
   }
+  // 複数の句が返るのは normalizeReading が句の区切り（、や /）を残す場合だけ。今は残さないので通らない
   const lastIndex = replaced.length - 1
   const fresh = replaced.map((p, i) => ({
     ...structuredClone(p),

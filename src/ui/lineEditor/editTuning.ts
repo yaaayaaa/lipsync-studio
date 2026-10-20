@@ -42,22 +42,42 @@ export function usableTuning(line: ScriptLine | null): LineTuning | null {
   return line?.tuning && !isTuningStale(line.tuning, line.text) ? line.tuning : null
 }
 
+/** 1回の変更の元。base に fn を当てる。origin はそのとき行が持っていた作り込み（なければ undefined） */
+export interface TuningEditBase {
+  base: LineTuning
+  origin: LineTuning | undefined
+  /**
+   * エンジンを待ってから入れる変更か。待つ間に行の作り込みが少しでも入れ替わっていたら
+   * （声の取り直し・別の変更・取り消し）、古い base から作った結果なので捨てる
+   */
+  waited?: boolean
+}
+
 /**
- * 行の作り込みを1つ変える。base は変更の元にした作り込み（ない行では /audio_query から作ったもの）。
+ * 行の作り込みを1つ変える。base は変更の元にした作り込み（ない行では /audio_query から作ったもの、
+ * 別の声の作り込みしかない行では今の声で取り直したもの）。
  * - 元にしたときから文が変わっていたら変えない（作るのにエンジンを待つ間に打ち替えた）
  * - 行に古い（文が違う）作り込みが残っていたら変えない。捨てるかどうかは文の確定で確認するので、
  *   ここで黙って作り直すと確認を飛ばして作り込みが消える
- * - 行の作り込みが同じ声のものならそれを、違えば base を元に fn を当てる。fn が null なら変えない
+ * - 待ってから入れる変更（waited）は、行がまだ origin を持っているときだけ base に当てる
+ * - その場の変更は、行の作り込みが base と同じ声ならそれに当てる（つまみを続けて動かすと、描画を待たずに
+ *   次の変更が来るため、行は origin より新しいことがある）。違う声なら、行がまだ origin を持っているときだけ
+ *   base に当てる。古い声の base で新しい声の作り込みを上書きしない
+ * - fn が null なら変えない。変えなかったときは current をそのまま返す
  */
 export function applyTuningEdit(
   current: ScriptLine,
-  base: LineTuning,
+  { base, origin, waited = false }: TuningEditBase,
   fn: (t: LineTuning) => LineTuning | null,
 ): ScriptLine {
   if (current.text !== base.text) return current
   if (current.tuning && isTuningStale(current.tuning, current.text)) return current
   const own = usableTuning(current)
-  const next = fn(own && own.styleId === base.styleId ? own : base)
+  let target: LineTuning
+  if (current.tuning === origin) target = base
+  else if (!waited && own && own.styleId === base.styleId) target = own
+  else return current
+  const next = fn(target)
   return next ? { ...current, tuning: next } : current
 }
 

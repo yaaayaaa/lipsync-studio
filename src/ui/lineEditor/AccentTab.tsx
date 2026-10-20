@@ -9,7 +9,7 @@ import type { ComputePhrases } from './PhraseEditor'
 interface Props {
   phrases: AccentPhrase[]
   disabled: boolean
-  /** エンジンを呼ぶ変更。成功したら true */
+  /** エンジンを呼ぶ変更。行に入ったら true（失敗・待つ間に内容が変わって入れなかったら false） */
   onChangeAsync(compute: ComputePhrases): Promise<boolean>
 }
 
@@ -64,7 +64,7 @@ export function AccentTab({ phrases, disabled, onChangeAsync }: Props) {
     const { index, text } = editing
     if (text === reading(phrases[index]!)) return setEditing(null)
     const ok = await onChangeAsync((ps, styleId) => replaceReading(client, ps, index, text, styleId))
-    // 失敗したら欄を開いたままにして、直してもう一度送れるようにする
+    // 失敗・入れなかったときは欄を開いたままにして、打った読みを失わずにもう一度送れるようにする
     if (ok) setEditing(null)
   }
 

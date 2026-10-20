@@ -17,6 +17,8 @@ export interface ScriptContextValue {
   openLineEditor(lineId: string): void
   /** どちらかの画面で書き出し中。その間はどちらの画面でも行の編集と再生・書き出しを止める */
   exportLocked: boolean
+  /** 今この瞬間に書き出し中か。非同期の結果を入れる直前の確認に使う（exportLocked は次の描画まで古いことがある） */
+  isExportLocked(): boolean
   /** 書き出しを始める。もう誰かが書き出し中なら null。終わったら返ってきた関数を必ず呼ぶ */
   claimExport(): (() => void) | null
 }

@@ -6,11 +6,16 @@ import { useApp } from '../useApp'
 import { errorMessage, saveRefreshedTuning } from '../script/lineJobs'
 import { useScriptLines } from '../script/useScriptLines'
 import { applyTuningEdit, ensureTuning, usableTuning } from './editTuning'
+import type { TuningEditBase } from './editTuning'
 
 /** 打っている最中に1文字ごとに /audio_query を呼ばないための待ち */
 const QUERY_DEBOUNCE_MS = 300
 
-export type EditLine = (lineId: string, fn: (line: ScriptLine) => ScriptLine) => void
+/** 行を変える。変わったら true（fn が行をそのまま返したら false） */
+export type EditLine = (lineId: string, fn: (line: ScriptLine) => ScriptLine) => boolean
+
+/** 変更の結果。dropped は待つ間に行が変わって入れなかった（または変える必要がなかった）、locked は書き出しが始まっていた */
+export type EditResult = 'applied' | 'dropped' | 'locked'
 
 const queryKey = (text: string, styleId: number) => JSON.stringify([styleId, text])
 
@@ -30,7 +35,13 @@ interface Args {
  */
 export function useLineTuning({ line, styleId, locked, editLine }: Args) {
   const { client } = useApp()
-  const { update } = useScriptLines()
+  const { update, isExportLocked } = useScriptLines()
+  // エンジンを待っている変更の数。待つ間は書き出しを始めない（結果が書き出しの途中に入らないように）
+  const [inFlight, setInFlight] = useState(0)
+  const track = useCallback(<T,>(p: Promise<T>): Promise<T> => {
+    setInFlight((n) => n + 1)
+    return p.finally(() => setInFlight((n) => n - 1))
+  }, [])
   // エラーと取り直しの知らせは出た行を覚えておき、その行を開いている間だけ見せる（非同期で遅れて届くため）
   const [errorState, setErrorState] = useState<{ lineId: string; message: string } | null>(null)
   // 声が変わって高さと長さを取り直した行
@@ -91,6 +102,8 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     const id = line.id
     ensureTuning(client, line, styleId).then(
       (refreshed) => {
+        // 待つ間に書き出しが始まっていたら入れない（次に開いたとき・合成の直前にまた取り直す）
+        if (isExportLocked()) return
         update((prev) => saveRefreshedTuning(prev, id, tuning, refreshed))
         setRefreshedLineId(id)
       },
@@ -98,7 +111,7 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     ).finally(() => {
       if (resolving.current === tuning) resolving.current = null
     })
-  }, [line, tuning, styleId, locked, client, update, setError])
+  }, [line, tuning, styleId, locked, client, update, isExportLocked, setError])
 
   /** 表示する全体の数値。作り込みがなければ /audio_query の値（取得中・失敗は null） */
   const query = key !== null ? queries.get(key) : undefined
@@ -109,40 +122,49 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
   }, [tuning, query, text, styleId])
 
   /**
-   * 変更の元にする作り込み。すぐ分かればその値、エンジンに作ってもらう必要があれば Promise、
-   * 変えられない（行がない・声がない・書き出し中・文を打ち替えて確定前）なら null。
+   * 変更の元にする作り込みと、そのとき行が持っていた作り込み。すぐ分かればその値、
+   * エンジンに作ってもらう必要があれば Promise、変えられない（行がない・声がない・書き出し中・
+   * 文を打ち替えて確定前）なら null。
    */
-  const baseTuning = useCallback((): LineTuning | Promise<LineTuning> | null => {
+  const baseTuning = useCallback((): TuningEditBase | Promise<TuningEditBase> | null => {
     if (!line || styleId === null || locked) return null
     // 古い作り込みは、文の確定で捨てる確認を出すまで残す。ここで作り直すと確認を飛ばしてしまう
     if (line.tuning && isTuningStale(line.tuning, line.text)) return null
-    if (tuning && tuning.styleId === styleId) return tuning
-    if (!tuning && shown) return shown
+    const origin = line.tuning
+    if (tuning && tuning.styleId === styleId) return { base: tuning, origin }
+    if (!tuning && shown) return { base: shown, origin }
     const id = line.id
-    return ensureTuning(client, line, styleId).then((made) => {
-      if (tuning && made !== tuning) setRefreshedLineId(id)
-      setError(null)
-      return made
-    })
-  }, [line, styleId, locked, tuning, shown, client, setError])
+    return track(
+      ensureTuning(client, line, styleId).then((made) => {
+        if (tuning && made !== tuning) setRefreshedLineId(id)
+        setError(null)
+        return { base: made, origin, waited: true }
+      }),
+    )
+  }, [line, styleId, locked, tuning, shown, client, setError, track])
 
-  /** どの変更も editLine を通す（取り消しの履歴をそこで取る） */
+  /** どの変更も editLine を通す（取り消しの履歴をそこで取る）。書き出しが始まっていたら入れない */
   const apply = useCallback(
-    (lineId: string, base: LineTuning, fn: (t: LineTuning) => LineTuning | null) =>
-      editLine(lineId, (current) => applyTuningEdit(current, base, fn)),
-    [editLine],
+    (lineId: string, edit: TuningEditBase, fn: (t: LineTuning) => LineTuning | null): EditResult => {
+      if (isExportLocked()) return 'locked'
+      return editLine(lineId, (current) => applyTuningEdit(current, edit, fn)) ? 'applied' : 'dropped'
+    },
+    [editLine, isExportLocked],
   )
 
   /**
    * 作り込みを変える（なければ作ってから変える）。
-   * 作るのにエンジンを待つ間に文が変わったら、その変更は捨てる。
+   * 作るのにエンジンを待つ間に文や作り込みが変わったら、その変更は捨てる。
    */
   const changeTuning = useCallback(
     (fn: (t: LineTuning) => LineTuning) => {
       const id = line?.id
       const base = baseTuning()
       if (id === undefined || base === null) return
-      if (!(base instanceof Promise)) return apply(id, base, fn)
+      if (!(base instanceof Promise)) {
+        apply(id, base, fn)
+        return
+      }
       base.then(
         (made) => apply(id, made, fn),
         (e: unknown) => setError(`数値を変えられませんでした: ${errorMessage(e)}`),
@@ -153,18 +175,22 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
 
   /**
    * エンジンを呼んでアクセント句を変える（取り直し・読みの変更）。失敗したら行は変えずに投げる。
-   * 待つ間にアクセント句が別の変更で変わっていたら、結果は捨てる（古い句から作った結果なので）。
+   * 待つ間に行の作り込みが少しでも変わっていたら、結果は捨てて 'dropped' を返す（古い句から作った結果なので）。
    */
   const changePhrases = useCallback(
-    async (compute: (phrases: AccentPhrase[], styleId: number) => Promise<AccentPhrase[]>) => {
+    async (compute: (phrases: AccentPhrase[], styleId: number) => Promise<AccentPhrase[]>): Promise<EditResult> => {
       const id = line?.id
       const pending = baseTuning()
-      if (id === undefined || pending === null) return
-      const base = await pending
-      const next = await compute(base.accentPhrases, base.styleId)
-      apply(id, base, (t) => (t.accentPhrases === base.accentPhrases ? { ...t, accentPhrases: next } : null))
+      if (id === undefined || pending === null) return locked ? 'locked' : 'dropped'
+      return track(
+        (async () => {
+          const edit = await pending
+          const next = await compute(edit.base.accentPhrases, edit.base.styleId)
+          return apply(id, { ...edit, waited: true }, (t) => ({ ...t, accentPhrases: next }))
+        })(),
+      )
     },
-    [line, baseTuning, apply],
+    [line, locked, baseTuning, apply, track],
   )
 
   return {
@@ -175,6 +201,8 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     error: errorState !== null && errorState.lineId === lineId ? errorState.message : null,
     refreshed: lineId !== null && refreshedLineId === lineId && line?.tuning !== undefined,
     markRefreshed: setRefreshedLineId,
+    /** エンジンを待っている変更がある */
+    busy: inFlight > 0,
     changeTuning,
     changePhrases,
   }

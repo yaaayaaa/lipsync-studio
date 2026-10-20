@@ -3,6 +3,7 @@ import type { AccentPhrase } from '../../core/voicevox/types'
 import { errorMessage } from '../script/lineJobs'
 import { AccentTab } from './AccentTab'
 import { LengthTab, PitchTab } from './MoraSliders'
+import type { EditResult } from './useLineTuning'
 
 type Tab = 'accent' | 'pitch' | 'length'
 
@@ -16,7 +17,13 @@ const TABS: readonly { id: Tab; label: string }[] = [
 export type ComputePhrases = (phrases: AccentPhrase[], styleId: number) => Promise<AccentPhrase[]>
 
 /** エンジンを呼んで句を作り直す（取り直し・読みの変更）。失敗したら行は変えずに投げる */
-export type ChangePhrasesAsync = (compute: ComputePhrases) => Promise<void>
+export type ChangePhrasesAsync = (compute: ComputePhrases) => Promise<EditResult>
+
+/** 結果を入れられなかったときの知らせ */
+const NOT_APPLIED: Record<Exclude<EditResult, 'applied'>, string> = {
+  dropped: '内容が変わったため反映しませんでした',
+  locked: '書き出し中のため反映しませんでした',
+}
 
 interface Props {
   /** 表示するアクセント句。取得できるまでは null */
@@ -34,13 +41,15 @@ export function PhraseEditor({ phrases, disabled, onChange, onChangeAsync }: Pro
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /** 取り直しの間は編集欄を止める。成功したら true */
+  /** 取り直しの間は編集欄を止める。行に入ったら true（失敗・入れなかったときは知らせて false） */
   const runAsync = async (compute: ComputePhrases): Promise<boolean> => {
     setBusy(true)
     setError(null)
     try {
-      await onChangeAsync(compute)
-      return true
+      const result = await onChangeAsync(compute)
+      if (result === 'applied') return true
+      setError(NOT_APPLIED[result])
+      return false
     } catch (e) {
       setError(errorMessage(e))
       return false

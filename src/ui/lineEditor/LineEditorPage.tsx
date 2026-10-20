@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Download, Play, RotateCcw, Square } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { ScriptLine } from '../../core/character/types'
@@ -42,9 +42,24 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const styleId = character?.voice?.styleId ?? null
   const problem = line ? lineProblem(line, characters) : null
 
-  /** 行の変更はすべてここを通す（取り消しの履歴をここで取る） */
+  // 最新の行。描画を待たずに続けて編集しても（確定の直後など）変わったかを正しく判断できるよう、
+  // editLine が変えたらすぐここにも入れる
+  const latestLines = useRef(lines)
+  useLayoutEffect(() => {
+    latestLines.current = lines
+  }, [lines])
+
+  /** 行の変更はすべてここを通す（取り消しの履歴をここで取る）。変わったら true */
   const editLine = useCallback(
-    (lineId: string, fn: (l: ScriptLine) => ScriptLine) => update((prev) => prev.map((l) => (l.id === lineId ? fn(l) : l))),
+    (lineId: string, fn: (l: ScriptLine) => ScriptLine): boolean => {
+      const current = latestLines.current?.find((l) => l.id === lineId)
+      if (!current) return false
+      const next = fn(current)
+      if (next === current) return false
+      latestLines.current = latestLines.current!.map((l) => (l === current ? next : l))
+      update((prev) => prev.map((l) => (l.id === lineId ? fn(l) : l)))
+      return true
+    },
     [update],
   )
   const tuning = useLineTuning({ line, styleId, locked, editLine })
@@ -88,7 +103,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   }
 
   const exportLine = async () => {
-    if (!line) return
+    // アクセント句の取り直しを待つ間は始めない（結果が書き出しの途中に入らないように）
+    if (!line || tuning.busy) return
     const lineId = line.id
     const signal = job.start()
     if (!signal) return
@@ -146,14 +162,14 @@ export function LineEditorPage({ active }: { active: boolean }) {
               disabled={locked}
               label={`${index + 1}行目のセリフ`}
               rows={3}
-              onEdit={(fn) => editLine(line.id, fn)}
+              onEdit={(fn) => void editLine(line.id, fn)}
             />
             <div className="line-controls">
               <LineCharacterSelects
                 line={line}
                 characters={characters}
                 disabled={locked}
-                onChange={(patch) => editLine(line.id, (l) => ({ ...l, ...patch }))}
+                onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
               />
             </div>
             {problem && <p className="line-problem">{PROBLEM_LABELS[problem]}</p>}
@@ -192,7 +208,11 @@ export function LineEditorPage({ active }: { active: boolean }) {
                   中止
                 </button>
               ) : (
-                <button type="button" disabled={problem !== null || locked} onClick={() => void exportLine()}>
+                <button
+                  type="button"
+                  disabled={problem !== null || locked || tuning.busy}
+                  onClick={() => void exportLine()}
+                >
                   <Download {...iconProps} />
                   この行を書き出し
                 </button>
@@ -202,7 +222,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
                 type="button"
                 disabled={!line.tuning || locked}
                 title="作り込みを捨てて、自動の状態に戻します"
-                onClick={() => editLine(line.id, dropTuning)}
+                onClick={() => void editLine(line.id, dropTuning)}
               >
                 <RotateCcw {...iconProps} />
                 元に戻す
@@ -233,7 +253,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
           disabled={!line || locked}
           paramsDisabled={!canTune}
           status={tuning.error ?? (canTune && !tuning.shown ? '数値を取得中…' : null)}
-          onSpeedChange={(v) => line && editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
+          onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
           onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}
         />
         {credit && (

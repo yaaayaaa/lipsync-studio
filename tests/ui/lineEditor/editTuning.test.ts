@@ -128,32 +128,99 @@ describe('ensureTuning', () => {
 
 describe('applyTuningEdit', () => {
   const bump = (t: LineTuning) => ({ ...t, intonationScale: t.intonationScale + 1 })
+  // origin は変更を始めたときに行が持っていた作り込み（なければ undefined）
+  const edit = (base: LineTuning, origin: LineTuning | undefined) => ({ base, origin })
 
-  it('edits the line\'s own tuning when it matches the text and the voice', () => {
+  it('edits the line\'s own tuning when it is still the one the edit started from', () => {
     const own = tuning('ずんだ', 3, { intonationScale: 0.5 })
-    const next = applyTuningEdit(line({ tuning: own }), tuning('ずんだ', 3), bump)
+    const next = applyTuningEdit(line({ tuning: own }), edit(own, own), bump)
+    expect(next.tuning?.intonationScale).toBe(1.5)
+  })
+
+  // つまみを続けて動かすと、描画を待たずに次の変更が来る。行はもう新しい作り込みを持っている
+  it('edits the line\'s newer same-voice tuning when an immediate edit started from an older state', () => {
+    const own = tuning('ずんだ', 3, { intonationScale: 0.5 })
+    const next = applyTuningEdit(line({ tuning: own }), edit(tuning('ずんだ', 3), undefined), bump)
     expect(next.tuning?.intonationScale).toBe(1.5)
   })
 
   it('creates the tuning from the base when the line has none', () => {
-    const next = applyTuningEdit(line(), tuning('ずんだ', 3), bump)
+    const next = applyTuningEdit(line(), edit(tuning('ずんだ', 3), undefined), bump)
     expect(next.tuning).toEqual({ ...tuning('ずんだ', 3), intonationScale: 1 })
   })
 
-  it('uses the base when the line\'s tuning is for another voice', () => {
+  it('uses the base when the line still holds the other-voice tuning the base was refreshed from', () => {
+    const old = tuning('ずんだ', 3)
     const base = tuning('ずんだ', 8, { intonationScale: 0.2 })
-    const next = applyTuningEdit(line({ tuning: tuning('ずんだ', 3) }), base, bump)
+    const next = applyTuningEdit(line({ tuning: old }), edit(base, old), bump)
     expect(next.tuning).toEqual({ ...base, intonationScale: 1.2 })
+  })
+
+  // 古い声の base で始めた変更が、待つ間に新しい声で取り直された作り込みを上書きしない
+  it('drops the edit when the line\'s tuning changed to another voice while waiting', () => {
+    const base = tuning('ずんだ', 3)
+    const current = line({ tuning: tuning('ずんだ', 8) })
+    expect(applyTuningEdit(current, edit(base, base), bump)).toBe(current)
+  })
+
+  it('drops the edit when the base was made for a line without tuning but one was created meanwhile', () => {
+    const current = line({ tuning: tuning('ずんだ', 3, { accentPhrases: [phrase(4)] }) })
+    const base = tuning('ずんだ', 8)
+    expect(applyTuningEdit(current, edit(base, undefined), bump)).toBe(current)
+  })
+
+  it('leaves the line untouched when fn returns null', () => {
+    const own = tuning('ずんだ', 3)
+    const current = line({ tuning: own })
+    expect(applyTuningEdit(current, edit(own, own), () => null)).toBe(current)
+    const bare = line()
+    expect(applyTuningEdit(bare, edit(own, undefined), () => null)).toBe(bare)
   })
 
   it('drops the edit when the text changed while the base was being made', () => {
     const current = line({ text: 'ずんだもん' })
-    expect(applyTuningEdit(current, tuning('ずんだ', 3), bump)).toBe(current)
+    expect(applyTuningEdit(current, edit(tuning('ずんだ', 3), undefined), bump)).toBe(current)
   })
 
   // 文を打ち替えて確定前（作り込みが古い）なら、捨てる確認を飛ばして作り直さない
   it('refuses to edit while the line holds a stale tuning that is not yet confirmed away', () => {
-    const current = line({ text: 'ずんだもん', tuning: tuning('ずんだ', 3) })
-    expect(applyTuningEdit(current, tuning('ずんだもん', 3), bump)).toBe(current)
+    const stale = tuning('ずんだ', 3)
+    const current = line({ text: 'ずんだもん', tuning: stale })
+    expect(applyTuningEdit(current, edit(tuning('ずんだもん', 3), stale), bump)).toBe(current)
+  })
+})
+
+describe('applyTuningEdit after waiting for the engine', () => {
+  const next = [phrase(6.5)]
+  const setPhrases = (t: LineTuning) => ({ ...t, accentPhrases: next })
+
+  it('applies the result when the line still holds the tuning it started from', () => {
+    const own = tuning('ずんだ', 3)
+    const result = applyTuningEdit(line({ tuning: own }), { base: own, origin: own, waited: true }, setPhrases)
+    expect(result.tuning).toEqual({ ...own, accentPhrases: next })
+  })
+
+  it('applies the result to a line that still has no tuning', () => {
+    const made = tuning('ずんだ', 3)
+    const result = applyTuningEdit(line(), { base: made, origin: undefined, waited: true }, setPhrases)
+    expect(result.tuning).toEqual({ ...made, accentPhrases: next })
+  })
+
+  // 待つ間に全体の数値を動かした・取り消した、など同じ声でも作り込みが入れ替わっていたら捨てる
+  it('drops the result when the line\'s tuning was replaced while waiting, even for the same voice', () => {
+    const own = tuning('ずんだ', 3)
+    const current = line({ tuning: { ...own, intonationScale: 1.3 } })
+    expect(applyTuningEdit(current, { base: own, origin: own, waited: true }, setPhrases)).toBe(current)
+  })
+
+  it('drops the result when a tuning was created while waiting', () => {
+    const current = line({ tuning: tuning('ずんだ', 3) })
+    expect(applyTuningEdit(current, { base: tuning('ずんだ', 3), origin: undefined, waited: true }, setPhrases)).toBe(current)
+  })
+
+  it('drops an old-voice result after the tuning was refreshed for the new voice', () => {
+    const old = tuning('ずんだ', 3)
+    const current = line({ tuning: tuning('ずんだ', 8) })
+    expect(applyTuningEdit(current, { base: old, origin: old, waited: true }, setPhrases)).toBe(current)
   })
 })

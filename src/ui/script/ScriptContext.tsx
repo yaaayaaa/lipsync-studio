@@ -110,10 +110,11 @@ export function ScriptProvider({ onOpenLineEditor, children }: { onOpenLineEdito
       setExportLocked(false)
     }
   }, [])
+  const isExportLocked = useCallback(() => exportClaimed.current, [])
 
   const value = useMemo<ScriptContextValue>(
-    () => ({ lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, claimExport }),
-    [lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, claimExport],
+    () => ({ lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, isExportLocked, claimExport }),
+    [lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, isExportLocked, claimExport],
   )
   return <ScriptContext.Provider value={value}>{children}</ScriptContext.Provider>
 }
