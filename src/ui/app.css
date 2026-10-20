@@ -1048,6 +1048,11 @@ input[type='color'] {
   gap: 8px;
 }
 
+/* 中身が列より高いときは縮めずに列ごとスクロールする（文の欄やつまみが潰れないように） */
+.line-editor-main > * {
+  flex: none;
+}
+
 .line-editor-main h2 {
   margin-bottom: 0;
 }
@@ -1090,6 +1095,254 @@ input[type='color'] {
 .line-editor-main .line-preview-canvas {
   width: auto;
   max-width: 100%;
-  max-height: 40vh;
+  max-height: 32vh;
   align-self: center;
+}
+
+/* ---- アクセント句の編集（1行編集の中央） ---- */
+
+.phrase-editor {
+  --mora-width: 2.4em;
+  gap: 8px;
+}
+
+.phrase-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phrase-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.phrase-tabs button {
+  border-color: transparent;
+}
+
+.phrase-tabs button.active {
+  background: var(--selected-bg);
+  border-color: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+/* 句が多いときは横に流す */
+.phrase-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.phrase {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.phrase-moras {
+  position: relative;
+  display: grid;
+}
+
+/* 高低の線。上の段（アクセントの点）に重ねる */
+.accent-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 32px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.mora-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.mora-cell .accent-point {
+  position: relative;
+  height: 32px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.accent-dot {
+  position: absolute;
+  left: 50%;
+  top: 75%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.accent-dot.high {
+  top: 25%;
+}
+
+/* 下がる位置は大きく、文字色で示す */
+.accent-point.accent .accent-dot {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  background: var(--fg);
+}
+
+.mora-label {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 15px;
+  cursor: text;
+  user-select: none;
+}
+
+/* モーラの文字の間の区切り。見た目は細い縦線で、触れる幅は広めに取る */
+.mora-cell .mora-split {
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  z-index: 1;
+}
+
+.mora-cell .mora-split::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 4px;
+  width: 2px;
+  background: var(--fg);
+  opacity: 0;
+}
+
+.mora-cell .mora-split:hover:not(:disabled)::after,
+.mora-cell .mora-split:focus-visible::after {
+  opacity: 1;
+}
+
+.phrase-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.phrase-foot button {
+  padding: 2px 4px;
+  border-color: transparent;
+}
+
+.phrase-pause {
+  color: var(--muted);
+}
+
+.phrase-join {
+  flex: none;
+  align-self: center;
+  padding: 4px;
+}
+
+.phrase-reading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phrase-reading input {
+  width: 10em;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.phrase-reading button {
+  padding: 4px;
+}
+
+.phrase.sliders {
+  flex-direction: row;
+  gap: 2px;
+}
+
+.mora-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: var(--mora-width);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mora-slider.empty {
+  opacity: 0.5;
+}
+
+.mora-slider .value {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+/* 縦のつまみ（上が大きい値） */
+.mora-slider input[type='range'] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 20px;
+  height: 120px;
+  margin: 0;
+}
+
+.mora-slider-caption {
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.mora-lengths {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mora-lengths-pair {
+  display: flex;
+}
+
+.mora-lengths .mora-slider {
+  width: 2.5em;
+}
+
+.mora-lengths .mora-slider-caption {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.mora-lengths.pause {
+  padding-left: 4px;
+  border-left: 1px dashed var(--border);
+}
+
+.mora-text {
+  font-size: 14px;
 }

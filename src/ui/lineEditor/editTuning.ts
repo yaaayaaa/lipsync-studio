@@ -37,6 +37,30 @@ export function setGlobalParam(t: LineTuning, key: GlobalParam, value: number): 
   return { ...t, [key]: Math.min(max, Math.max(min, value)) }
 }
 
+/** 今の文に合う作り込み。古い（文が違う）ものは使わない */
+export function usableTuning(line: ScriptLine | null): LineTuning | null {
+  return line?.tuning && !isTuningStale(line.tuning, line.text) ? line.tuning : null
+}
+
+/**
+ * 行の作り込みを1つ変える。base は変更の元にした作り込み（ない行では /audio_query から作ったもの）。
+ * - 元にしたときから文が変わっていたら変えない（作るのにエンジンを待つ間に打ち替えた）
+ * - 行に古い（文が違う）作り込みが残っていたら変えない。捨てるかどうかは文の確定で確認するので、
+ *   ここで黙って作り直すと確認を飛ばして作り込みが消える
+ * - 行の作り込みが同じ声のものならそれを、違えば base を元に fn を当てる。fn が null なら変えない
+ */
+export function applyTuningEdit(
+  current: ScriptLine,
+  base: LineTuning,
+  fn: (t: LineTuning) => LineTuning | null,
+): ScriptLine {
+  if (current.text !== base.text) return current
+  if (current.tuning && isTuningStale(current.tuning, current.text)) return current
+  const own = usableTuning(current)
+  const next = fn(own && own.styleId === base.styleId ? own : base)
+  return next ? { ...current, tuning: next } : current
+}
+
 /**
  * 編集に使う作り込み。今の文と合っていれば（声が違えば高さと長さを取り直して）それを、
  * なければ・古ければ /audio_query の結果から作る。失敗は呼び出し側へ伝える。

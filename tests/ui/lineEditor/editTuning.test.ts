@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LineTuning, ScriptLine } from '../../../src/core/character/types'
 import type { AccentPhrase, AudioQuery } from '../../../src/core/voicevox/types'
-import { GLOBAL_PARAM_RANGES, ensureTuning, setGlobalParam } from '../../../src/ui/lineEditor/editTuning'
+import { GLOBAL_PARAM_RANGES, applyTuningEdit, ensureTuning, setGlobalParam } from '../../../src/ui/lineEditor/editTuning'
 
 const phrase = (pitch: number): AccentPhrase => ({
   moras: [{ text: 'ズ', consonant: 'z', consonant_length: 0.05, vowel: 'u', vowel_length: 0.1, pitch }],
@@ -123,5 +123,37 @@ describe('ensureTuning', () => {
     const { client, audioQuery } = fakeClient()
     audioQuery.mockRejectedValueOnce(new Error('つながりません'))
     await expect(ensureTuning(client, line(), 3)).rejects.toThrow('つながりません')
+  })
+})
+
+describe('applyTuningEdit', () => {
+  const bump = (t: LineTuning) => ({ ...t, intonationScale: t.intonationScale + 1 })
+
+  it('edits the line\'s own tuning when it matches the text and the voice', () => {
+    const own = tuning('ずんだ', 3, { intonationScale: 0.5 })
+    const next = applyTuningEdit(line({ tuning: own }), tuning('ずんだ', 3), bump)
+    expect(next.tuning?.intonationScale).toBe(1.5)
+  })
+
+  it('creates the tuning from the base when the line has none', () => {
+    const next = applyTuningEdit(line(), tuning('ずんだ', 3), bump)
+    expect(next.tuning).toEqual({ ...tuning('ずんだ', 3), intonationScale: 1 })
+  })
+
+  it('uses the base when the line\'s tuning is for another voice', () => {
+    const base = tuning('ずんだ', 8, { intonationScale: 0.2 })
+    const next = applyTuningEdit(line({ tuning: tuning('ずんだ', 3) }), base, bump)
+    expect(next.tuning).toEqual({ ...base, intonationScale: 1.2 })
+  })
+
+  it('drops the edit when the text changed while the base was being made', () => {
+    const current = line({ text: 'ずんだもん' })
+    expect(applyTuningEdit(current, tuning('ずんだ', 3), bump)).toBe(current)
+  })
+
+  // 文を打ち替えて確定前（作り込みが古い）なら、捨てる確認を飛ばして作り直さない
+  it('refuses to edit while the line holds a stale tuning that is not yet confirmed away', () => {
+    const current = line({ text: 'ずんだもん', tuning: tuning('ずんだ', 3) })
+    expect(applyTuningEdit(current, tuning('ずんだもん', 3), bump)).toBe(current)
   })
 })

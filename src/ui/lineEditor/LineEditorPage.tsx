@@ -19,6 +19,7 @@ import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
 import { GlobalParams } from './GlobalParams'
 import { LineEditorList } from './LineEditorList'
+import { PhraseEditor } from './PhraseEditor'
 import { setGlobalParam } from './editTuning'
 import { useLineTuning } from './useLineTuning'
 
@@ -167,8 +168,13 @@ export function LineEditorPage({ active }: { active: boolean }) {
               caption={caption}
               idleHint="「再生」を押すと、口パクを音声付きで再生します"
             />
-            {/* アクセント・高さ・長さの編集欄（次の作業で中身を入れる） */}
-            <div className="accent-editor-slot" />
+            <PhraseEditor
+              key={line.id}
+              phrases={canTune ? (tuning.shown?.accentPhrases ?? null) : null}
+              disabled={locked || !canTune}
+              onChange={(fn) => tuning.changeTuning((t) => ({ ...t, accentPhrases: fn(t.accentPhrases) }))}
+              onChangeAsync={tuning.changePhrases}
+            />
             <div className="line-editor-actions">
               {playing ? (
                 <button type="button" onClick={playback.stop}>
