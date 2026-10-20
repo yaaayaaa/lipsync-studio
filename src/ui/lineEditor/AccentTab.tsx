@@ -39,6 +39,13 @@ export function AccentTab({ phrases, disabled, onChangeAsync }: Props) {
   const { client } = useApp()
   // 読みを直している句と、その欄の文字
   const [editing, setEditing] = useState<{ index: number; text: string } | null>(null)
+  // 句が変わったら（取り消し・やり直し・声の取り直しなど、ここを通らない変更も含む）読みの欄は閉じる。
+  // 句の数や並びが変わると、開いている句の番号が別の句を指してしまうため
+  const [editingFor, setEditingFor] = useState(phrases)
+  if (editingFor !== phrases) {
+    setEditingFor(phrases)
+    setEditing(null)
+  }
 
   // 句の数や並びが変わる変更の前に、読みの欄は閉じる（開いている句の番号がずれるため）
   const run = (compute: ComputePhrases) => {
