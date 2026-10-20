@@ -8,6 +8,7 @@ import {
   gestureEntry,
   noGesture,
   noteGestureEdit,
+  outsideChange,
   record,
   redo,
   sameSnapshot,
@@ -26,6 +27,8 @@ import type { EditLine } from './useLineTuning'
  *   操作は始めた側が token で持ち、その token でしか終わらない。積むのは操作の編集が変えた項目だけを戻す形
  * - 声の取り直しなど、ユーザーの編集でない書き込みは editLine を通さない（update を直に使う）ので積まれない。
  *   操作の途中に入っても、その項目は操作のものではないので、取り消しで巻き戻さない
+ * - このページは閉じても消えない（タブを替えても残る）。「セリフ」の画面など、ここを通らずに行が変わったら、
+ *   その行の履歴と途中の操作は捨てる（古い履歴で戻すと、ほかの画面の変更を黙って巻き戻すため）。声の取り直しだけは残す
  */
 export function useLineHistory(lines: ScriptLine[] | null) {
   const { update, isExportLocked } = useScriptLines()
@@ -45,6 +48,10 @@ export function useLineHistory(lines: ScriptLine[] | null) {
     changed()
   }, [])
   const historyOf = (lineId: string) => histories.current.get(lineId) ?? emptyHistory
+
+  // 行ごとに、履歴が最後に見た状態。ここ（editLine・取り消し）を通った書き込みでだけ進める。
+  // 描画された行がこれと違えば、ここを通らずに変わったということ
+  const seen = useRef(new Map<string, Snapshot>())
 
   /** 行を書き換える（履歴には積まない） */
   const write = useCallback(
@@ -124,6 +131,7 @@ export function useLineHistory(lines: ScriptLine[] | null) {
       if (!current) return false
       const next = fn(current)
       if (next === current) return false
+      seen.current.set(lineId, snapshotOf(next))
       write(lineId, current, next, fn)
       const g = gestures.current.current
       if (g?.lineId === lineId) {
@@ -146,16 +154,44 @@ export function useLineHistory(lines: ScriptLine[] | null) {
       const result = (action === 'undo' ? undo : redo)(histories.current.get(lineId) ?? emptyHistory, snapshotOf(current))
       if (!result) return
       setHistory(lineId, result.history)
-      write(lineId, current, applySnapshot(current, result.snapshot), (l) => applySnapshot(l, result.snapshot))
+      const next = applySnapshot(current, result.snapshot)
+      seen.current.set(lineId, snapshotOf(next))
+      write(lineId, current, next, (l) => applySnapshot(l, result.snapshot))
     },
     [isExportLocked, endCurrentGesture, setHistory, write],
   )
+
+  /** 途中の操作を、履歴に積まずに捨てる */
+  const dropGesture = useCallback(() => {
+    const g = gestures.current.current
+    if (!g) return
+    gestures.current = { ...gestures.current, current: null }
+    cleanups.current.get(g.token)?.()
+    cleanups.current.delete(g.token)
+  }, [])
+
+  // ここを通らずに変わった行（「セリフ」の画面での変更など）の履歴と途中の操作は捨てる。
+  // 取り消しのキーより先に効くよう、描画の直後に確かめる
+  useLayoutEffect(() => {
+    if (!lines) return
+    let cleared = false
+    for (const line of lines) {
+      const now = snapshotOf(line)
+      const last = seen.current.get(line.id)
+      seen.current.set(line.id, now)
+      if (!last || outsideChange(last, now) !== 'clear') continue
+      if (histories.current.delete(line.id)) cleared = true
+      if (gestures.current.current?.lineId === line.id) dropGesture()
+    }
+    if (cleared) changed()
+  }, [lines, dropGesture])
 
   // 消された行の履歴は捨てる（同じ ID の行は二度と現れない）
   useEffect(() => {
     if (!lines) return
     const ids = new Set(lines.map((l) => l.id))
     for (const id of histories.current.keys()) if (!ids.has(id)) histories.current.delete(id)
+    for (const id of seen.current.keys()) if (!ids.has(id)) seen.current.delete(id)
     const g = gestures.current.current
     if (g && !ids.has(g.lineId)) endGesture(g.token)
   }, [lines, endGesture])

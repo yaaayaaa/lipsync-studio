@@ -61,6 +61,33 @@ export function sameSnapshot(a: Snapshot, b: Snapshot): boolean {
   )
 }
 
+/** 作り込みが同じか。参照が違っても中身が同じなら同じ（編集の関数は保存のときにもう一度呼ばれ、別オブジェクトになる） */
+function sameTuning(a: Snapshot['tuning'], b: Snapshot['tuning']): boolean {
+  return a === b || (a !== undefined && b !== undefined && JSON.stringify(a) === JSON.stringify(b))
+}
+
+/**
+ * 履歴が最後に見た状態（seen）から、1行編集の編集の経路（editLine・取り消し）を通らずに行が変わったときの扱い。
+ * - none：変わっていない
+ * - rebase：声の取り直しだけ（同じ文の作り込みを別の声に合わせた）。ユーザーの編集でないので履歴は残し、見た状態だけ進める
+ * - clear：それ以外（「セリフ」の画面での変更など）。古い履歴で戻すと、ほかの画面の変更を黙って巻き戻すので捨てる
+ */
+export function outsideChange(seen: Snapshot, current: Snapshot): 'none' | 'rebase' | 'clear' {
+  const restSame =
+    seen.text === current.text &&
+    seen.speedScale === current.speedScale &&
+    seen.characterId === current.characterId &&
+    seen.expressionId === current.expressionId
+  if (restSame && sameTuning(seen.tuning, current.tuning)) return 'none'
+  const refreshed =
+    restSame &&
+    seen.tuning !== undefined &&
+    current.tuning !== undefined &&
+    seen.tuning.text === current.tuning.text &&
+    seen.tuning.styleId !== current.tuning.styleId
+  return refreshed ? 'rebase' : 'clear'
+}
+
 // 続けて何度も変わる操作（つまみのドラッグ・文の入力から確定まで）は1件にまとめる。
 // 操作は始めた側が token で持ち、その token でしか終わらない（別の操作の終わりの知らせで切れないように）。
 

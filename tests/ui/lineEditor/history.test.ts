@@ -8,6 +8,7 @@ import {
   gestureEntry,
   noGesture,
   noteGestureEdit,
+  outsideChange,
   startGesture,
   isTextEntry,
   record,
@@ -235,5 +236,38 @@ describe('gestures', () => {
   it('records nothing when the owned fields ended where they started', () => {
     const before = snap('あ', { speedScale: 1 })
     expect(gestureEntry({ token: 1, lineId: 'l1', before, owned: ['speedScale'] }, snap('あ', { speedScale: 1 }))).toBeNull()
+  })
+})
+
+describe('outsideChange', () => {
+  const t = tuning('あ')
+
+  it('sees no change when the fields hold the same values (tuning compared by content)', () => {
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { tuning: t }))).toBe('none')
+    // 編集の関数は保存のときにもう一度呼ばれるので、作り込みは同じ中身の別オブジェクトになる
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { tuning: tuning('あ') }))).toBe('none')
+    expect(outsideChange(snap('あ'), snap('あ'))).toBe('none')
+  })
+
+  it('clears the history when the text, speed, character or style changed elsewhere', () => {
+    expect(outsideChange(snap('あ'), snap('い'))).toBe('clear')
+    expect(outsideChange(snap('あ'), snap('あ', { speedScale: 1.5 }))).toBe('clear')
+    expect(outsideChange(snap('あ'), snap('あ', { characterId: 'c2' }))).toBe('clear')
+    expect(outsideChange(snap('あ'), snap('あ', { expressionId: 'e2' }))).toBe('clear')
+  })
+
+  it('clears the history when the tuning was dropped, added or edited elsewhere', () => {
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ'))).toBe('clear')
+    expect(outsideChange(snap('あ'), snap('あ', { tuning: t }))).toBe('clear')
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { tuning: tuning('あ', 1.5) }))).toBe('clear')
+  })
+
+  // 声の取り直しは、ユーザーの編集でなく同じ作り込みを別の声に合わせただけ。消すと取り消しが効かなくなるので履歴は残す
+  it('rebases on a voice refresh: only the tuning changed, to another voice for the same text', () => {
+    const refreshed = { ...tuning('あ', 1.3), styleId: 8 }
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { tuning: refreshed }))).toBe('rebase')
+    // ほかの項目も変わっていれば取り直しではない
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { speedScale: 2, tuning: refreshed }))).toBe('clear')
+    expect(outsideChange(snap('あ', { tuning: t }), snap('あ', { tuning: { ...tuning('い'), styleId: 8 } }))).toBe('clear')
   })
 })
