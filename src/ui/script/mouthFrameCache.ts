@@ -28,6 +28,7 @@ function versionOf(character: Character, expression: Expression): string {
     character.mouthMap,
     character.eyeGroupId ?? null,
     character.eyeMap ?? null,
+    character.blinkEnabled ?? true,
     expression.visibility,
   ])
 }

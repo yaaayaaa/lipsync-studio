@@ -41,6 +41,8 @@ export interface Character {
   /** 古い保存データにはない（未設定は瞬きしない） */
   eyeGroupId?: LayerId | null
   eyeMap?: EyeMap
+  /** false なら目の割り当てを残したまま瞬きを止める。古い保存データにはない（瞬きする） */
+  blinkEnabled?: boolean
   expressions: Expression[]
 }
 

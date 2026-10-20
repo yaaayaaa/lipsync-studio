@@ -69,6 +69,20 @@ describe('MouthFrameCache', () => {
     expect(stores[2]!.close).not.toHaveBeenCalled()
   })
 
+  it('re-renders when blinking is switched off, but treats old data as switched on', async () => {
+    const { render } = fakeRender()
+    const cache = new MouthFrameCache(render)
+    const c = { ...character('c1'), eyeGroupId: 'eyes', eyeMap: { closed: 'e-closed' } }
+    cache.acquire(c, c.expressions[0]!).release()
+    await flush()
+    cache.acquire({ ...c, blinkEnabled: true }, c.expressions[0]!).release()
+    await flush()
+    expect(render).toHaveBeenCalledTimes(1)
+    cache.acquire({ ...c, blinkEnabled: false }, c.expressions[0]!).release()
+    await flush()
+    expect(render).toHaveBeenCalledTimes(2)
+  })
+
   it('does not close bitmaps that are still in use until they are released', async () => {
     const { render, stores } = fakeRender()
     const cache = new MouthFrameCache(render, 1)

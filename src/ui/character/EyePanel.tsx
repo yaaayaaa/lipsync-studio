@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Character, EyeMap } from '../../core/character/types'
 import { findNode } from '../../core/psd/layerTree'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
+import { ToggleSwitch } from '../ToggleSwitch'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
 import { conflictingGroupIds, groupOptions } from './groupOptions'
@@ -14,6 +15,7 @@ interface Props {
   visibility: VisibilityState
   psdSize: PsdSize
   onChange(patch: { eyeGroupId: LayerId | null; eyeMap: EyeMap }): void
+  onBlinkEnabledChange(enabled: boolean): void
 }
 
 type SelectKey = 'group' | 'closed' | 'half'
@@ -25,8 +27,9 @@ function assign(map: EyeMap, key: 'closed' | 'half', layerId: LayerId | null): E
   return next
 }
 
-export function EyePanel({ tree, character, visibility, psdSize, onChange }: Props) {
-  const { eyeGroupId = null, eyeMap = {}, mouthGroupId } = character
+export function EyePanel({ tree, character, visibility, psdSize, onChange, onBlinkEnabledChange }: Props) {
+  // 古い保存データはスイッチの項目を持たない。割り当てがあれば瞬きしていたのでオンとして扱う
+  const { eyeGroupId = null, eyeMap = {}, mouthGroupId, blinkEnabled = true } = character
   const eyeGroup = eyeGroupId === null ? undefined : findNode(tree, eyeGroupId)
   const eyeOptions = eyeGroup
     ? [...eyeGroup.children]
@@ -52,7 +55,10 @@ export function EyePanel({ tree, character, visibility, psdSize, onChange }: Pro
 
   return (
     <section className="panel">
-      <h2>目（瞬き）</h2>
+      <div className="panel-heading">
+        <h2>目（瞬き）</h2>
+        <ToggleSwitch label="瞬きする" checked={blinkEnabled} onChange={onBlinkEnabledChange} />
+      </div>
       <div className="mouth-group-field">
         <span aria-hidden>目のグループ</span>
         <LayerSelect
@@ -98,7 +104,11 @@ export function EyePanel({ tree, character, visibility, psdSize, onChange }: Pro
       ) : (
         <p className="hint">目のグループを選ぶと、閉じ目と半目を選べます。</p>
       )}
-      <p className="hint">閉じ目を選ぶと、書き出しとプレビューで瞬きします。開いた目はスタイルの表示のまま使います。</p>
+      <p className="hint">
+        {blinkEnabled
+          ? '閉じ目を選ぶと、書き出しとプレビューで瞬きします。開いた目はスタイルの表示のまま使います。'
+          : '瞬きはオフです。目の割り当ては残っているので、オンに戻せばまた瞬きします。'}
+      </p>
     </section>
   )
 }

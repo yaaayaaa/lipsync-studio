@@ -278,6 +278,7 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           visibility={visibility}
           psdSize={psdSize}
           onChange={(patch) => onSave({ ...character, ...patch })}
+          onBlinkEnabledChange={(blinkEnabled) => onSave({ ...character, blinkEnabled })}
         />
         <ExpressionPanel
           tree={tree}

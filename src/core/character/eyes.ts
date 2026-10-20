@@ -10,10 +10,16 @@ export interface BlinkSpec {
   half: LayerId | null
 }
 
-/** 目のグループと閉じ目が揃っているときだけ瞬きできる。古い保存データ（項目なし）は null。 */
-export function blinkSpec(character: Pick<Character, 'eyeGroupId' | 'eyeMap'>): BlinkSpec | null {
-  const { eyeGroupId, eyeMap } = character
-  if (!eyeGroupId || !eyeMap?.closed) return null
+/** 瞬きを左右するキャラの項目 */
+export type BlinkFields = Pick<Character, 'eyeGroupId' | 'eyeMap' | 'blinkEnabled'>
+
+/**
+ * 目のグループと閉じ目が揃っていて、瞬きをオフにしていないときだけ瞬きできる。
+ * 古い保存データ（項目なし）は割り当てがないので null。
+ */
+export function blinkSpec(character: BlinkFields): BlinkSpec | null {
+  const { eyeGroupId, eyeMap, blinkEnabled } = character
+  if (blinkEnabled === false || !eyeGroupId || !eyeMap?.closed) return null
   return { groupId: eyeGroupId, closed: eyeMap.closed, half: eyeMap.half ?? null }
 }
 

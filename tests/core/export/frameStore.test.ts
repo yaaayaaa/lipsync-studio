@@ -23,7 +23,7 @@ const tree = buildLayerTree([
 ])
 const expression: VisibilityState = initialVisibility(tree)
 const size = { width: 4, height: 4 }
-type Assign = Pick<Character, 'mouthGroupId' | 'mouthMap' | 'eyeGroupId' | 'eyeMap'>
+type Assign = Pick<Character, 'mouthGroupId' | 'mouthMap' | 'eyeGroupId' | 'eyeMap' | 'blinkEnabled'>
 const mouth = { mouthGroupId: '1', mouthMap: { closed: '1/0', a: '1/1' } }
 const withHalf: Assign = { ...mouth, eyeGroupId: '2', eyeMap: { closed: '2/0', half: '2/1' } }
 const noHalf: Assign = { ...mouth, eyeGroupId: '2', eyeMap: { closed: '2/0' } }
@@ -116,6 +116,10 @@ describe('FrameStore', () => {
     expect(composeTo).toHaveBeenCalledTimes(1)
     // 目は表情のまま（開き目）で合成される
     expect(composedStates()[0]['2/2']).toBe(true)
+  })
+
+  it('does not blink when blinking is switched off, even with eyes assigned', () => {
+    expect(new FrameStore(tree, expression, { ...withHalf, blinkEnabled: false }, size).blink).toBeNull()
   })
 
   it('agrees between has and get, and get throws for an unprepared key', async () => {

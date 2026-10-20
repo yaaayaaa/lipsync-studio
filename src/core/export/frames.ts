@@ -1,5 +1,5 @@
 import { applyEyes, blinkSpec } from '../character/eyes'
-import type { BlinkSpec } from '../character/eyes'
+import type { BlinkFields, BlinkSpec } from '../character/eyes'
 import { applyMouth, resolveMouthLayer } from '../character/mouth'
 import { VOWELS } from '../character/types'
 import type { Character, ExportSettings, EyeState, Vowel } from '../character/types'
@@ -81,7 +81,7 @@ export class FrameStore {
   constructor(
     tree: LayerNode[],
     expression: VisibilityState,
-    character: Pick<Character, 'mouthGroupId' | 'mouthMap' | 'eyeGroupId' | 'eyeMap'>,
+    character: Pick<Character, 'mouthGroupId' | 'mouthMap'> & BlinkFields,
     psdSize: Size,
   ) {
     this.tree = tree
@@ -155,7 +155,7 @@ export class FrameStore {
 export async function createFrameStore(
   tree: LayerNode[],
   expression: VisibilityState,
-  character: Pick<Character, 'mouthGroupId' | 'mouthMap' | 'eyeGroupId' | 'eyeMap'>,
+  character: Pick<Character, 'mouthGroupId' | 'mouthMap'> & BlinkFields,
   psdSize: Size,
 ): Promise<FrameStore> {
   const store = new FrameStore(tree, expression, character, psdSize)

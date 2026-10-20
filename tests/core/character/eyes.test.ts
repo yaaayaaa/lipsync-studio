@@ -20,6 +20,13 @@ describe('blinkSpec', () => {
       half: '1/1',
     })
   })
+
+  it('is null when blinking is turned off, and old data without the switch still blinks', () => {
+    const assigned = { eyeGroupId: '1', eyeMap: { closed: '1/0' } }
+    expect(blinkSpec({ ...assigned, blinkEnabled: false })).toBeNull()
+    expect(blinkSpec({ ...assigned, blinkEnabled: true })).not.toBeNull()
+    expect(blinkSpec(assigned)).not.toBeNull()
+  })
 })
 
 describe('eyeLayer', () => {

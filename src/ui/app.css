@@ -525,6 +525,49 @@ li.selected .row-menu-button[aria-expanded='true'] {
   margin-bottom: 0;
 }
 
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ---- トグルスイッチ ---- */
+
+.toggle-switch {
+  flex: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--hover-bg);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.toggle-switch[aria-checked='true'] {
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+}
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.15s;
+}
+
+.toggle-switch[aria-checked='true'] .toggle-switch-thumb {
+  background: var(--primary-fg);
+  transform: translateX(16px);
+}
+
 .field {
   display: flex;
   align-items: center;
