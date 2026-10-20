@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { LineTuning, ScriptLine } from '../../../src/core/character/types'
-import { saveRefreshedTuning } from '../../../src/ui/script/lineJobs'
+import type { Character, LineTuning, ScriptLine } from '../../../src/core/character/types'
+import { appendLine, saveRefreshedTuning } from '../../../src/ui/script/lineJobs'
 
 const tuning = (text: string, styleId: number, pitchScale = 0): LineTuning => ({
   text,
@@ -47,5 +47,38 @@ describe('saveRefreshedTuning', () => {
   it('drops the refreshed value when the line was removed', () => {
     const lines = [line('b', used)]
     expect(saveRefreshedTuning(lines, 'a', used, refreshed)).toBe(lines)
+  })
+})
+
+describe('appendLine', () => {
+  const character = (id: string, expressionIds: string[]): Character => ({
+    id,
+    name: id,
+    psdFileName: `${id}.psd`,
+    voice: null,
+    mouthGroupId: null,
+    mouthMap: {},
+    expressions: expressionIds.map((e) => ({ id: e, name: e, visibility: {} })),
+  })
+  const characters = [character('c1', ['e1', 'e2']), character('c2', ['f1'])]
+
+  it('adds an empty line that continues the character and style of the last line', () => {
+    const lines = [{ ...line('a'), characterId: 'c1', expressionId: 'e2', speedScale: 1.5 }]
+    expect(appendLine(lines, characters, 'n')).toEqual([
+      lines[0],
+      { id: 'n', text: '', characterId: 'c1', expressionId: 'e2', speedScale: 1 },
+    ])
+  })
+
+  it('falls back to the first character and its first style when the last line has none', () => {
+    expect(appendLine([], characters, 'n')).toEqual([
+      { id: 'n', text: '', characterId: 'c1', expressionId: 'e1', speedScale: 1 },
+    ])
+    const deleted = [{ ...line('a'), characterId: 'gone', expressionId: 'x' }]
+    expect(appendLine(deleted, characters, 'n')[1]).toMatchObject({ characterId: 'c1', expressionId: 'e1' })
+  })
+
+  it('leaves the character empty when there are no characters', () => {
+    expect(appendLine([], [], 'n')).toEqual([{ id: 'n', text: '', characterId: null, expressionId: null, speedScale: 1 }])
   })
 })

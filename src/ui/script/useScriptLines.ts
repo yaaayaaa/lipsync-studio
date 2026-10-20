@@ -15,6 +15,10 @@ export interface ScriptContextValue {
   editingLineId: string | null
   /** 1行編集のタブへ切り替えて、その行を開く */
   openLineEditor(lineId: string): void
+  /** どちらかの画面で書き出し中。その間はどちらの画面でも行の編集と再生・書き出しを止める */
+  exportLocked: boolean
+  /** 書き出しを始める。もう誰かが書き出し中なら null。終わったら返ってきた関数を必ず呼ぶ */
+  claimExport(): (() => void) | null
 }
 
 /** 値は ScriptProvider（ScriptContext.tsx）が入れる。 */

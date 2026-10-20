@@ -95,9 +95,25 @@ export function ScriptProvider({ onOpenLineEditor, children }: { onOpenLineEdito
     [onOpenLineEditor],
   )
 
+  // 書き出しは一度に1つだけ。同じ瞬間に2回押されても取り合わないよう、判定は ref で行う
+  const exportClaimed = useRef(false)
+  const [exportLocked, setExportLocked] = useState(false)
+  const claimExport = useCallback(() => {
+    if (exportClaimed.current) return null
+    exportClaimed.current = true
+    setExportLocked(true)
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      exportClaimed.current = false
+      setExportLocked(false)
+    }
+  }, [])
+
   const value = useMemo<ScriptContextValue>(
-    () => ({ lines, error, update, frameCache, editingLineId, openLineEditor }),
-    [lines, error, update, frameCache, editingLineId, openLineEditor],
+    () => ({ lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, claimExport }),
+    [lines, error, update, frameCache, editingLineId, openLineEditor, exportLocked, claimExport],
   )
   return <ScriptContext.Provider value={value}>{children}</ScriptContext.Provider>
 }

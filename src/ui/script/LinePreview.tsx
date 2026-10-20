@@ -14,10 +14,17 @@ interface Props {
   settings: ExportSettings
   /** 合成中・再生中などの一言 */
   caption: string | null
+  /** まだ何も再生していないときの案内 */
+  idleHint?: string
 }
 
 /** 書き出しと同じ解像度・配置・背景で、その時点の口を描く。 */
-export function LinePreview({ frame, settings, caption }: Props) {
+export function LinePreview({
+  frame,
+  settings,
+  caption,
+  idleHint = '行の「プレビュー」を押すと、口パクを音声付きで再生します',
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export function LinePreview({ frame, settings, caption }: Props) {
         aria-label="セリフのプレビュー"
       />
       <p className="hint">
-        {caption ?? (frame ? `${frame.lineNumber}行目` : '行の「プレビュー」を押すと、口パクを音声付きで再生します')}
+        {caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}
       </p>
     </section>
   )

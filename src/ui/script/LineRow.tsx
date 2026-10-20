@@ -1,23 +1,17 @@
-import { ArrowDown, ArrowUp, SlidersHorizontal, SquarePen, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, SquarePen, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { Character, ScriptLine } from '../../core/character/types'
 import type { LineProblem } from '../../core/storage/db'
 import { RowMenu } from '../character/RowMenu'
+import { LineCharacterSelects, LineTextArea, TunedMark } from './LineFields'
 import { PROBLEM_LABELS, canListen } from './lineJobs'
-import { applyTextChange, commitText, dropTuning } from './lineText'
-
-const DROP_TUNING_CONFIRM = 'この行の作り込み（アクセント・高さ・長さなど）が消えます。よろしいですか？'
-
-export const SPEED_MIN = 0.5
-export const SPEED_MAX = 2.0
-export const SPEED_STEP = 0.05
+import { SPEED_MAX, SPEED_MIN, SPEED_STEP } from './speed'
+import type { PlaybackMode } from './useLinePlayback'
 
 export type LineStatus =
   | { state: 'exporting'; progress: number }
   | { state: 'done'; fileName: string }
   | { state: 'error'; message: string }
-
-export type PlaybackMode = 'listen' | 'preview'
 
 interface Props {
   line: ScriptLine
@@ -43,22 +37,6 @@ interface Props {
 
 export function LineRow(props: Props) {
   const { line, index, count, characters, problem, status, playing, locked } = props
-  const character = characters.find((c) => c.id === line.characterId)
-  const expressionKnown = character?.expressions.some((e) => e.id === line.expressionId) ?? false
-
-  const selectCharacter = (id: string) => {
-    const next = characters.find((c) => c.id === id)
-    props.onChange({ characterId: next?.id ?? null, expressionId: next?.expressions[0]?.id ?? null })
-  }
-
-  // 作り込みのある行は、文を確定したときに初めて作り込みを捨てる（打ち間違い1つで消さないため）。
-  // 確定はフォーカスを外したときだけ。この欄は複数行なので Enter は改行のまま
-  const commit = () => {
-    if (!commitText(line).needsConfirm) return
-    if (window.confirm(DROP_TUNING_CONFIRM)) props.onEdit(dropTuning)
-    else props.onEdit((current) => (current.tuning ? applyTextChange(current, current.tuning.text) : current))
-  }
-
   const playButton = (mode: PlaybackMode, label: string) =>
     playing?.mode === mode ? (
       <button type="button" onClick={props.onStop}>
@@ -78,53 +56,12 @@ export function LineRow(props: Props) {
     <li className={`line-row${problem ? ' has-problem' : ''}`}>
       <div className="line-index">
         {String(index + 1).padStart(3, '0')}
-        {line.tuning && (
-          <span className="line-tuned" role="img" aria-label="作り込み済み" title="作り込み済み">
-            <SlidersHorizontal {...iconProps} />
-          </span>
-        )}
+        {line.tuning && <TunedMark />}
       </div>
       <div className="line-main">
-        <textarea
-          className="line-text"
-          rows={2}
-          value={line.text}
-          placeholder="セリフを入力"
-          disabled={locked}
-          aria-label={`${index + 1}行目のセリフ`}
-          onChange={(e) => {
-            const text = e.target.value
-            props.onEdit((current) => applyTextChange(current, text))
-          }}
-          onBlur={commit}
-        />
+        <LineTextArea line={line} disabled={locked} label={`${index + 1}行目のセリフ`} onEdit={props.onEdit} />
         <div className="line-controls">
-          <select
-            value={character ? character.id : ''}
-            disabled={locked}
-            aria-label="キャラ"
-            onChange={(e) => selectCharacter(e.target.value)}
-          >
-            <option value="">{line.characterId && !character ? '（削除されたキャラ）' : 'キャラを選択'}</option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={expressionKnown ? (line.expressionId ?? '') : ''}
-            disabled={locked || !character}
-            aria-label="スタイル"
-            onChange={(e) => props.onChange({ expressionId: e.target.value || null })}
-          >
-            <option value="">{line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択'}</option>
-            {character?.expressions.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
+          <LineCharacterSelects line={line} characters={characters} disabled={locked} onChange={props.onChange} />
           <label className="speed">
             <span>話速</span>
             <input
@@ -175,7 +112,7 @@ export function LineRow(props: Props) {
           <RowMenu
             label={`${index + 1}行目の操作`}
             items={[
-              { label: '1行編集で開く', icon: SquarePen, onSelect: props.onOpenEditor },
+              { label: '1行編集で開く', icon: SquarePen, disabled: locked, onSelect: props.onOpenEditor },
               { label: '削除', icon: Trash2, danger: true, disabled: locked, onSelect: props.onRemove },
             ]}
           />

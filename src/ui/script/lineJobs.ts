@@ -47,6 +47,17 @@ export function saveRefreshedTuning(
   return lines.map((l) => (l === current ? { ...l, tuning: refreshed } : l))
 }
 
+/**
+ * 末尾に空の行を足す。キャラとスタイルは最後の行を引き継ぎ（なければ最初のキャラ）、話速は既定の 1.0
+ */
+export function appendLine(lines: ScriptLine[], characters: Character[], id: string): ScriptLine[] {
+  const last = lines.at(-1)
+  const character = characters.find((c) => c.id === last?.characterId) ?? characters[0]
+  const expressionId =
+    last && character?.id === last.characterId ? last.expressionId : (character?.expressions[0]?.id ?? null)
+  return [...lines, { id, text: '', characterId: character?.id ?? null, expressionId, speedScale: 1.0 }]
+}
+
 /** 書き出しと同じ配置で1フレームを描く（プレビュー用）。 */
 export function drawMouthFrame(
   ctx: CanvasRenderingContext2D,
