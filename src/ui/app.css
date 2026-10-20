@@ -979,11 +979,8 @@ input[type='range'] {
 
 .line-order {
   display: flex;
-  gap: 2px;
-}
-
-.line-order {
   align-items: center;
+  gap: 2px;
 }
 
 .line-order > button {
