@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ScriptLine } from '../../core/character/types'
+import type { FrameKey } from '../../core/export/frames'
 import { FPS, frameSchedule, lineFrameKeys } from '../../core/export/frames'
-import { blinkStarts, eyeAtFrame } from '../../core/lipsync/blink'
 import { browserPlaybackEnv, startSamplePlayback } from '../character/samplePlayback'
 import type { PlaybackHandle } from '../character/samplePlayback'
 import { useApp } from '../useApp'
 import type { PreviewFrame } from './LinePreview'
 import { errorMessage, resolveLine } from './lineJobs'
+import { previewKeyAt } from './previewKey'
 import type { FramesLease } from './mouthFrameCache'
 import { useScriptLines } from './useScriptLines'
 import type { SpeakLine } from './useSpeakLine'
@@ -80,23 +81,18 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
     }
     const isCurrent = () => playbackRef.current === handle
     // 瞬きの位置は書き出しと同じ種（行の id）で決める。終端の長さは試聴・プレビューには足さない
-    let blink: { starts: number[]; hasHalf: boolean; frameCount: number } | null = null
+    // 用意した各フレームの絵。load で埋めてから再生が始まるので、onMouth からは必ず埋まった後に読む
+    let keys: FrameKey[] = []
 
     const handle = startSamplePlayback(
       async () => {
         const [prepared, sample] = await Promise.all([lease?.frames, speak(line, character.voice.styleId)])
         if (prepared && isCurrent()) {
           // 描画は同期で行うので、再生前に使う口と目の組み合わせを全部合成しておく
-          const vowels = frameSchedule(sample.timeline, FPS)
           const spec = prepared.frames.blink
-          await prepared.frames.prepare(lineFrameKeys(vowels, spec && { seed: line.id, hasHalf: spec.half !== null }))
-          if (spec) {
-            blink = {
-              starts: blinkStarts(line.id, vowels.length),
-              hasHalf: spec.half !== null,
-              frameCount: vowels.length,
-            }
-          }
+          const blinkSeed = spec && { seed: line.id, hasHalf: spec.half !== null }
+          keys = lineFrameKeys(frameSchedule(sample.timeline, FPS), blinkSeed)
+          await prepared.frames.prepare(keys)
           if (isCurrent()) setPreview({ lineNumber, prepared, key: { vowel: 'closed', eye: 'open' } })
         }
         return sample
@@ -104,13 +100,11 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
       browserPlaybackEnv,
       {
         onPlaying: () => isCurrent() && setPlaying({ lineId: line.id, mode, loading: false }),
-        onMouth: (vowel, time) => {
+        onMouth: (_vowel, time) => {
           if (mode === 'preview' && isCurrent()) {
-            // 音声が口の予定より少し長いこともあるので、最後のフレームの目に留める
-            const frame = Math.min(Math.floor(time * FPS), (blink?.frameCount ?? 1) - 1)
-            const eye = blink ? eyeAtFrame(blink.starts, frame, blink.hasHalf) : 'open'
+            const key = previewKeyAt(keys, time)
             setPreview((prev) =>
-              prev && (prev.key.vowel !== vowel || prev.key.eye !== eye) ? { ...prev, key: { vowel, eye } } : prev,
+              prev && (prev.key.vowel !== key.vowel || prev.key.eye !== key.eye) ? { ...prev, key } : prev,
             )
           }
         },
