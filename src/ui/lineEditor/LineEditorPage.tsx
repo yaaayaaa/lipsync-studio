@@ -177,11 +177,12 @@ export function LineEditorPage({ active }: { active: boolean }) {
         ) : (
           <>
             <h2>{index + 1}行目</h2>
-            {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む */}
+            {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む。
+                作り込みと文が合っていない知らせのボタンは、押したら消えて blur が来ないので、操作にしない（1回ずつ積む） */}
             <div
               className="line-text-field"
-              onFocus={() => {
-                textGesture.current = beginGesture(line.id)
+              onFocus={(e) => {
+                if (e.target instanceof HTMLTextAreaElement) textGesture.current = beginGesture(line.id)
               }}
               onBlur={() => {
                 if (textGesture.current !== null) endGesture(textGesture.current)
@@ -302,7 +303,11 @@ export function LineEditorPage({ active }: { active: boolean }) {
           values={tuning.shown}
           disabled={!line || locked}
           paramsDisabled={!canTune}
-          status={tuning.error ?? (canTune && !tuning.shown ? '数値を取得中…' : null)}
+          status={
+            tuning.stale
+              ? '作り込みが文と合っていないため変えられません'
+              : (tuning.error ?? (canTune && !tuning.shown ? '数値を取得中…' : null))
+          }
           onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
           onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}
         />

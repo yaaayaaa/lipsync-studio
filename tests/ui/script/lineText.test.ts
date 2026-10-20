@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LineTuning, ScriptLine } from '../../../src/core/character/types'
-import { applyTextChange, commitText, dropTuning } from '../../../src/ui/script/lineText'
+import { applyTextChange, dropTuning, hasStaleTuning, restoreTunedText } from '../../../src/ui/script/lineText'
 
 const tuning = (text: string): LineTuning => ({
   text,
@@ -33,20 +33,21 @@ describe('applyTextChange', () => {
   })
 })
 
-describe('commitText', () => {
+// 文の確定で作り込みを捨てる確認を出すのは、これが true のときだけ
+describe('hasStaleTuning', () => {
   it('needs no confirmation for a line without tuning', () => {
     const plain = line({ text: '別の文' })
-    expect(commitText(plain)).toEqual({ line: plain, needsConfirm: false })
+    expect(hasStaleTuning(plain)).toBe(false)
   })
 
   it('needs no confirmation when the text is back to the tuned text', () => {
     const tuned = line({ tuning: tuning('ずんだもんなのだ') })
-    expect(commitText(tuned)).toEqual({ line: tuned, needsConfirm: false })
+    expect(hasStaleTuning(tuned)).toBe(false)
   })
 
   it('asks for confirmation when the text differs from the tuned text', () => {
     const tuned = line({ text: 'ずんだもん', tuning: tuning('ずんだもんなのだ') })
-    expect(commitText(tuned)).toEqual({ line: tuned, needsConfirm: true })
+    expect(hasStaleTuning(tuned)).toBe(true)
   })
 })
 
@@ -56,5 +57,21 @@ describe('dropTuning', () => {
     const dropped = dropTuning(tuned)
     expect(dropped).not.toHaveProperty('tuning')
     expect(dropped).toEqual({ id: 'l1', text: 'ずんだもん', characterId: 'c1', expressionId: 'e1', speedScale: 1.3 })
+  })
+})
+
+describe('restoreTunedText', () => {
+  it('puts back the text the tuning was made for and keeps the tuning', () => {
+    const t = tuning('ずんだもんなのだ')
+    const next = restoreTunedText(line({ text: 'ずんだもん', tuning: t }))
+    expect(next.text).toBe('ずんだもんなのだ')
+    expect(next.tuning).toBe(t)
+  })
+
+  it('returns the line itself when there is nothing to restore', () => {
+    const plain = line()
+    expect(restoreTunedText(plain)).toBe(plain)
+    const tuned = line({ tuning: tuning('ずんだもんなのだ') })
+    expect(restoreTunedText(tuned)).toBe(tuned)
   })
 })

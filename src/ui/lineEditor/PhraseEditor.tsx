@@ -23,6 +23,7 @@ export type ChangePhrasesAsync = (compute: ComputePhrases) => Promise<EditResult
 const NOT_APPLIED: Record<Exclude<EditResult, 'applied'>, string> = {
   dropped: '内容が変わったため反映しませんでした',
   locked: '書き出し中のため反映しませんでした',
+  stale: '作り込みが文と合っていないため反映しませんでした。作り込みを捨てるか、文を戻してください',
 }
 
 interface Props {

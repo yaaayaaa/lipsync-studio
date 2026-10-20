@@ -876,6 +876,39 @@ progress {
   color: var(--fg);
 }
 
+/* 作り込みが文と合っていない（使えない）印。色だけに頼らずアイコンも替える */
+.line-tuned.stale {
+  color: var(--danger);
+}
+
+.stale-tuning {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.stale-tuning.compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+
+.stale-tuning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stale-tuning-actions button {
+  color: var(--fg);
+}
+
 .line-main {
   display: flex;
   flex-direction: column;

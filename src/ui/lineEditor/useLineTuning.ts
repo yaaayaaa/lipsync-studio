@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { LineTuning, ScriptLine } from '../../core/character/types'
-import { isTuningStale, tuningFromQuery } from '../../core/voicevox/tuning'
+import { tuningFromQuery } from '../../core/voicevox/tuning'
 import type { AccentPhrase, AudioQuery } from '../../core/voicevox/types'
 import { useApp } from '../useApp'
 import { errorMessage, saveRefreshedTuning } from '../script/lineJobs'
+import { hasStaleTuning } from '../script/lineText'
 import { useScriptLines } from '../script/useScriptLines'
 import { applyTuningEdit, ensureTuning, usableTuning } from './editTuning'
 import type { TuningEditBase } from './editTuning'
@@ -14,8 +15,11 @@ const QUERY_DEBOUNCE_MS = 300
 /** 行を変える。変わったら true（fn が行をそのまま返したら false） */
 export type EditLine = (lineId: string, fn: (line: ScriptLine) => ScriptLine) => boolean
 
-/** 変更の結果。dropped は待つ間に行が変わって入れなかった（または変える必要がなかった）、locked は書き出しが始まっていた */
-export type EditResult = 'applied' | 'dropped' | 'locked'
+/**
+ * 変更の結果。dropped は待つ間に行が変わって入れなかった（または変える必要がなかった）、locked は書き出しが始まっていた、
+ * stale は作り込みが今の文と合っていない（捨てるか文を戻すまで変えられない）
+ */
+export type EditResult = 'applied' | 'dropped' | 'locked' | 'stale'
 
 const queryKey = (text: string, styleId: number) => JSON.stringify([styleId, text])
 
@@ -68,6 +72,8 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
   )
 
   const tuning = usableTuning(line)
+  // 作り込みが今の文と合っていない。捨てるか文を戻すまで、作り込みは使わず変えもしない
+  const stale = line !== null && hasStaleTuning(line)
   const text = line?.text ?? ''
   const needsQuery = !tuning && styleId !== null && text.trim() !== ''
   const key = styleId === null ? null : queryKey(text, styleId)
@@ -129,7 +135,7 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
   const baseTuning = useCallback((): TuningEditBase | Promise<TuningEditBase> | null => {
     if (!line || styleId === null || locked) return null
     // 古い作り込みは、文の確定で捨てる確認を出すまで残す。ここで作り直すと確認を飛ばしてしまう
-    if (line.tuning && isTuningStale(line.tuning, line.text)) return null
+    if (stale) return null
     const origin = line.tuning
     if (tuning && tuning.styleId === styleId) return { base: tuning, origin }
     if (!tuning && shown) return { base: shown, origin }
@@ -141,7 +147,7 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
         return { base: made, origin, waited: true }
       }),
     )
-  }, [line, styleId, locked, tuning, shown, client, setError, track])
+  }, [line, styleId, locked, stale, tuning, shown, client, setError, track])
 
   /** どの変更も editLine を通す（取り消しの履歴をそこで取る）。書き出しが始まっていたら入れない */
   const apply = useCallback(
@@ -181,7 +187,7 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     async (compute: (phrases: AccentPhrase[], styleId: number) => Promise<AccentPhrase[]>): Promise<EditResult> => {
       const id = line?.id
       const pending = baseTuning()
-      if (id === undefined || pending === null) return locked ? 'locked' : 'dropped'
+      if (id === undefined || pending === null) return locked ? 'locked' : stale ? 'stale' : 'dropped'
       return track(
         (async () => {
           const edit = await pending
@@ -190,7 +196,7 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
         })(),
       )
     },
-    [line, locked, baseTuning, apply, track],
+    [line, locked, stale, baseTuning, apply, track],
   )
 
   return {
@@ -198,6 +204,8 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     shown,
     /** この行に作り込みがあるか */
     tuned: tuning !== null,
+    /** 作り込みが今の文と合っていない */
+    stale,
     error: errorState !== null && errorState.lineId === lineId ? errorState.message : null,
     refreshed: lineId !== null && refreshedLineId === lineId && line?.tuning !== undefined,
     markRefreshed: setRefreshedLineId,
