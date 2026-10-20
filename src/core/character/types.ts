@@ -1,4 +1,5 @@
 import type { LayerId, VisibilityState } from '../psd/types'
+import type { AccentPhrase } from '../voicevox/types'
 
 /** 口の形。n は「ん」（未設定なら closed と同じ口） */
 export type Vowel = 'a' | 'i' | 'u' | 'e' | 'o' | 'n' | 'closed'
@@ -29,12 +30,30 @@ export interface Character {
   expressions: Expression[]
 }
 
+/**
+ * 1 行の作り込み。話速は ScriptLine.speedScale に置くのでここには持たない。
+ * 出力サンプリングレート等の合成直前の項目も保存しない（prepareQuery が付ける）。
+ */
+export interface LineTuning {
+  /** 作り込んだ時点のセリフ。違えば古い（isTuningStale） */
+  text: string
+  styleId: number
+  accentPhrases: AccentPhrase[]
+  pitchScale: number
+  intonationScale: number
+  volumeScale: number
+  pauseLengthScale: number
+  prePhonemeLength: number
+  postPhonemeLength: number
+}
+
 export interface ScriptLine {
   id: string
   text: string
   characterId: string | null
   expressionId: string | null
   speedScale: number
+  tuning?: LineTuning
 }
 
 export interface ExportSettings {

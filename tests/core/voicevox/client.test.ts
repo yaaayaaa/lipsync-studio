@@ -159,3 +159,39 @@ describe('prepareQuery', () => {
     expect(out.accent_phrases).not.toBe(q.accent_phrases)
   })
 })
+
+describe('VoicevoxClient accent phrases / mora data', () => {
+  it('accentPhrases POSTs text, speaker and is_kana', async () => {
+    // Response の本文は 1 回しか読めないので、呼ぶたびに作る。
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse([]))
+    const client = new VoicevoxClient({ baseUrl: BASE, fetch: fetchMock })
+    await client.accentPhrases('あ', 3, true)
+    await client.accentPhrases('あ', 3, false)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${BASE}/accent_phrases?text=%E3%81%82&speaker=3&is_kana=true`)
+    expect(init.method).toBe('POST')
+    expect(fetchMock.mock.calls[1][0]).toContain('is_kana=false')
+  })
+
+  it('accentPhrases rejects a non-array response', async () => {
+    const client = new VoicevoxClient({ baseUrl: BASE, fetch: vi.fn().mockResolvedValue(jsonResponse({})) })
+    expect((await catchError(client.accentPhrases('あ', 1, false))).kind).toBe('invalid-response')
+  })
+
+  it('moraData POSTs the phrases as a JSON array with speaker', async () => {
+    const phrases = [{ moras: [], accent: 1, pause_mora: null }]
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(phrases))
+    const client = new VoicevoxClient({ baseUrl: BASE, fetch: fetchMock })
+    expect(await client.moraData(phrases, 5)).toEqual(phrases)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${BASE}/mora_data?speaker=5`)
+    expect(init.method).toBe('POST')
+    expect(init.headers['Content-Type']).toBe('application/json')
+    expect(JSON.parse(init.body)).toEqual(phrases)
+  })
+
+  it('moraData rejects a non-array response', async () => {
+    const client = new VoicevoxClient({ baseUrl: BASE, fetch: vi.fn().mockResolvedValue(jsonResponse({ a: 1 })) })
+    expect((await catchError(client.moraData([], 1))).kind).toBe('invalid-response')
+  })
+})

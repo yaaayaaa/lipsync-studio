@@ -1,4 +1,4 @@
-import type { AudioQuery, Speaker } from './types'
+import type { AccentPhrase, AudioQuery, Speaker } from './types'
 
 export type VoicevoxErrorKind = 'unreachable' | 'timeout' | 'http' | 'invalid-response'
 
@@ -81,6 +81,24 @@ export class VoicevoxClient {
       `/audio_query?${params}`,
       { method: 'POST' },
       (v) => typeof v === 'object' && v !== null && Array.isArray((v as AudioQuery).accent_phrases),
+    )
+  }
+
+  accentPhrases(text: string, styleId: number, isKana: boolean): Promise<AccentPhrase[]> {
+    const params = new URLSearchParams({ text, speaker: String(styleId), is_kana: String(isKana) })
+    return this.requestJson(`/accent_phrases?${params}`, { method: 'POST' }, Array.isArray)
+  }
+
+  /** 声を変えたときに、アクセント句はそのままで高さと長さだけを取り直す。 */
+  moraData(phrases: AccentPhrase[], styleId: number): Promise<AccentPhrase[]> {
+    return this.requestJson(
+      `/mora_data?speaker=${styleId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(phrases),
+      },
+      Array.isArray,
     )
   }
 
