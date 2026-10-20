@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { AppProvider } from './AppContext'
 import { CharacterPage } from './character/CharacterPage'
 import { EngineBanner } from './EngineBanner'
+import { LineEditorPage } from './lineEditor/LineEditorPage'
 import { ScriptProvider } from './script/ScriptContext'
 import { ScriptPage } from './script/ScriptPage'
 import { SupportBanner } from './SupportBanner'
@@ -49,9 +50,8 @@ export function App() {
           <div className="page" hidden={tab !== 'script'}>
             <ScriptPage active={tab === 'script'} />
           </div>
-          {/* 1行編集の画面本体はまだない（次の作業で作る） */}
           <div className="page" hidden={tab !== 'line'}>
-            <p className="app-message">1行編集の画面は準備中です</p>
+            <LineEditorPage active={tab === 'line'} />
           </div>
         </ScriptProvider>
       </AppProvider>
