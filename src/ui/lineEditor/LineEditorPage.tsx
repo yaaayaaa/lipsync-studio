@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
@@ -47,6 +47,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const history = useLineHistory(lines)
   const { editLine, beginGesture, endGesture, undo, redo } = history
   const lineId = line?.id ?? null
+  // 文の欄の操作（フォーカスから確定まで）の token
+  const textGesture = useRef<number | null>(null)
 
   const tuning = useLineTuning({ line, styleId, locked, editLine })
   const { markRefreshed } = tuning
@@ -142,12 +144,15 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const startSliderGesture = (e: PointerEvent<HTMLElement>) => {
     const target = e.target
     if (!line || !(target instanceof HTMLInputElement) || target.type !== 'range') return
-    beginGesture(line.id)
+    // 文の欄にフォーカスがあれば、先に確定させる。押した後の既定の動作でフォーカスが外れるのを待つと、
+    // 確定（作り込みを捨てる確認を含む）がつまみの操作に混ざってしまう
+    const focused = document.activeElement
+    if (focused instanceof HTMLElement && focused !== target && isTextEntry(focused)) focused.blur()
     const done = new AbortController()
-    const finish = () => {
-      done.abort()
-      endGesture()
-    }
+    const token = beginGesture(line.id, () => done.abort())
+    if (token === null) return
+    // 確認の窓などで pointerup を取りこぼしても、待ち受けは次の操作が始まったときに外れる（cleanup）
+    const finish = () => endGesture(token)
     window.addEventListener('pointerup', finish, { signal: done.signal })
     window.addEventListener('pointercancel', finish, { signal: done.signal })
   }
@@ -173,7 +178,16 @@ export function LineEditorPage({ active }: { active: boolean }) {
           <>
             <h2>{index + 1}行目</h2>
             {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む */}
-            <div className="line-text-field" onFocus={() => beginGesture(line.id)} onBlur={endGesture}>
+            <div
+              className="line-text-field"
+              onFocus={() => {
+                textGesture.current = beginGesture(line.id)
+              }}
+              onBlur={() => {
+                if (textGesture.current !== null) endGesture(textGesture.current)
+                textGesture.current = null
+              }}
+            >
               <LineTextArea
                 line={line}
                 disabled={locked}

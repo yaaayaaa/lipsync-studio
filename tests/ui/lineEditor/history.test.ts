@@ -4,6 +4,11 @@ import {
   HISTORY_LIMIT,
   applySnapshot,
   emptyHistory,
+  finishGesture,
+  gestureEntry,
+  noGesture,
+  noteGestureEdit,
+  startGesture,
   isTextEntry,
   record,
   redo,
@@ -178,5 +183,57 @@ describe('isTextEntry', () => {
     expect(isTextEntry({ tagName: 'BUTTON' })).toBe(false)
     expect(isTextEntry({ tagName: 'BODY' })).toBe(false)
     expect(isTextEntry(null)).toBe(false)
+  })
+})
+
+describe('gestures', () => {
+  const a = snap('あ')
+
+  it('gives each gesture its own token and ends only the gesture that owns it', () => {
+    const first = startGesture(noGesture, 'l1', a)
+    expect(first.ended).toBeNull()
+    // つまみを押したとき、文の欄の操作はまだ終わっていない場合がある：始めた側の token でしか終わらない
+    const second = startGesture(first.state, 'l1', a)
+    expect(second.token).not.toBe(first.token)
+    expect(second.ended?.token).toBe(first.token)
+    // 古い token（文の欄の onBlur・取り残された pointerup）では、今の操作を終えない
+    const stale = finishGesture(second.state, first.token)
+    expect(stale.ended).toBeNull()
+    expect(stale.state).toBe(second.state)
+    const done = finishGesture(second.state, second.token)
+    expect(done.ended?.token).toBe(second.token)
+    expect(done.state.current).toBeNull()
+    expect(finishGesture(done.state, second.token).ended).toBeNull()
+  })
+
+  it('remembers which fields the gesture\'s own edits changed', () => {
+    const { state } = startGesture(noGesture, 'l1', a)
+    const t = tuning('あい')
+    const g1 = noteGestureEdit(state.current!, snap('あ', { tuning: t }), snap('あい', { tuning: t }))
+    const g2 = noteGestureEdit(g1, snap('あい', { tuning: t }), snap('あい'))
+    expect([...g2.owned].sort()).toEqual(['text', 'tuning'])
+  })
+
+  it('builds the entry from the owned fields only, so writes from elsewhere are not undone or recorded', () => {
+    const t = tuning('あ')
+    const refreshed = { ...tuning('あ'), styleId: 8 }
+    const before = snap('あ', { tuning: t })
+    // 文の欄にフォーカスがある間に、声の取り直し（ユーザーの編集でない）だけが入った
+    expect(gestureEntry({ token: 1, lineId: 'l1', before, owned: [] }, snap('あ', { tuning: refreshed }))).toBeNull()
+    // 文を変えた：戻すのは文だけで、取り直した作り込みはそのまま
+    const entry = gestureEntry({ token: 1, lineId: 'l1', before, owned: ['text'] }, snap('あい', { tuning: refreshed }))
+    expect(entry).toEqual(snap('あ', { tuning: refreshed }))
+  })
+
+  it('restores the text and the dropped tuning together when the commit dropped it', () => {
+    const t = tuning('あ')
+    const before = snap('あ', { tuning: t })
+    const entry = gestureEntry({ token: 1, lineId: 'l1', before, owned: ['text', 'tuning'] }, snap('あい'))
+    expect(entry).toEqual(before)
+  })
+
+  it('records nothing when the owned fields ended where they started', () => {
+    const before = snap('あ', { speedScale: 1 })
+    expect(gestureEntry({ token: 1, lineId: 'l1', before, owned: ['speedScale'] }, snap('あ', { speedScale: 1 }))).toBeNull()
   })
 })

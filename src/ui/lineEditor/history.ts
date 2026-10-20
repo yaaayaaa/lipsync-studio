@@ -61,6 +61,63 @@ export function sameSnapshot(a: Snapshot, b: Snapshot): boolean {
   )
 }
 
+// 続けて何度も変わる操作（つまみのドラッグ・文の入力から確定まで）は1件にまとめる。
+// 操作は始めた側が token で持ち、その token でしか終わらない（別の操作の終わりの知らせで切れないように）。
+
+type SnapshotField = keyof Snapshot
+const SNAPSHOT_FIELDS: readonly SnapshotField[] = ['text', 'speedScale', 'tuning', 'characterId', 'expressionId']
+
+export interface Gesture {
+  token: number
+  lineId: string
+  /** 始めたときの状態 */
+  before: Snapshot
+  /** この操作の編集が変えた項目。履歴にはこの項目だけを戻す形で積む */
+  owned: SnapshotField[]
+}
+
+export interface GestureState {
+  current: Gesture | null
+  nextToken: number
+}
+
+export const noGesture: GestureState = { current: null, nextToken: 1 }
+
+/** 操作を始める。途中の操作があれば終えて ended で返す（積むのは呼び出し側） */
+export function startGesture(s: GestureState, lineId: string, before: Snapshot) {
+  const token = s.nextToken
+  return {
+    state: { current: { token, lineId, before, owned: [] }, nextToken: token + 1 },
+    token,
+    ended: s.current,
+  }
+}
+
+/** token の操作を終える。もう終わっている・別の操作に替わっていたら何もしない（ended は null） */
+export function finishGesture(s: GestureState, token: number): { state: GestureState; ended: Gesture | null } {
+  if (s.current?.token !== token) return { state: s, ended: null }
+  return { state: { ...s, current: null }, ended: s.current }
+}
+
+/** 操作の中の1回の編集（current → next）で変わった項目を、その操作のものとして覚える */
+export function noteGestureEdit(g: Gesture, current: Snapshot, next: Snapshot): Gesture {
+  const added = SNAPSHOT_FIELDS.filter((f) => current[f] !== next[f] && !g.owned.includes(f))
+  return added.length === 0 ? g : { ...g, owned: [...g.owned, ...added] }
+}
+
+/**
+ * 終えた操作の履歴の1件。操作が変えた項目だけを始めの値に戻した状態で、ほかの項目は今のまま
+ * （その間に入った声の取り直しなど、ユーザーの編集でない書き込みを取り消しで巻き戻さない）。
+ * 操作が変えた項目が始めと同じに戻っていたら null（積まない）
+ */
+export function gestureEntry(g: Gesture, after: Snapshot): Snapshot | null {
+  if (!g.owned.some((f) => g.before[f] !== after[f])) return null
+  const entry: Snapshot = { ...after }
+  for (const f of g.owned) Object.assign(entry, { [f]: g.before[f] })
+  if (entry.tuning === undefined) delete entry.tuning
+  return entry
+}
+
 export type HistoryAction = 'undo' | 'redo'
 
 /** キーの組み合わせ。KeyboardEvent の一部 */
