@@ -136,6 +136,17 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     return tuningFromQuery(query, text, styleId)
   }, [tuning, query, text, styleId])
 
+  // 作り込みをエンジンに作ってもらっている途中の問い合わせ。待つ間につまみを動かし続けても
+  // （別の声の作り込みを取り直す間のドラッグなど）、同じ行・文・作り込み・声なら1つにまとめる
+  const pendingBase = useRef<{
+    lineId: string
+    text: string
+    origin: LineTuning | undefined
+    styleId: number
+    client: typeof client
+    promise: Promise<TuningEditBase>
+  } | null>(null)
+
   /**
    * 変更の元にする作り込みと、そのとき行が持っていた作り込み。すぐ分かればその値、
    * エンジンに作ってもらう必要があれば Promise、変えられない（行がない・声がない・書き出し中・
@@ -149,13 +160,30 @@ export function useLineTuning({ line, styleId, locked, editLine }: Args) {
     if (tuning && tuning.styleId === styleId) return { base: tuning, origin }
     if (!tuning && shown) return { base: shown, origin }
     const id = line.id
-    return track(
+    const pending = pendingBase.current
+    if (
+      pending &&
+      pending.lineId === id &&
+      pending.text === line.text &&
+      pending.origin === origin &&
+      pending.styleId === styleId &&
+      pending.client === client
+    ) {
+      return pending.promise
+    }
+    const promise = track(
       ensureTuning(client, line, styleId).then((made) => {
         if (tuning && made !== tuning) setRefreshedLineId(id)
         setError(null)
         return { base: made, origin, waited: true }
       }),
     )
+    pendingBase.current = { lineId: id, text: line.text, origin, styleId, client, promise }
+    const settle = () => {
+      if (pendingBase.current?.promise === promise) pendingBase.current = null
+    }
+    promise.then(settle, settle)
+    return promise
   }, [line, styleId, locked, stale, tuning, shown, client, setError, track])
 
   /** どの変更も editLine を通す（取り消しの履歴をそこで取る）。書き出しが始まっていたら入れない */
