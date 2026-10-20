@@ -4,7 +4,7 @@ import { findNode } from '../../core/psd/layerTree'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
-import { groupOptions } from './groupOptions'
+import { conflictingGroupIds, groupOptions } from './groupOptions'
 import { eyeGroupChoicePatch } from './mouthGroup'
 
 interface Props {
@@ -57,7 +57,7 @@ export function EyePanel({ tree, character, visibility, psdSize, onChange }: Pro
         <span aria-hidden>目のグループ</span>
         <LayerSelect
           label="目のグループ"
-          options={groupOptions(tree, mouthGroupId)}
+          options={groupOptions(tree, conflictingGroupIds(tree, mouthGroupId))}
           value={eyeGroup ? eyeGroup.id : null}
           onChange={chooseGroup}
           {...openProps('group')}
@@ -66,6 +66,9 @@ export function EyePanel({ tree, character, visibility, psdSize, onChange }: Pro
       </div>
       {eyeGroupId !== null && !eyeGroup && (
         <p className="notice error">設定された目のグループが PSD に見つかりません。選び直してください。</p>
+      )}
+      {eyeGroup && conflictingGroupIds(tree, mouthGroupId).has(eyeGroup.id) && (
+        <p className="notice error">目のグループが口グループと重なっています。選び直してください。</p>
       )}
       {eyeGroup ? (
         <div className="vowel-grid eye-grid">

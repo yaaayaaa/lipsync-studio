@@ -7,12 +7,7 @@ import type { PsdSize } from '../usePsd'
 import { dropdownReduce, placePopover } from './dropdown'
 import type { DropdownEvent } from './dropdown'
 import { LayerThumb } from './LayerThumb'
-
-export interface LayerOption {
-  node: LayerNode
-  /** 表示名（グループならパス付きなど） */
-  label: string
-}
+import type { LayerOption } from './groupOptions'
 
 interface Props {
   /** ボタンの読み上げ名（例「あの口」「口グループ」） */

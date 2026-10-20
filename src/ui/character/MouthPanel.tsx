@@ -6,7 +6,7 @@ import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
-import { groupOptions } from './groupOptions'
+import { conflictingGroupIds, groupOptions } from './groupOptions'
 import { groupChoicePatch } from './mouthGroup'
 import { VOWEL_LABELS } from './labels'
 import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
@@ -78,7 +78,7 @@ export function MouthPanel({
         <span aria-hidden>口グループ</span>
         <LayerSelect
           label="口グループ"
-          options={groupOptions(tree)}
+          options={groupOptions(tree, conflictingGroupIds(tree, character.eyeGroupId))}
           value={mouthGroup ? mouthGroup.id : null}
           onChange={chooseGroup}
           {...openProps('group')}
