@@ -146,6 +146,41 @@ describe('snapshots', () => {
     expect(sameSnapshot(snap('あ'), snap('あ', { expressionId: 'e2' }))).toBe(false)
     expect(sameSnapshot(snap('あ'), snap('い'))).toBe(false)
   })
+
+  describe('tailSeconds', () => {
+    it('round-trips with and without a line value; absence removes the key', () => {
+      const withTail: ScriptLine = { ...line, tailSeconds: 1.5 }
+      expect(snapshotOf(withTail).tailSeconds).toBe(1.5)
+      expect('tailSeconds' in snapshotOf(line)).toBe(false)
+
+      expect(applySnapshot(line, snapshotOf(withTail)).tailSeconds).toBe(1.5)
+      const cleared = applySnapshot(withTail, snapshotOf(line))
+      expect('tailSeconds' in cleared).toBe(false)
+    })
+
+    it('keeps an explicit 0 as a value of its own', () => {
+      expect(snapshotOf({ ...line, tailSeconds: 0 }).tailSeconds).toBe(0)
+      expect(sameSnapshot(snap('あ'), snap('あ', { tailSeconds: 0 }))).toBe(false)
+    })
+
+    it('treats a different tailSeconds as a different snapshot', () => {
+      expect(sameSnapshot(snap('あ', { tailSeconds: 1 }), snap('あ', { tailSeconds: 1 }))).toBe(true)
+      expect(sameSnapshot(snap('あ', { tailSeconds: 1 }), snap('あ', { tailSeconds: 2 }))).toBe(false)
+    })
+
+    it('clears the history when only tailSeconds changed elsewhere', () => {
+      expect(outsideChange(snap('あ'), snap('あ', { tailSeconds: 2 }))).toBe('clear')
+      expect(outsideChange(snap('あ', { tailSeconds: 2 }), snap('あ'))).toBe('clear')
+      expect(outsideChange(snap('あ', { tailSeconds: 2 }), snap('あ', { tailSeconds: 2 }))).toBe('none')
+    })
+
+    it('restores an absent tailSeconds as an absent key in a gesture entry', () => {
+      const before = snap('あ')
+      const entry = gestureEntry({ token: 1, lineId: 'l1', before, owned: ['tailSeconds'] }, snap('あ', { tailSeconds: 3 }))
+      expect(entry).not.toBeNull()
+      expect('tailSeconds' in entry!).toBe(false)
+    })
+  })
 })
 
 describe('shortcutAction', () => {

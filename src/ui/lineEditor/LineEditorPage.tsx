@@ -3,6 +3,7 @@ import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { newId } from '../../core/id'
+import { clampTail, effectiveTail } from '../../core/export/tail'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
 import { CreditPanel } from '../script/CreditPanel'
@@ -20,6 +21,7 @@ import type { SpeakLine } from '../script/useSpeakLine'
 import { GlobalParams } from './GlobalParams'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
+import { TailLengthPanel } from './TailLengthPanel'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
 import { useLineHistory } from './useLineHistory'
@@ -312,6 +314,19 @@ export function LineEditorPage({ active }: { active: boolean }) {
           }
           onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
           onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}
+        />
+        <TailLengthPanel
+          seconds={line ? effectiveTail(line, settings.export) : clampTail(settings.export.tailSeconds)}
+          own={line?.tailSeconds !== undefined}
+          disabled={!line || locked}
+          onChange={(v) => line && void editLine(line.id, (l) => ({ ...l, tailSeconds: clampTail(v) }))}
+          onReset={() =>
+            line &&
+            void editLine(line.id, (l) => {
+              const { tailSeconds: _own, ...rest } = l
+              return rest
+            })
+          }
         />
         {credit && (
           <CreditPanel

@@ -1242,6 +1242,17 @@ input[type='color'] {
   min-width: 0;
 }
 
+.tail-param {
+  grid-template-columns: 6em 1fr 4em;
+}
+
+.tail-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 /* 再生と書き出しのボタンが画面の下へ押し出されないよう、プレビューの高さを抑える */
 .line-editor-main .line-preview-canvas {
   width: auto;
