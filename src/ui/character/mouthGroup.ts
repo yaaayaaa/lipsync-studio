@@ -1,4 +1,4 @@
-import type { MouthMap } from '../../core/character/types'
+import type { EyeMap, MouthMap } from '../../core/character/types'
 import type { LayerId } from '../../core/psd/types'
 
 /**
@@ -11,4 +11,15 @@ export function groupChoicePatch(
   chosenId: LayerId | null,
 ): { mouthGroupId: LayerId | null; mouthMap: MouthMap } | null {
   return chosenId === savedGroupId ? null : { mouthGroupId: chosenId, mouthMap: {} }
+}
+
+/**
+ * 目のグループを選んだときの保存内容。規則は口（groupChoicePatch）と同じ。
+ * 古い保存データは eyeGroupId を持たない（undefined）ので、null と同じ「未設定」として扱う。
+ */
+export function eyeGroupChoicePatch(
+  savedGroupId: LayerId | null | undefined,
+  chosenId: LayerId | null,
+): { eyeGroupId: LayerId | null; eyeMap: EyeMap } | null {
+  return chosenId === (savedGroupId ?? null) ? null : { eyeGroupId: chosenId, eyeMap: {} }
 }

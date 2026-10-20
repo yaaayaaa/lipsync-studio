@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
+import { applyEyes, blinkSpec } from '../../core/character/eyes'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
-import type { Character, Expression, Vowel } from '../../core/character/types'
+import type { Character, EyeState, Expression, Vowel } from '../../core/character/types'
 import { initialVisibility, setVisible } from '../../core/psd/visibility'
 import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import { useApp } from '../useApp'
@@ -20,6 +21,9 @@ import { DEFAULT_PREVIEW_MODE, PREVIEW_MODES, previewModeAfter, previewMouthLaye
 import type { LiveMouth, PreviewEvent, PreviewMode } from './previewMode'
 import { VoicePanel } from './VoicePanel'
 import { newId } from '../../core/id'
+import { FPS } from '../../core/export/frames'
+import { eyeAtFrame } from '../../core/lipsync/blink'
+import { EyePanel } from './EyePanel'
 
 const characterNameId = (id: string) => `character-name-${id}`
 
@@ -193,13 +197,18 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
   const live = useLiveMouth()
   const follow = (event: PreviewEvent) => setPreviewMode(previewModeAfter(event))
 
+  const spec = useMemo(() => blinkSpec(character), [character])
+  const { blinkEye, blink } = useBlinkPreview(spec !== null && spec.half !== null)
+
   const previewVisibility = useMemo(() => {
     const { mouthGroupId, mouthMap } = character
-    if (playbackVowel !== null) {
-      return applyMouth(tree, visibility, mouthGroupId, resolveMouthLayer(mouthMap, playbackVowel))
-    }
-    return applyMouth(tree, visibility, mouthGroupId, previewMouthLayer(mouthMap, previewMode, live.value))
-  }, [tree, visibility, playbackVowel, previewMode, live.value, character])
+    const mouth =
+      playbackVowel !== null
+        ? applyMouth(tree, visibility, mouthGroupId, resolveMouthLayer(mouthMap, playbackVowel))
+        : applyMouth(tree, visibility, mouthGroupId, previewMouthLayer(mouthMap, previewMode, live.value))
+    // 開いた目はスタイルの表示のまま。瞬きボタンの再生中だけ閉じ目・半目を当てる
+    return applyEyes(tree, mouth, spec, blinkEye)
+  }, [tree, visibility, playbackVowel, previewMode, live.value, character, spec, blinkEye])
 
   const selectExpression = (e: Expression) => {
     setVisibility(e.visibility)
@@ -214,6 +223,7 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           tree={tree}
           visibility={visibility}
           mouthGroupId={character.mouthGroupId}
+          eyeGroupId={character.eyeGroupId ?? null}
           psdSize={psdSize}
           onToggle={(id, visible) => {
             setVisibility((v) => setVisible(tree, v, id, visible))
@@ -239,6 +249,9 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
         <div className="preview-stage">
           <Preview tree={tree} visibility={previewVisibility} psdSize={psdSize} />
         </div>
+        <button type="button" className="blink-button" disabled={spec === null || blinkEye !== 'open'} onClick={blink}>
+          瞬き
+        </button>
         <p className="hint">
           {psdSize.width}×{psdSize.height}・{character.psdFileName}
           {playbackVowel !== null && `・再生中（${VOWEL_LABELS[playbackVowel]}）`}
@@ -258,6 +271,13 @@ function ReadyEditor({ character, onSave, tree, psdSize }: EditorProps & { tree:
           onPlaybackMouth={setPlaybackVowel}
           onVowelOpen={(vowel) => follow({ type: 'vowelOpened', vowel })}
           onLiveMouth={live.set}
+        />
+        <EyePanel
+          tree={tree}
+          character={character}
+          visibility={visibility}
+          psdSize={psdSize}
+          onChange={(patch) => onSave({ ...character, ...patch })}
         />
         <ExpressionPanel
           tree={tree}
@@ -302,4 +322,25 @@ function useLiveMouth(): { value: LiveMouth | null; set(vowel: Vowel, layerId: L
     })
   }
   return { value, set }
+}
+
+/** 「瞬き」ボタン用。瞬き1回分（eyeAtFrame の先頭）を 1/30 秒ずつ流し、終わったら開いた目に戻す。 */
+function useBlinkPreview(hasHalf: boolean): { blinkEye: EyeState; blink(): void } {
+  const [blinkEye, setBlinkEye] = useState<EyeState>('open')
+  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+
+  useEffect(() => () => clearInterval(timer.current), [])
+
+  const blink = () => {
+    clearInterval(timer.current)
+    const frameCount = hasHalf ? 4 : 3
+    let frame = 0
+    setBlinkEye(eyeAtFrame([0], frame, hasHalf))
+    timer.current = setInterval(() => {
+      frame += 1
+      if (frame >= frameCount) clearInterval(timer.current)
+      setBlinkEye(eyeAtFrame([0], frame, hasHalf))
+    }, 1000 / FPS)
+  }
+  return { blinkEye, blink }
 }

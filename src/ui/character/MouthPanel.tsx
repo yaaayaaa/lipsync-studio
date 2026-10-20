@@ -6,8 +6,8 @@ import type { LayerId, LayerNode, VisibilityState } from '../../core/psd/types'
 import { useApp } from '../useApp'
 import type { PsdSize } from '../usePsd'
 import { LayerSelect } from './LayerSelect'
+import { groupOptions } from './groupOptions'
 import { groupChoicePatch } from './mouthGroup'
-import type { LayerOption } from './LayerSelect'
 import { VOWEL_LABELS } from './labels'
 import { browserPlaybackEnv, startSamplePlayback } from './samplePlayback'
 import type { PlaybackHandle } from './samplePlayback'
@@ -27,17 +27,6 @@ interface Props {
   onVowelOpen(vowel: Vowel): void
   /** 開いている母音のドロップダウンで強調中の口（null は「未設定」）。閉じたら undefined */
   onLiveMouth(vowel: Vowel, layerId: LayerId | null | undefined): void
-}
-
-/** flip を除いた全グループを、親からのパス付きの名前で上から順に並べる。 */
-function groupOptions(nodes: LayerNode[], prefix = ''): LayerOption[] {
-  return [...nodes]
-    .reverse()
-    .filter((n) => n.isGroup && !n.flip)
-    .flatMap((n) => {
-      const label = prefix + n.name
-      return [{ node: n, label }, ...groupOptions(n.children, `${label}/`)]
-    })
 }
 
 function assign(map: MouthMap, vowel: Vowel, layerId: LayerId | null): MouthMap {

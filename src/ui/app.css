@@ -1497,3 +1497,12 @@ input[type='color'] {
 .mora-text {
   font-size: 14px;
 }
+
+.blink-button {
+  align-self: center;
+}
+
+/* 閉じ目・半目は名前が長いので1列に並べる */
+.eye-grid {
+  grid-template-columns: 1fr;
+}

@@ -7,6 +7,7 @@ interface Props {
   tree: LayerNode[]
   visibility: VisibilityState
   mouthGroupId: LayerId | null
+  eyeGroupId: LayerId | null
   psdSize: PsdSize
   onToggle(id: LayerId, visible: boolean): void
 }
@@ -28,13 +29,14 @@ function Nodes({ nodes, groupName, ...props }: Props & { nodes: LayerNode[]; gro
 }
 
 function Node({ node, groupName, ...props }: Props & { node: LayerNode; groupName: string }) {
-  const { tree, visibility, mouthGroupId, psdSize, onToggle } = props
+  const { tree, visibility, mouthGroupId, eyeGroupId, psdSize, onToggle } = props
   const checked = visibility[node.id] === true
   const dimmed = !isEffectivelyVisible(tree, visibility, node.id)
   const label = (
     <span className={`layer-name${node.isGroup ? ' group' : ''}${node.id === mouthGroupId ? ' mouth' : ''}`}>
       {node.name}
       {node.id === mouthGroupId && <span className="badge">口</span>}
+      {node.id === eyeGroupId && <span className="badge">目</span>}
     </span>
   )
 
