@@ -44,9 +44,11 @@ async function describeHttpFailure(res: Response): Promise<string> {
   try {
     const body: unknown = JSON.parse(await res.text())
     const raw = (body as { detail?: unknown } | null)?.detail
-    if (raw !== undefined) {
-      detail = typeof raw === 'string' ? raw : JSON.stringify(raw)
-    }
+    // かな表記の誤りなどは { text, error_name, error_args } で返るので、人に向けた text を使う
+    const text = (raw as { text?: unknown } | null)?.text
+    if (typeof raw === 'string') detail = raw
+    else if (typeof text === 'string') detail = text
+    else if (raw !== undefined) detail = JSON.stringify(raw)
   } catch {
     // 本文が JSON でなければ、ステータスだけを伝える。
   }

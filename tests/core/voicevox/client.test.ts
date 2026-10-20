@@ -74,6 +74,15 @@ describe('VoicevoxClient', () => {
     expect(err.message).toContain('bad text')
   })
 
+  // かな表記の誤りなどは detail が {text, error_name, error_args} で返る（エンジン 0.25.2 で確認）
+  it('uses the engine\'s own message when detail is an object with text', async () => {
+    const body = { detail: { text: '判別できない読み仮名があります: A', error_name: 'UNKNOWN_TEXT', error_args: { text: 'A' } } }
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body, 400))
+    const client = new VoicevoxClient({ baseUrl: BASE, fetch: fetchMock })
+    const err = await catchError(client.accentPhrases("A'", 1, true))
+    expect(err.message).toBe('VOICEVOX エンジンがエラーを返しました (400): 判別できない読み仮名があります: A')
+  })
+
   it('maps non-JSON error body to http error without detail', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('oops', { status: 500 }))
     const client = new VoicevoxClient({ baseUrl: BASE, fetch: fetchMock })
