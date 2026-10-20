@@ -7,6 +7,8 @@ const GAP_SPAN = 60 // 前の開始から 90〜149 フレーム（3〜5 秒）
 
 const BLINK_WITH_HALF: readonly EyeState[] = ['half', 'closed', 'closed', 'half']
 const BLINK_WITHOUT_HALF: readonly EyeState[] = ['closed', 'closed', 'closed']
+/** 瞬き1回の長いほう（半目あり）。開始位置を半目の有無と無関係に決めるため、こちらで収まるかを見る */
+const LONGEST_BLINK = Math.max(BLINK_WITH_HALF.length, BLINK_WITHOUT_HALF.length)
 
 /** 種の文字列から 32bit の値を作る（FNV-1a） */
 function hashSeed(seed: string): number {
@@ -31,13 +33,14 @@ function mulberry32(seed: number): () => number {
 
 /**
  * 各瞬きの開始フレーム。乱数を頭から順に引くので、frameCount を延ばしても前のほうの位置は変わらない。
- * frameCount 以降に始まるものは含めない。
+ * 動画の終わりで途中まで閉じた目のまま切れないよう、瞬き1回（長いほうの 4 フレーム）が
+ * frameCount までに収まるものだけ含める。
  */
 export function blinkStarts(seed: string, frameCount: number): number[] {
   const rand = mulberry32(hashSeed(seed))
   const starts: number[] = []
   let start = FIRST_BLINK_MIN + Math.floor(rand() * FIRST_BLINK_SPAN)
-  while (start < frameCount) {
+  while (start + LONGEST_BLINK <= frameCount) {
     starts.push(start)
     start += GAP_MIN + Math.floor(rand() * GAP_SPAN)
   }

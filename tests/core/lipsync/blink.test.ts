@@ -20,7 +20,7 @@ describe('blinkStarts', () => {
         expect(gap).toBeGreaterThanOrEqual(90)
         expect(gap).toBeLessThanOrEqual(149)
       }
-      expect(starts.every((s) => s < 3000)).toBe(true)
+      expect(starts.every((s) => s + 4 <= 3000)).toBe(true)
     }
   })
 
@@ -31,9 +31,19 @@ describe('blinkStarts', () => {
     }
   })
 
-  it('is empty when frameCount is under 30', () => {
-    expect(blinkStarts('a', 29)).toEqual([])
+  it('is empty when frameCount is under 34 (the earliest blink needs 30 + 4 frames)', () => {
+    expect(blinkStarts('a', 33)).toEqual([])
     expect(blinkStarts('a', 0)).toEqual([])
+  })
+
+  it('leaves out a blink that the clip end would cut', () => {
+    for (const seed of seeds) {
+      const [first] = blinkStarts(seed, 3000)
+      // 4 フレーム（半目ありの長さ）が収まるときだけ入る
+      expect(blinkStarts(seed, first + 4)[0]).toBe(first)
+      expect(blinkStarts(seed, first + 3)).toEqual([])
+      expect(blinkStarts(seed, first + 1)).toEqual([])
+    }
   })
 })
 
@@ -58,5 +68,19 @@ describe('eyeSchedule', () => {
     expect(sched).toHaveLength(200)
     expect(sched).toEqual(Array.from({ length: 200 }, (_, f) => eyeAtFrame(starts, f, true)))
     expect(sched).toContain('closed')
+  })
+
+  it('never ends the clip in the middle of a blink', () => {
+    for (const seed of seeds) {
+      const [first] = blinkStarts(seed, 3000)
+      for (const hasHalf of [true, false]) {
+        for (const frameCount of [first + 1, first + 2, first + 3]) {
+          expect(eyeSchedule(seed, frameCount, hasHalf).every((e) => e === 'open')).toBe(true)
+        }
+        const whole = eyeSchedule(seed, first + 4, hasHalf)
+        expect(whole.at(-1)).toBe(hasHalf ? 'half' : 'open')
+        expect(whole.slice(first)).toEqual(hasHalf ? ['half', 'closed', 'closed', 'half'] : ['closed', 'closed', 'closed', 'open'])
+      }
+    }
   })
 })
