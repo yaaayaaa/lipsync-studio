@@ -1053,6 +1053,11 @@ input[type='color'] {
   flex: none;
 }
 
+/* 文の欄の包み（取り消しの履歴をまとめるため）。下に行の高さ分の隙間を作らない */
+.line-text-field .line-text {
+  display: block;
+}
+
 .line-editor-main h2 {
   margin-bottom: 0;
 }

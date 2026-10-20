@@ -1,0 +1,182 @@
+import { describe, expect, it } from 'vitest'
+import type { LineTuning, ScriptLine } from '../../../src/core/character/types'
+import {
+  HISTORY_LIMIT,
+  applySnapshot,
+  emptyHistory,
+  isTextEntry,
+  record,
+  redo,
+  sameSnapshot,
+  shortcutAction,
+  snapshotOf,
+  undo,
+} from '../../../src/ui/lineEditor/history'
+import type { Snapshot } from '../../../src/ui/lineEditor/history'
+
+const tuning = (text: string, intonationScale = 1): LineTuning => ({
+  text,
+  styleId: 3,
+  accentPhrases: [],
+  pitchScale: 0,
+  intonationScale,
+  volumeScale: 1,
+  pauseLengthScale: 1,
+  prePhonemeLength: 0.1,
+  postPhonemeLength: 0.1,
+})
+
+const snap = (text: string, patch: Partial<Snapshot> = {}): Snapshot => ({
+  text,
+  speedScale: 1,
+  characterId: 'c1',
+  expressionId: 'e1',
+  tuning: undefined,
+  ...patch,
+})
+
+describe('record / undo / redo', () => {
+  it('round-trips: undo returns the recorded state, redo returns the state it replaced', () => {
+    const a = snap('あ')
+    const b = snap('い')
+    const h = record(emptyHistory, a)
+
+    const undone = undo(h, b)
+    expect(undone?.snapshot).toBe(a)
+    expect(undone?.history).toEqual({ past: [], future: [b] })
+
+    const redone = redo(undone!.history, a)
+    expect(redone?.snapshot).toBe(b)
+    expect(redone?.history).toEqual({ past: [a], future: [] })
+  })
+
+  it('walks back several steps in order', () => {
+    const [a, b, c] = [snap('あ'), snap('い'), snap('う')]
+    const h = record(record(emptyHistory, a), b)
+    const first = undo(h, c)!
+    expect(first.snapshot).toBe(b)
+    const second = undo(first.history, b)!
+    expect(second.snapshot).toBe(a)
+    expect(undo(second.history, a)).toBeNull()
+    expect(redo(second.history, a)?.snapshot).toBe(b)
+  })
+
+  it('returns null when there is nothing to undo or redo', () => {
+    expect(undo(emptyHistory, snap('あ'))).toBeNull()
+    expect(redo(emptyHistory, snap('あ'))).toBeNull()
+    expect(redo(record(emptyHistory, snap('あ')), snap('い'))).toBeNull()
+  })
+
+  it('clears the redo stack when a new edit is recorded after an undo', () => {
+    const [a, b] = [snap('あ'), snap('い')]
+    const undone = undo(record(emptyHistory, a), b)!
+    expect(undone.history.future).toHaveLength(1)
+    const next = record(undone.history, a)
+    expect(next.future).toEqual([])
+    expect(redo(next, snap('え'))).toBeNull()
+  })
+
+  it(`keeps at most ${HISTORY_LIMIT} entries and drops the oldest first`, () => {
+    expect(HISTORY_LIMIT).toBe(100)
+    let h = emptyHistory
+    for (let i = 0; i < HISTORY_LIMIT + 5; i++) h = record(h, snap(String(i)))
+    expect(h.past).toHaveLength(HISTORY_LIMIT)
+    expect(h.past[0]!.text).toBe('5')
+    expect(h.past.at(-1)!.text).toBe(String(HISTORY_LIMIT + 4))
+  })
+
+  it('does not mutate the history it was given', () => {
+    const h = record(emptyHistory, snap('あ'))
+    const frozen = structuredClone(h)
+    record(h, snap('い'))
+    undo(h, snap('う'))
+    expect(h).toEqual(frozen)
+  })
+})
+
+describe('snapshots', () => {
+  const line: ScriptLine = {
+    id: 'l1',
+    text: 'ずんだ',
+    characterId: 'c1',
+    expressionId: 'e1',
+    speedScale: 1.2,
+    tuning: tuning('ずんだ'),
+  }
+
+  it('takes only the undoable fields of a line', () => {
+    expect(snapshotOf(line)).toEqual({
+      text: 'ずんだ',
+      speedScale: 1.2,
+      characterId: 'c1',
+      expressionId: 'e1',
+      tuning: tuning('ずんだ'),
+    })
+  })
+
+  it('applies a snapshot without touching the id', () => {
+    const next = applySnapshot(line, snap('もち', { characterId: 'c2', expressionId: null, speedScale: 0.8 }))
+    expect(next).toEqual({ id: 'l1', text: 'もち', characterId: 'c2', expressionId: null, speedScale: 0.8 })
+  })
+
+  // 作り込みのない状態へ戻すときは、tuning の項目そのものを消す（undefined の項目を残さない）
+  it('removes the tuning key when the snapshot has none', () => {
+    const next = applySnapshot(line, snap('ずんだ'))
+    expect('tuning' in next).toBe(false)
+  })
+
+  it('restores the tuning together with its text', () => {
+    const t = tuning('ずんだ', 1.7)
+    const next = applySnapshot({ ...line, text: 'もち', tuning: undefined }, snap('ずんだ', { tuning: t }))
+    expect(next.text).toBe('ずんだ')
+    expect(next.tuning).toBe(t)
+  })
+
+  it('compares snapshots field by field (tuning by identity)', () => {
+    const t = tuning('ずんだ')
+    expect(sameSnapshot(snap('あ', { tuning: t }), snap('あ', { tuning: t }))).toBe(true)
+    expect(sameSnapshot(snap('あ', { tuning: t }), snap('あ', { tuning: tuning('ずんだ') }))).toBe(false)
+    expect(sameSnapshot(snap('あ'), snap('あ', { speedScale: 1.1 }))).toBe(false)
+    expect(sameSnapshot(snap('あ'), snap('あ', { expressionId: 'e2' }))).toBe(false)
+    expect(sameSnapshot(snap('あ'), snap('い'))).toBe(false)
+  })
+})
+
+describe('shortcutAction', () => {
+  const key = (k: string, mods: Partial<Parameters<typeof shortcutAction>[0]> = {}) =>
+    shortcutAction({ key: k, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, isComposing: false, ...mods })
+
+  it('maps Ctrl/Cmd+Z to undo and Ctrl/Cmd+Shift+Z or Ctrl+Y to redo', () => {
+    expect(key('z', { ctrlKey: true })).toBe('undo')
+    expect(key('z', { metaKey: true })).toBe('undo')
+    expect(key('Z', { ctrlKey: true, shiftKey: true })).toBe('redo')
+    expect(key('Z', { metaKey: true, shiftKey: true })).toBe('redo')
+    expect(key('y', { ctrlKey: true })).toBe('redo')
+  })
+
+  it('ignores other keys, plain keys, Alt combinations and IME composition', () => {
+    expect(key('z')).toBeNull()
+    expect(key('x', { ctrlKey: true })).toBeNull()
+    expect(key('z', { ctrlKey: true, altKey: true })).toBeNull()
+    expect(key('z', { ctrlKey: true, isComposing: true })).toBeNull()
+    expect(key('y', { metaKey: true })).toBeNull()
+  })
+})
+
+describe('isTextEntry', () => {
+  it('leaves text fields, text areas, selects and editable content to the browser', () => {
+    expect(isTextEntry({ tagName: 'TEXTAREA' })).toBe(true)
+    expect(isTextEntry({ tagName: 'SELECT' })).toBe(true)
+    expect(isTextEntry({ tagName: 'INPUT', type: 'text' })).toBe(true)
+    expect(isTextEntry({ tagName: 'INPUT', type: 'number' })).toBe(true)
+    expect(isTextEntry({ tagName: 'DIV', isContentEditable: true })).toBe(true)
+  })
+
+  it('handles the shortcut on sliders, buttons and the page itself', () => {
+    expect(isTextEntry({ tagName: 'INPUT', type: 'range' })).toBe(false)
+    expect(isTextEntry({ tagName: 'INPUT', type: 'checkbox' })).toBe(false)
+    expect(isTextEntry({ tagName: 'BUTTON' })).toBe(false)
+    expect(isTextEntry({ tagName: 'BODY' })).toBe(false)
+    expect(isTextEntry(null)).toBe(false)
+  })
+})

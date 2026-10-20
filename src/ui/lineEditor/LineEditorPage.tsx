@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Download, Play, RotateCcw, Square } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import type { PointerEvent } from 'react'
+import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
-import type { ScriptLine } from '../../core/character/types'
 import { newId } from '../../core/id'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
@@ -21,6 +21,8 @@ import { GlobalParams } from './GlobalParams'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import { setGlobalParam } from './editTuning'
+import { isTextEntry, shortcutAction } from './history'
+import { useLineHistory } from './useLineHistory'
 import { useLineTuning } from './useLineTuning'
 
 const REFRESHED_NOTICE = '声が変わったので高さと長さを取り直しました'
@@ -42,26 +44,10 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const styleId = character?.voice?.styleId ?? null
   const problem = line ? lineProblem(line, characters) : null
 
-  // 最新の行。描画を待たずに続けて編集しても（確定の直後など）変わったかを正しく判断できるよう、
-  // editLine が変えたらすぐここにも入れる
-  const latestLines = useRef(lines)
-  useLayoutEffect(() => {
-    latestLines.current = lines
-  }, [lines])
+  const history = useLineHistory(lines)
+  const { editLine, beginGesture, endGesture, undo, redo } = history
+  const lineId = line?.id ?? null
 
-  /** 行の変更はすべてここを通す（取り消しの履歴をここで取る）。変わったら true */
-  const editLine = useCallback(
-    (lineId: string, fn: (l: ScriptLine) => ScriptLine): boolean => {
-      const current = latestLines.current?.find((l) => l.id === lineId)
-      if (!current) return false
-      const next = fn(current)
-      if (next === current) return false
-      latestLines.current = latestLines.current!.map((l) => (l === current ? next : l))
-      update((prev) => prev.map((l) => (l.id === lineId ? fn(l) : l)))
-      return true
-    },
-    [update],
-  )
   const tuning = useLineTuning({ line, styleId, locked, editLine })
   const { markRefreshed } = tuning
 
@@ -80,6 +66,21 @@ export function LineEditorPage({ active }: { active: boolean }) {
   // 別の行を開いたら、前の行の再生とプレビューは片付ける
   const { clearPreview } = playback
   useEffect(() => clearPreview(), [editingLineId, clearPreview])
+
+  // Ctrl/Cmd+Z で取り消し、Ctrl/Cmd+Shift+Z と Ctrl+Y でやり直し。この画面を開いているときだけ。
+  // 文の欄などで打っている最中はブラウザ標準の取り消しに任せる
+  useEffect(() => {
+    if (!active || lineId === null) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      const action = shortcutAction(e)
+      if (!action || isTextEntry(e.target instanceof HTMLElement ? e.target : null)) return
+      e.preventDefault()
+      if (action === 'undo') undo(lineId)
+      else redo(lineId)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [active, lineId, undo, redo])
 
   if (!lines) {
     return (
@@ -137,8 +138,22 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const caption = playing ? (loading ? '合成中…' : '再生中') : null
   const canTune = styleId !== null && line !== null && line.text.trim() !== ''
 
+  // つまみのドラッグは、押してから離すまでを1件の履歴にまとめる（キーで動かしたときは1回ずつ）
+  const startSliderGesture = (e: PointerEvent<HTMLElement>) => {
+    const target = e.target
+    if (!line || !(target instanceof HTMLInputElement) || target.type !== 'range') return
+    beginGesture(line.id)
+    const done = new AbortController()
+    const finish = () => {
+      done.abort()
+      endGesture()
+    }
+    window.addEventListener('pointerup', finish, { signal: done.signal })
+    window.addEventListener('pointercancel', finish, { signal: done.signal })
+  }
+
   return (
-    <div className="line-editor-page">
+    <div className="line-editor-page" onPointerDownCapture={startSliderGesture}>
       <LineEditorList
         lines={lines}
         selectedId={line?.id ?? null}
@@ -157,13 +172,16 @@ export function LineEditorPage({ active }: { active: boolean }) {
         ) : (
           <>
             <h2>{index + 1}行目</h2>
-            <LineTextArea
-              line={line}
-              disabled={locked}
-              label={`${index + 1}行目のセリフ`}
-              rows={3}
-              onEdit={(fn) => void editLine(line.id, fn)}
-            />
+            {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む */}
+            <div className="line-text-field" onFocus={() => beginGesture(line.id)} onBlur={endGesture}>
+              <LineTextArea
+                line={line}
+                disabled={locked}
+                label={`${index + 1}行目のセリフ`}
+                rows={3}
+                onEdit={(fn) => void editLine(line.id, fn)}
+              />
+            </div>
             <div className="line-controls">
               <LineCharacterSelects
                 line={line}
@@ -218,6 +236,24 @@ export function LineEditorPage({ active }: { active: boolean }) {
                 </button>
               )}
               <span className="spacer" />
+              <button
+                type="button"
+                disabled={!history.canUndo(line.id) || locked}
+                aria-label="取り消し"
+                title="取り消し（Ctrl/Cmd+Z）"
+                onClick={() => undo(line.id)}
+              >
+                <Undo2 {...iconProps} />
+              </button>
+              <button
+                type="button"
+                disabled={!history.canRedo(line.id) || locked}
+                aria-label="やり直し"
+                title="やり直し（Ctrl/Cmd+Shift+Z）"
+                onClick={() => redo(line.id)}
+              >
+                <Redo2 {...iconProps} />
+              </button>
               <button
                 type="button"
                 disabled={!line.tuning || locked}
