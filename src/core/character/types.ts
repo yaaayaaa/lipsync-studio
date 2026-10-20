@@ -53,6 +53,8 @@ export interface ScriptLine {
   characterId: string | null
   expressionId: string | null
   speedScale: number
+  /** 喋り終わったあと立ち絵を映し続ける秒数。ない＝書き出し設定の既定を使う（0 も行の値として効く） */
+  tailSeconds?: number
   tuning?: LineTuning
 }
 
@@ -62,6 +64,8 @@ export interface ExportSettings {
   /** 立ち絵の高さ ÷ 動画の高さ */
   scale: number
   background: string
+  /** 喋り終わったあと立ち絵を映し続ける既定の秒数（行ごとに ScriptLine.tailSeconds で上書きできる） */
+  tailSeconds: number
 }
 
 export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
@@ -69,4 +73,5 @@ export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
   height: 1080,
   scale: 0.9,
   background: '#00FF00',
+  tailSeconds: 0,
 }

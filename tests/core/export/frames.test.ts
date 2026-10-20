@@ -45,7 +45,7 @@ describe('frameSchedule', () => {
 
 describe('placement', () => {
   it('centres the character with height = video height * scale', () => {
-    const settings = { width: 1920, height: 1080, scale: 0.9, background: '#00FF00' }
+    const settings = { width: 1920, height: 1080, scale: 0.9, background: '#00FF00', tailSeconds: 0 }
     expect(placement(settings, { width: 1000, height: 2000 })).toEqual({ height: 972, width: 486, x: 717, y: 54 })
   })
 })

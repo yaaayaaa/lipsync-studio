@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ExportSettings } from '../../core/character/types'
+import { TAIL_RANGE } from '../../core/export/tail'
 import { useApp } from '../useApp'
 import { errorMessage } from '../script/lineJobs'
 
@@ -12,7 +13,7 @@ const SCALE_MIN = 0.3
 const SCALE_MAX = 1.5
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
 
-/** 解像度・拡大率・背景色。全行の書き出しにも1行ずつの書き出しにも効く */
+/** 解像度・拡大率・終端の長さ・背景色。全行の書き出しにも1行ずつの書き出しにも効く */
 export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
   const { settings, saveSettings } = useApp()
   const current = settings.export
@@ -67,6 +68,20 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
         <output className="value">{current.scale.toFixed(2)}</output>
       </label>
       <p className="hint">拡大率は「立ち絵の高さ ÷ 動画の高さ」です。立ち絵は中央に置きます。</p>
+      <label className="field">
+        <span>終端の長さ</span>
+        <input
+          type="range"
+          min={TAIL_RANGE.min}
+          max={TAIL_RANGE.max}
+          step={TAIL_RANGE.step}
+          value={current.tailSeconds}
+          disabled={disabled}
+          onChange={(e) => update({ tailSeconds: Number(e.target.value) })}
+        />
+        <output className="value">{current.tailSeconds.toFixed(1)} 秒</output>
+      </label>
+      <p className="hint">喋り終わったあと、立ち絵を映し続ける長さ。1行編集で行ごとに変えられます</p>
       <div className="field">
         <span>背景色</span>
         <input

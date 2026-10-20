@@ -95,6 +95,17 @@ describe('Store script and settings', () => {
     expect('tuning' in loaded[1]!).toBe(false)
   })
 
+  it('round-trips tailSeconds on a line, and leaves it absent when unset', async () => {
+    const name = dbName()
+    const withTail = line({ tailSeconds: 0 })
+    const plain = line({ id: 'l2', text: 'b' })
+    await (await openStore(name)).saveScript([withTail, plain])
+    const loaded = await (await openStore(name)).loadScript()
+    expect(loaded).toEqual([withTail, plain])
+    expect(loaded[0]!.tailSeconds).toBe(0)
+    expect('tailSeconds' in loaded[1]!).toBe(false)
+  })
+
   it('returns defaults when settings were never saved, as a fresh copy', async () => {
     const store = await freshStore()
     const s = await store.loadSettings()
@@ -116,6 +127,12 @@ describe('Store script and settings', () => {
     expect(s.engineUrl).toBe('http://x:1')
     expect(s.export.background).toBe('#000000')
     expect(s.export.scale).toBe(0.9)
+  })
+
+  it('fills tailSeconds with 0 for settings saved before it existed', async () => {
+    const store = await freshStore()
+    await store.saveSettings({ engineUrl: 'http://y', export: { width: 1280, height: 720, scale: 0.9, background: '#00FF00' } } as never)
+    expect((await store.loadSettings()).export.tailSeconds).toBe(0)
   })
 
   it('merges partially stored settings over defaults', async () => {

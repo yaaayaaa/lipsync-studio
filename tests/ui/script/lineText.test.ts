@@ -75,3 +75,12 @@ describe('restoreTunedText', () => {
     expect(restoreTunedText(tuned)).toBe(tuned)
   })
 })
+
+describe('tailSeconds', () => {
+  it('survives a text change that drops the tuning', () => {
+    const tuned = line({ tuning: tuning('ずんだもんなのだ'), tailSeconds: 1.5 })
+    expect(applyTextChange(tuned, 'ずんだもん').tailSeconds).toBe(1.5)
+    expect(dropTuning(applyTextChange(tuned, 'ずんだもん')).tailSeconds).toBe(1.5)
+    expect(dropTuning(tuned)).not.toHaveProperty('tuning')
+  })
+})
