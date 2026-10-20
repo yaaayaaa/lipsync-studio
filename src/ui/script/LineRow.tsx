@@ -1,8 +1,12 @@
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowUp, SlidersHorizontal, SquarePen, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { Character, ScriptLine } from '../../core/character/types'
 import type { LineProblem } from '../../core/storage/db'
+import { RowMenu } from '../character/RowMenu'
 import { PROBLEM_LABELS, canListen } from './lineJobs'
+import { applyTextChange, commitText, dropTuning } from './lineText'
+
+const DROP_TUNING_CONFIRM = 'この行の作り込み（アクセント・高さ・長さなど）が消えます。よろしいですか？'
 
 export const SPEED_MIN = 0.5
 export const SPEED_MAX = 2.0
@@ -27,11 +31,14 @@ interface Props {
   /** 書き出し中は行の編集と操作を止める */
   locked: boolean
   onChange(patch: Partial<ScriptLine>): void
+  /** 今の行から次の行を作る（作り込みを捨てるなど、項目を消す変更に使う） */
+  onEdit(fn: (line: ScriptLine) => ScriptLine): void
   onMove(delta: -1 | 1): void
   onRemove(): void
   onPlay(mode: PlaybackMode): void
   onStop(): void
   onExport(): void
+  onOpenEditor(): void
 }
 
 export function LineRow(props: Props) {
@@ -42,6 +49,14 @@ export function LineRow(props: Props) {
   const selectCharacter = (id: string) => {
     const next = characters.find((c) => c.id === id)
     props.onChange({ characterId: next?.id ?? null, expressionId: next?.expressions[0]?.id ?? null })
+  }
+
+  // 作り込みのある行は、文を確定したときに初めて作り込みを捨てる（打ち間違い1つで消さないため）。
+  // 確定はフォーカスを外したときだけ。この欄は複数行なので Enter は改行のまま
+  const commit = () => {
+    if (!commitText(line).needsConfirm) return
+    if (window.confirm(DROP_TUNING_CONFIRM)) props.onEdit(dropTuning)
+    else props.onEdit((current) => (current.tuning ? applyTextChange(current, current.tuning.text) : current))
   }
 
   const playButton = (mode: PlaybackMode, label: string) =>
@@ -61,7 +76,14 @@ export function LineRow(props: Props) {
 
   return (
     <li className={`line-row${problem ? ' has-problem' : ''}`}>
-      <div className="line-index">{String(index + 1).padStart(3, '0')}</div>
+      <div className="line-index">
+        {String(index + 1).padStart(3, '0')}
+        {line.tuning && (
+          <span className="line-tuned" role="img" aria-label="作り込み済み" title="作り込み済み">
+            <SlidersHorizontal {...iconProps} />
+          </span>
+        )}
+      </div>
       <div className="line-main">
         <textarea
           className="line-text"
@@ -70,7 +92,11 @@ export function LineRow(props: Props) {
           placeholder="セリフを入力"
           disabled={locked}
           aria-label={`${index + 1}行目のセリフ`}
-          onChange={(e) => props.onChange({ text: e.target.value })}
+          onChange={(e) => {
+            const text = e.target.value
+            props.onEdit((current) => applyTextChange(current, text))
+          }}
+          onBlur={commit}
         />
         <div className="line-controls">
           <select
@@ -146,9 +172,13 @@ export function LineRow(props: Props) {
           >
             <ArrowDown {...iconProps} />
           </button>
-          <button type="button" className="danger" disabled={locked} onClick={props.onRemove}>
-            削除
-          </button>
+          <RowMenu
+            label={`${index + 1}行目の操作`}
+            items={[
+              { label: '1行編集で開く', icon: SquarePen, onSelect: props.onOpenEditor },
+              { label: '削除', icon: Trash2, danger: true, disabled: locked, onSelect: props.onRemove },
+            ]}
+          />
         </span>
       </div>
     </li>

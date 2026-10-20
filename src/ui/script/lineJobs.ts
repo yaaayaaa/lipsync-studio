@@ -1,4 +1,4 @@
-import type { Character, Expression, ExportSettings, ScriptLine, Vowel } from '../../core/character/types'
+import type { Character, Expression, ExportSettings, LineTuning, ScriptLine, Vowel } from '../../core/character/types'
 import { placement } from '../../core/export/frames'
 import type { MouthFrames } from '../../core/export/frames'
 import { lineProblem } from '../../core/storage/db'
@@ -29,6 +29,17 @@ export function resolveLine(line: ScriptLine, characters: Character[], listenOnl
   const character = characters.find((c) => c.id === line.characterId)!
   const expression = character.expressions.find((e) => e.id === line.expressionId)!
   return { character: character as ReadyLine['character'], expression }
+}
+
+/**
+ * 声が変わって取り直した作り込みを、その行へ書き戻す（speakLine が tuning を返したとき）。
+ * 合成を待つ間に文を変えて作り込みが別の文のものになった（または消えた・行が消えた）なら、取り直した値は捨てる。
+ * 作り込みは、使われた時点で文と合っていたので、取り直した値の text が合成した文になる。
+ */
+export function saveRefreshedTuning(lines: ScriptLine[], lineId: string, refreshed: LineTuning): ScriptLine[] {
+  const current = lines.find((l) => l.id === lineId)
+  if (current?.tuning?.text !== refreshed.text) return lines
+  return lines.map((l) => (l === current ? { ...l, tuning: refreshed } : l))
 }
 
 /** 書き出しと同じ配置で1フレームを描く（プレビュー用）。 */

@@ -1,20 +1,23 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { AppProvider } from './AppContext'
 import { CharacterPage } from './character/CharacterPage'
 import { EngineBanner } from './EngineBanner'
+import { ScriptProvider } from './script/ScriptContext'
 import { ScriptPage } from './script/ScriptPage'
 import { SupportBanner } from './SupportBanner'
 import './app.css'
 
-type Tab = 'character' | 'script'
+type Tab = 'character' | 'script' | 'line'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'character', label: 'キャラ設定' },
   { id: 'script', label: 'セリフ' },
+  { id: 'line', label: '1行編集' },
 ]
 
 export function App() {
   const [tab, setTab] = useState<Tab>('character')
+  const openLineEditorTab = useCallback(() => setTab('line'), [])
   return (
     <div className="app">
       <header className="app-header">
@@ -38,13 +41,19 @@ export function App() {
       <AppProvider>
         <SupportBanner />
         <EngineBanner />
-        {/* 両方とも置いたままにする：タブを切り替えても書き出しの進行や画面の状態を失わないため */}
-        <div className="page" hidden={tab !== 'character'}>
-          <CharacterPage />
-        </div>
-        <div className="page" hidden={tab !== 'script'}>
-          <ScriptPage active={tab === 'script'} />
-        </div>
+        <ScriptProvider onOpenLineEditor={openLineEditorTab}>
+          {/* どれも置いたままにする：タブを切り替えても書き出しの進行や画面の状態を失わないため */}
+          <div className="page" hidden={tab !== 'character'}>
+            <CharacterPage />
+          </div>
+          <div className="page" hidden={tab !== 'script'}>
+            <ScriptPage active={tab === 'script'} />
+          </div>
+          {/* 1行編集の画面本体はまだない（次の作業で作る） */}
+          <div className="page" hidden={tab !== 'line'}>
+            <p className="app-message">1行編集の画面は準備中です</p>
+          </div>
+        </ScriptProvider>
       </AppProvider>
     </div>
   )

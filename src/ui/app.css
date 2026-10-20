@@ -861,9 +861,19 @@ progress {
 }
 
 .line-index {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   padding-top: 4px;
+}
+
+/* 作り込み済みの行の印。押しても何も起きない */
+.line-tuned {
+  display: inline-flex;
+  color: var(--fg);
 }
 
 .line-main {
@@ -932,7 +942,11 @@ input[type='range'] {
   gap: 2px;
 }
 
-.line-order button {
+.line-order {
+  align-items: center;
+}
+
+.line-order > button {
   flex: 1;
   padding: 2px 6px;
 }

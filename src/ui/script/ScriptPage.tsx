@@ -1,27 +1,26 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { iconProps } from '../icons'
-import { prerenderMouthFrames } from '../../core/export/frames'
 import { renderLineMp4 } from '../../core/export/encode'
 import { exportLines, zipResults } from '../../core/export/exportAll'
-import { creditText, lineFileName } from '../../core/export/naming'
+import { creditText, lineFileName, singleFileName } from '../../core/export/naming'
 import { newId } from '../../core/id'
 import type { ScriptLine } from '../../core/character/types'
+import { speakLine } from '../../core/voicevox/speechCache'
+import type { Speech } from '../../core/voicevox/speechCache'
 import { lineProblem } from '../../core/storage/db'
 import { browserPlaybackEnv, startSamplePlayback } from '../character/samplePlayback'
 import type { PlaybackHandle } from '../character/samplePlayback'
 import { useApp } from '../useApp'
-import { loadParsedPsd } from '../usePsd'
 import { ExportSettingsPanel } from './ExportSettingsPanel'
 import { LinePreview } from './LinePreview'
 import type { PreviewFrame } from './LinePreview'
 import { LineRow, SPEED_MAX, SPEED_MIN } from './LineRow'
 import type { LineStatus, PlaybackMode } from './LineRow'
-import { downloadBlob, errorMessage, isAbortError, resolveLine } from './lineJobs'
-import { MouthFrameCache } from './mouthFrameCache'
+import { downloadBlob, errorMessage, isAbortError, resolveLine, saveRefreshedTuning } from './lineJobs'
 import type { FramesLease } from './mouthFrameCache'
+import { useScriptLines } from './useScriptLines'
 
-const SAVE_DEBOUNCE_MS = 300
 const ZIP_NAME = 'zunda-lipsync.zip'
 
 interface Playing {
@@ -44,73 +43,16 @@ function clampSpeed(v: number): number {
   return Number.isFinite(v) ? Math.min(SPEED_MAX, Math.max(SPEED_MIN, v)) : 1
 }
 
-/** 保存済みの行を読み込み、変更のたびに（300ms まとめて）保存する。 */
-function useScript() {
-  const { store } = useApp()
-  const [lines, setLines] = useState<ScriptLine[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const dirty = useRef(false)
-  const latest = useRef<ScriptLine[] | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    store.loadScript().then(
-      (loaded) => !cancelled && setLines(loaded),
-      (e: unknown) => !cancelled && setError(`セリフを読み込めませんでした: ${errorMessage(e)}`),
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [store])
-
-  const save = useCallback(
-    (toSave: ScriptLine[]) => {
-      dirty.current = false
-      store.saveScript(toSave).then(
-        () => setError(null),
-        (e: unknown) => setError(`セリフを保存できませんでした: ${errorMessage(e)}`),
-      )
-    },
-    [store],
-  )
-
-  useEffect(() => {
-    latest.current = lines
-    if (!lines || !dirty.current) return
-    const timer = setTimeout(() => save(lines), SAVE_DEBOUNCE_MS)
-    return () => clearTimeout(timer)
-  }, [lines, save])
-
-  // 画面を離れるときに、待っている保存を捨てない
-  useEffect(
-    () => () => {
-      if (dirty.current && latest.current) save(latest.current)
-    },
-    [save],
-  )
-
-  const update = useCallback((fn: (prev: ScriptLine[]) => ScriptLine[]) => {
-    dirty.current = true
-    setLines((prev) => (prev ? fn(prev) : prev))
-  }, [])
-
-  return { lines, update, error }
-}
-
 export function ScriptPage({ active }: { active: boolean }) {
-  const { speech, characters, settings, store } = useApp()
-  const { lines, update, error: scriptError } = useScript()
+  const { speech, client, characters, settings } = useApp()
+  const { lines, update, error: scriptError, frameCache: cache, openLineEditor } = useScriptLines()
 
-  const cache = useMemo(
-    () =>
-      new MouthFrameCache(async (character, expression) => {
-        const { tree, psdSize } = await loadParsedPsd(store, character.id)
-        const frames = await prerenderMouthFrames(tree, expression.visibility, character, psdSize)
-        return { frames, psdSize }
-      }),
-    [store],
-  )
-  useEffect(() => () => cache.dispose(), [cache])
+  /** 行の作り込みを使って合成する。声が変わって取り直した作り込みは、その行へ保存する */
+  const speakFor = async (line: ScriptLine, styleId: number): Promise<Speech> => {
+    const { speech: spoken, tuning } = await speakLine(speech, client, line, styleId)
+    if (tuning) update((prev) => saveRefreshedTuning(prev, line.id, tuning))
+    return spoken
+  }
 
   const [statuses, setStatuses] = useState<Record<string, LineStatus>>({})
   const setStatus = useCallback((lineId: string, status: LineStatus | null) => {
@@ -174,7 +116,7 @@ export function ScriptPage({ active }: { active: boolean }) {
       async () => {
         const [prepared, sample] = await Promise.all([
           lease?.frames,
-          speech.speak(line.text, character.voice.styleId, line.speedScale),
+          speakFor(line, character.voice.styleId),
         ])
         if (prepared && isCurrent()) setPreview({ lineNumber: index + 1, prepared, vowel: 'closed' })
         return sample
@@ -214,7 +156,7 @@ export function ScriptPage({ active }: { active: boolean }) {
   /** 1行分：合成と口の画像の用意を並行し、mp4 にする。 */
   const renderLine = async (
     line: ScriptLine,
-    index: number,
+    fileNameFor: (characterName: string) => string,
     signal: AbortSignal,
     onProgress: (ratio: number) => void,
   ): Promise<Rendered> => {
@@ -223,10 +165,10 @@ export function ScriptPage({ active }: { active: boolean }) {
     try {
       const [{ frames, psdSize }, { wav, timeline }] = await Promise.all([
         lease.frames,
-        speech.speak(line.text, character.voice.styleId, line.speedScale),
+        speakFor(line, character.voice.styleId),
       ])
       const blob = await renderLineMp4({ wav, timeline, frames, psdSize, settings: settings.export, onProgress, signal })
-      return { fileName: lineFileName(index, character.name, line.text), blob, speakerName: character.voice.speakerName }
+      return { fileName: fileNameFor(character.name), blob, speakerName: character.voice.speakerName }
     } finally {
       lease.release()
     }
@@ -247,11 +189,16 @@ export function ScriptPage({ active }: { active: boolean }) {
     setExporting(null)
   }
 
-  const exportOne = async (line: ScriptLine, index: number) => {
+  const exportOne = async (line: ScriptLine) => {
     const signal = beginExport({ mode: 'one', lineId: line.id })
     setStatus(line.id, { state: 'exporting', progress: 0 })
     try {
-      const r = await renderLine(line, index, signal, (progress) => setStatus(line.id, { state: 'exporting', progress }))
+      const r = await renderLine(
+        line,
+        () => singleFileName(line.text, newId()),
+        signal,
+        (progress) => setStatus(line.id, { state: 'exporting', progress }),
+      )
       downloadBlob(r.blob, r.fileName)
       setStatus(line.id, { state: 'done', fileName: r.fileName })
       setCredit(creditText([r.speakerName]))
@@ -280,7 +227,7 @@ export function ScriptPage({ active }: { active: boolean }) {
           currentLineId = line.id
           setExporting({ mode: 'all', index, total, progress: 0 })
           setStatus(line.id, { state: 'exporting', progress: 0 })
-          const r = await renderLine(line, index, signal, (progress) => {
+          const r = await renderLine(line, (name) => lineFileName(index, name, line.text), signal, (progress) => {
             setExporting({ mode: 'all', index, total, progress })
             setStatus(line.id, { state: 'exporting', progress })
           })
@@ -329,6 +276,9 @@ export function ScriptPage({ active }: { active: boolean }) {
         { id: newId(), text: '', characterId: character?.id ?? null, expressionId, speedScale: 1.0 },
       ]
     })
+
+  const editLine = (id: string, fn: (line: ScriptLine) => ScriptLine) =>
+    update((prev) => prev.map((l) => (l.id === id ? fn(l) : l)))
 
   const changeLine = (id: string, patch: Partial<ScriptLine>) =>
     update((prev) =>
@@ -425,11 +375,13 @@ export function ScriptPage({ active }: { active: boolean }) {
               playing={playing?.lineId === line.id ? { mode: playing.mode, loading: playing.loading } : null}
               locked={locked}
               onChange={(patch) => changeLine(line.id, patch)}
+              onEdit={(fn) => editLine(line.id, fn)}
               onMove={(delta) => moveLine(index, delta)}
               onRemove={() => removeLine(line.id)}
               onPlay={(mode) => play(line, index, mode)}
               onStop={stopPlayback}
-              onExport={() => void exportOne(line, index)}
+              onExport={() => void exportOne(line)}
+              onOpenEditor={() => openLineEditor(line.id)}
             />
           ))}
         </ol>
