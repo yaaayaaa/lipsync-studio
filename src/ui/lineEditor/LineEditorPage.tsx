@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
@@ -24,6 +24,7 @@ import { PhraseEditor } from './PhraseEditor'
 import { TailLengthPanel } from './TailLengthPanel'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
+import { isPlayShortcut, ownsSpace } from './playShortcut'
 import { useLineHistory } from './useLineHistory'
 import { useLineTuning } from './useLineTuning'
 
@@ -86,6 +87,37 @@ export function LineEditorPage({ active }: { active: boolean }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [active, lineId, undo, redo])
 
+  const play = () => {
+    if (!line) return
+    const lineId = line.id
+    setPlayError(null)
+    playback.play(line, index + 1, 'preview', (message) => setPlayError({ lineId, message }))
+  }
+  const playing = playback.playing !== null && playback.playing.lineId === line?.id
+  const canPlay = problem === null && !locked
+  // 再生ボタン・停止ボタンと同じ条件で切り替える
+  const togglePlayback = () => {
+    if (playing) playback.stop()
+    else if (canPlay) play()
+  }
+
+  // Space で再生と停止を切り替える（動画編集ソフトと同じ）。この画面を開いているときだけ。
+  // 文の欄で打っている最中や、開いたドロップダウンの中では Space をそちらに任せる。
+  // ボタンにフォーカスがあっても、Space はボタンを押さずに再生に使う（ボタンは Enter で押せる）
+  const onSpace = useEffectEvent(togglePlayback)
+  useEffect(() => {
+    if (!active || lineId === null) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!isPlayShortcut(e)) return
+      const target = e.target instanceof HTMLElement ? e.target : null
+      if (isTextEntry(target) || ownsSpace(target)) return
+      e.preventDefault()
+      onSpace()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [active, lineId])
+
   if (!lines) {
     return (
       <div className="line-editor-page">
@@ -98,13 +130,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
     const id = newId()
     update((prev) => appendLine(prev, characters, id))
     openLineEditor(id)
-  }
-
-  const play = () => {
-    if (!line) return
-    const lineId = line.id
-    setPlayError(null)
-    playback.play(line, index + 1, 'preview', (message) => setPlayError({ lineId, message }))
   }
 
   const exportLine = async () => {
@@ -137,7 +162,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
 
   const shownPlayError = playError && playError.lineId === line?.id ? playError.message : null
   const shownExport = exportState?.lineId === line?.id ? exportState : null
-  const playing = playback.playing !== null && playback.playing.lineId === line?.id
   const loading = playing && playback.playing!.loading
   const caption = playing ? (loading ? '合成中…' : '再生中') : null
   const canTune = styleId !== null && line !== null && line.text.trim() !== ''
@@ -217,7 +241,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
               frame={playback.preview}
               settings={settings.export}
               caption={caption}
-              idleHint="「再生」を押すと、口パクを音声付きで再生します"
+              idleHint="「再生」か Space で、口パクを音声付きで再生します"
             />
             <PhraseEditor
               key={line.id}
@@ -230,12 +254,12 @@ export function LineEditorPage({ active }: { active: boolean }) {
             />
             <div className="line-editor-actions">
               {playing ? (
-                <button type="button" onClick={playback.stop}>
+                <button type="button" title="停止（Space）" onClick={playback.stop}>
                   <Square {...iconProps} />
                   {loading ? '合成中…' : '停止'}
                 </button>
               ) : (
-                <button type="button" className="primary" disabled={problem !== null || locked} onClick={play}>
+                <button type="button" className="primary" title="再生（Space）" disabled={!canPlay} onClick={play}>
                   <Play {...iconProps} />
                   再生
                 </button>
