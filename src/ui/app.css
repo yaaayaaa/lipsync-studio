@@ -1358,6 +1358,12 @@ input[type='color'] {
   color: var(--selected-fg);
 }
 
+/* タブを切り替えても枠の高さが変わらず、下の再生ボタンが動かないよう、いちばん背の高い「長さ」のタブの分を取っておく。
+   高さは縦のつまみ（120px）と、その上下の数値・文字の行から決まる */
+.phrase-tab-panel {
+  min-height: 198px;
+}
+
 /* 句が多いときは横に流す */
 .phrase-strip {
   display: flex;

@@ -95,7 +95,7 @@ export function PhraseEditor({ phrases, disabled, loadError, onRetry, onChange, 
           {error}
         </p>
       )}
-      <div id="phrase-tab-panel" role="tabpanel" aria-labelledby={`phrase-tab-${tab}`}>
+      <div id="phrase-tab-panel" className="phrase-tab-panel" role="tabpanel" aria-labelledby={`phrase-tab-${tab}`}>
         {phrases === null && disabled ? (
           <p className="hint">セリフと声があると編集できます</p>
         ) : phrases === null && loadError ? (
