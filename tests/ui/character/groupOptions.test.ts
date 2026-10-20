@@ -34,7 +34,7 @@ describe('groupOptions', () => {
     expect(groupOptions(tree).map((o) => o.label)).toEqual(['無関係', '親', '親/兄弟', '親/口', '親/口/孫'])
   })
 
-  it('drops the conflicting groups (equal, ancestor, descendant)', () => {
-    expect(groupOptions(tree, conflictingGroupIds(tree, '0/0')).map((o) => o.label)).toEqual(['無関係'])
+  it('drops the conflicting groups (equal, ancestor, descendant) but keeps a sibling inside a dropped ancestor', () => {
+    expect(groupOptions(tree, conflictingGroupIds(tree, '0/0')).map((o) => o.label)).toEqual(['無関係', '親/兄弟'])
   })
 })

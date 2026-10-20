@@ -27,14 +27,15 @@ export function conflictingGroupIds(tree: LayerNode[], otherId: LayerId | null |
 
 /**
  * flip を除いた全グループを、親からのパス付きの名前で上から順に並べる。
- * exclude に入っているグループは除く。
+ * exclude に入っているグループは除く。除いたグループの中もたどる（口の祖先を除いても、口の兄弟は選べる）。
  */
 export function groupOptions(nodes: LayerNode[], exclude: ReadonlySet<LayerId> = new Set(), prefix = ''): LayerOption[] {
   return [...nodes]
     .reverse()
-    .filter((n) => n.isGroup && !n.flip && !exclude.has(n.id))
+    .filter((n) => n.isGroup && !n.flip)
     .flatMap((n) => {
       const label = prefix + n.name
-      return [{ node: n, label }, ...groupOptions(n.children, exclude, `${label}/`)]
+      const inner = groupOptions(n.children, exclude, `${label}/`)
+      return exclude.has(n.id) ? inner : [{ node: n, label }, ...inner]
     })
 }
