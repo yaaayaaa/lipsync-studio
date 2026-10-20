@@ -266,7 +266,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
                 type="button"
                 disabled={!history.canRedo(line.id) || locked}
                 aria-label="やり直し"
-                title="やり直し（Ctrl/Cmd+Shift+Z）"
+                title="やり直し（Ctrl/Cmd+Shift+Z、Ctrl+Y）"
                 onClick={() => redo(line.id)}
               >
                 <Redo2 {...iconProps} />
