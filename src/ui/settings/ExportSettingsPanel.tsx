@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ExportSettings } from '../../core/character/types'
 import { useApp } from '../useApp'
-import { errorMessage } from './lineJobs'
+import { errorMessage } from '../script/lineJobs'
 
 const RESOLUTIONS = [
   { width: 1920, height: 1080 },
@@ -12,6 +12,7 @@ const SCALE_MIN = 0.3
 const SCALE_MAX = 1.5
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
 
+/** 解像度・拡大率・背景色。全行の書き出しにも1行ずつの書き出しにも効く */
 export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
   const { settings, saveSettings } = useApp()
   const current = settings.export
@@ -34,7 +35,7 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
 
   return (
     <section className="panel">
-      <h2>書き出し設定</h2>
+      <h2>書き出し</h2>
       <label className="field">
         <span>解像度</span>
         <select

@@ -8,7 +8,6 @@ import type { ScriptLine } from '../../core/character/types'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
 import { CreditPanel } from './CreditPanel'
-import { ExportSettingsPanel } from './ExportSettingsPanel'
 import { LinePreview } from './LinePreview'
 import { LineRow } from './LineRow'
 import type { LineStatus } from './LineRow'
@@ -262,7 +261,6 @@ export function ScriptPage({ active }: { active: boolean }) {
       </section>
       <aside className="column panel-column script-side">
         <LinePreview frame={preview} settings={settings.export} caption={previewCaption} />
-        <ExportSettingsPanel disabled={locked} />
         {credit && (
           <CreditPanel credit={credit} onError={(text) => setExportMessage({ text, error: true })} />
         )}

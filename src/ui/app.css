@@ -217,27 +217,15 @@ input[type='text'],
 
 .app {
   display: flex;
-  flex-direction: column;
   height: 100vh;
 }
 
-.app-header {
+/* 各画面の列。上部の案内（エンジン・ブラウザ対応）もこの中に出す */
+.app-main {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 10px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
-.app-header h1 {
-  font-size: 17px;
-  color: var(--fg);
-}
-
-.app-tagline {
-  color: var(--muted);
-  font-size: 12px;
+  flex-direction: column;
 }
 
 .app-message {
@@ -698,26 +686,10 @@ li.selected .row-menu-button[aria-expanded='true'] {
   gap: 6px;
 }
 
-/* ---- タブと上部の案内 ---- */
+/* ---- 画面の切り替えと上部の案内 ---- */
 
 [hidden] {
   display: none !important;
-}
-
-.tabs {
-  display: flex;
-  gap: 4px;
-  align-self: center;
-}
-
-.tabs button {
-  border-color: transparent;
-}
-
-.tabs button.active {
-  background: var(--selected-bg);
-  border-color: var(--selected-bg);
-  color: var(--selected-fg);
 }
 
 .page {
@@ -739,14 +711,10 @@ li.selected .row-menu-button[aria-expanded='true'] {
   gap: 4px 16px;
   padding: 6px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--notice-bg);
-  font-size: 13px;
-}
-
-.engine-banner.error,
-.support-banner {
+  /* どちらも出るのは困ったときだけなので、エラーの色にする */
   background: var(--danger-soft);
   color: var(--danger);
+  font-size: 13px;
 }
 
 .engine-banner p,
@@ -760,36 +728,177 @@ li.selected .row-menu-button[aria-expanded='true'] {
   opacity: 0.8;
 }
 
-.engine-status {
-  color: var(--muted);
-}
-
-.engine-url {
+.engine-actions {
   display: flex;
-  align-items: center;
   gap: 6px;
   margin-left: auto;
 }
 
-.engine-url label {
+.engine-actions button {
+  color: var(--fg);
+}
+
+/* ---- サイドメニュー ---- */
+
+.side-nav {
+  flex: none;
+  width: 184px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.side-nav.collapsed {
+  width: 52px;
+}
+
+.side-nav-head {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 32px;
+}
+
+.side-nav.collapsed .side-nav-head {
+  justify-content: center;
+}
+
+.app-name {
+  padding-left: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-toggle {
+  flex: none;
+  display: inline-flex;
+  padding: 6px;
+  border-color: transparent;
   color: var(--muted);
 }
 
+.nav-items,
+.nav-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 設定は作業の画面と離して一番下に置く */
+.nav-foot {
+  margin-top: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-start;
+  padding: 7px 10px;
+  border-color: transparent;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.side-nav.collapsed .nav-item {
+  justify-content: center;
+  padding: 7px 0;
+}
+
+.nav-item.current {
+  background: var(--selected-bg);
+  border-color: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.nav-engine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-nav.collapsed .nav-engine {
+  justify-content: center;
+  padding: 0;
+}
+
+/* 接続状態の印。白黒の配色に合わせ、つながっていれば塗り・確認中は枠だけ・つながらなければ赤 */
+.nav-engine .dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+}
+
+.nav-engine.ok .dot {
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+.nav-engine.error {
+  color: var(--danger);
+}
+
+.nav-engine.error .dot {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- 設定画面 ---- */
+
+.settings-page {
+  min-height: 0;
+  overflow: auto;
+}
+
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+  padding: 16px;
+}
+
+.settings-title {
+  font-size: 17px;
+}
+
 .engine-url input {
-  width: 240px;
-  color: var(--fg);
+  flex: 1;
+  min-width: 0;
 }
 
-.engine-url button {
-  color: var(--fg);
+.engine-state {
+  margin: 0;
+  color: var(--muted);
 }
 
-.url-error {
-  flex-basis: 100%;
-  text-align: right;
+.engine-state.error {
   color: var(--danger);
 }
 

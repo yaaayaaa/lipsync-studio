@@ -1,60 +1,48 @@
 import { useCallback, useState } from 'react'
 import { AppProvider } from './AppContext'
 import { CharacterPage } from './character/CharacterPage'
+import { EngineStatusProvider } from './engine/EngineStatus'
 import { EngineBanner } from './EngineBanner'
 import { LineEditorPage } from './lineEditor/LineEditorPage'
 import { ScriptProvider } from './script/ScriptContext'
 import { ScriptPage } from './script/ScriptPage'
+import { SettingsPage } from './settings/SettingsPage'
+import { SideNav } from './SideNav'
+import type { Page } from './SideNav'
 import { SupportBanner } from './SupportBanner'
 import './app.css'
 
-type Tab = 'character' | 'script' | 'line'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'character', label: 'キャラ設定' },
-  { id: 'script', label: 'セリフ' },
-  { id: 'line', label: '1行編集' },
-]
-
 export function App() {
-  const [tab, setTab] = useState<Tab>('character')
-  const openLineEditorTab = useCallback(() => setTab('line'), [])
+  const [page, setPage] = useState<Page>('character')
+  const openLineEditorPage = useCallback(() => setPage('line'), [])
+  const openSettings = useCallback(() => setPage('settings'), [])
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>zunda-lipsync</h1>
-        <nav className="tabs" role="tablist" aria-label="画面">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              className={tab === t.id ? 'active' : undefined}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <span className="app-tagline">PSD 立ち絵を VOICEVOX の音声にリップシンクして mp4 に書き出します</span>
-      </header>
-      <AppProvider>
-        <SupportBanner />
-        <EngineBanner />
-        <ScriptProvider onOpenLineEditor={openLineEditorTab}>
-          {/* どれも置いたままにする：タブを切り替えても書き出しの進行や画面の状態を失わないため */}
-          <div className="page" hidden={tab !== 'character'}>
-            <CharacterPage />
-          </div>
-          <div className="page" hidden={tab !== 'script'}>
-            <ScriptPage active={tab === 'script'} />
-          </div>
-          <div className="page" hidden={tab !== 'line'}>
-            <LineEditorPage active={tab === 'line'} />
+    <AppProvider>
+      <EngineStatusProvider>
+        <ScriptProvider onOpenLineEditor={openLineEditorPage}>
+          <div className="app">
+            <SideNav page={page} onSelect={setPage} />
+            <main className="app-main">
+              <SupportBanner />
+              {/* 設定画面では接続状態を画面の中に出すので、同じ案内を重ねない */}
+              {page !== 'settings' && <EngineBanner onOpenSettings={openSettings} />}
+              {/* どれも置いたままにする：画面を切り替えても書き出しの進行や画面の状態を失わないため */}
+              <div className="page" hidden={page !== 'character'}>
+                <CharacterPage />
+              </div>
+              <div className="page" hidden={page !== 'script'}>
+                <ScriptPage active={page === 'script'} />
+              </div>
+              <div className="page" hidden={page !== 'line'}>
+                <LineEditorPage active={page === 'line'} />
+              </div>
+              <div className="page" hidden={page !== 'settings'}>
+                <SettingsPage />
+              </div>
+            </main>
           </div>
         </ScriptProvider>
-      </AppProvider>
-    </div>
+      </EngineStatusProvider>
+    </AppProvider>
   )
 }
