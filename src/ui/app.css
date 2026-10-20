@@ -38,7 +38,7 @@
 }
 
 /* ダーク：背景は黒、文字は白、選択状態は白地に黒文字。2か所の値は同じに保つこと。
-   既定は OS の設定に従い、data-theme で明示されたらそちらを優先する（切り替え UI はまだない） */
+   既定は OS の設定に従い、data-theme で明示されたらそちらを優先する（設定画面の「表示」で選ぶ。theme.ts） */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --bg: #000000;

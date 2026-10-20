@@ -1,4 +1,5 @@
 import { useScriptLines } from '../script/useScriptLines'
+import { AppearanceSettingsPanel } from './AppearanceSettingsPanel'
 import { EngineSettingsPanel } from './EngineSettingsPanel'
 import { ExportSettingsPanel } from './ExportSettingsPanel'
 
@@ -15,6 +16,7 @@ export function SettingsPage() {
         <EngineSettingsPanel />
         <ExportSettingsPanel disabled={exportLocked} />
         {exportLocked && <p className="hint">書き出し中は書き出しの設定を変えられません</p>}
+        <AppearanceSettingsPanel />
       </div>
     </div>
   )
