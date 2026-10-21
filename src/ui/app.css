@@ -1355,7 +1355,75 @@ input[type='color'] {
 .line-editor-page {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(420px, 1fr);
+  /* 行の一覧の幅は境目をドラグして変えられる。境目そのものは幅 0 で、触れる範囲だけ左右に広げる */
+  grid-template-columns: var(--line-list-width, 220px) 0 minmax(420px, 1fr);
+}
+
+/* ---- 境目のつまみ（Premiere Pro のパネルの境目のように、ドラグで大きさを変える） ---- */
+
+.splitter {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  touch-action: none;
+}
+
+/* 触れる範囲は見た目の線より広く取る */
+.splitter::before {
+  content: '';
+  position: absolute;
+}
+
+.splitter::after {
+  content: '';
+  position: absolute;
+  background: var(--fg);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.splitter:hover::after,
+.splitter.dragging::after,
+.splitter:focus-visible::after {
+  opacity: 0.6;
+}
+
+.splitter:focus-visible {
+  outline: none;
+}
+
+/* 左右に動かす境目（縦の線） */
+.splitter[aria-orientation='vertical'] {
+  cursor: col-resize;
+}
+
+.splitter[aria-orientation='vertical']::before {
+  inset: 0 -4px;
+}
+
+.splitter[aria-orientation='vertical']::after {
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 2px;
+}
+
+/* 上下に動かす境目（横の線）。パネルの間の隙間（8px）にちょうど収める */
+.splitter[aria-orientation='horizontal'] {
+  height: 8px;
+  margin-block: -8px;
+  cursor: row-resize;
+}
+
+.splitter[aria-orientation='horizontal']::before {
+  inset: 0;
+}
+
+.splitter[aria-orientation='horizontal']::after {
+  left: 0;
+  right: 0;
+  top: 3px;
+  height: 2px;
 }
 
 .line-editor-list {
@@ -1525,8 +1593,12 @@ input[type='color'] {
 
 .phrase-editor {
   --mora-width: 2.4em;
-  /* アクセントの点と線の段の高さ。句の枠が「高さ」「長さ」のタブと同じ高さ（176px）になるよう、残りを全部この段に回す */
-  --accent-area: 103px;
+  /* 句の枠の高さ。1行編集で境目をドラグすると変わる（既定 176px）。3つのタブの中身はこの高さから決める */
+  --phrase-card-height: var(--line-editor-phrase-height, 176px);
+  /* 高さのつまみ：数値と文字の行（56px）を除いた残り */
+  --mora-slider-height: calc(var(--phrase-card-height) - 56px);
+  /* アクセントの点と線の段：文字と鉛筆の行（73px）を除いた残り */
+  --accent-area: calc(var(--phrase-card-height) - 73px);
   gap: 8px;
 }
 
@@ -1551,10 +1623,9 @@ input[type='color'] {
   color: var(--selected-fg);
 }
 
-/* タブを切り替えても枠の高さが変わらず、下の再生ボタンが動かないよう、背の高い「高さ」「長さ」のタブの分を取っておく。
-   高さは縦のつまみ（120px）と、その上下の数値・文字の行から決まる（2つのタブは同じ高さに揃えてある） */
+/* タブを切り替えても枠の高さが変わらないよう、句の枠と横スクロールの帯（4px）の分を取っておく */
 .phrase-tab-panel {
-  min-height: 180px;
+  min-height: calc(var(--phrase-card-height) + 4px);
 }
 
 /* 句が多いときは横に流す */
@@ -1739,7 +1810,7 @@ input[type='color'] {
   writing-mode: vertical-lr;
   direction: rtl;
   width: 20px;
-  height: 120px;
+  height: var(--mora-slider-height);
   margin: 0;
 }
 
@@ -1771,7 +1842,7 @@ input[type='color'] {
 
 /* 「長さ」は子音・母音の見出しの行（14px と隙間 2px）が「高さ」より1段多いので、そのぶんつまみを短くして句の枠の高さを揃える */
 .mora-lengths .mora-slider input[type='range'] {
-  height: calc(120px - 16px);
+  height: calc(var(--mora-slider-height) - 16px);
 }
 
 .mora-lengths.pause {

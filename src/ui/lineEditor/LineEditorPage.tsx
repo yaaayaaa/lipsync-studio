@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useEffectEvent, useState } from 'react'
-import type { PointerEvent } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { newId } from '../../core/id'
@@ -13,16 +13,24 @@ import { useExportJob } from '../script/useExportJob'
 import { useLinePlayback } from '../script/useLinePlayback'
 import { useRenderLine } from '../script/useRenderLine'
 import { useScriptLines } from '../script/useScriptLines'
+import { Splitter } from '../Splitter'
 import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import { isTextEntry, shortcutAction } from './history'
+import { DEFAULT_LAYOUT, LIST_WIDTH_RANGE, PHRASE_HEIGHT_MIN, loadLayout, saveLayout } from './layout'
+import type { LineEditorLayout } from './layout'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
 import { useLineHistory } from './useLineHistory'
 import { useLineTuning } from './useLineTuning'
 
 const REFRESHED_NOTICE = '声が変わったので高さと長さを取り直しました'
+
+/** プレビューに最低限残す高さ（app.css の .line-editor-main .line-preview の min-height と同じ） */
+const PREVIEW_MIN_HEIGHT = 220
+/** 句の枠の高さの上限の目安（読み上げ用）。実際の上限は、そのときのプレビューの高さで決まる */
+const PHRASE_HEIGHT_MAX = 600
 
 type ExportState = { lineId: string } & (
   | { state: 'exporting'; progress: number }
@@ -54,6 +62,21 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const playback = useLinePlayback(active, speak)
   const { exportSingle } = useRenderLine(speak)
   const job = useExportJob()
+
+  // パネルの大きさ（行の一覧の幅・句の枠の高さ）。ドラグするたびに覚える
+  const [layout, setLayout] = useState(loadLayout)
+  const changeLayout = (patch: Partial<LineEditorLayout>) => {
+    const next = { ...layout, ...patch }
+    setLayout(next)
+    saveLayout(next)
+  }
+  const mainRef = useRef<HTMLElement>(null)
+  /** 句の枠を伸ばせる上限：プレビューを最低限の高さまで縮めた分まで（操作のたびに測る） */
+  const phraseHeightMax = () => {
+    const preview = mainRef.current?.querySelector('.line-preview')
+    const spare = preview ? preview.getBoundingClientRect().height - PREVIEW_MIN_HEIGHT : 0
+    return Math.max(layout.phraseHeight + spare, PHRASE_HEIGHT_MIN)
+  }
 
   // 結果の表示は、その行を開いている間だけ見せる
   const [playError, setPlayError] = useState<{ lineId: string; message: string } | null>(null)
@@ -177,7 +200,16 @@ export function LineEditorPage({ active }: { active: boolean }) {
   }
 
   return (
-    <div className="line-editor-page" onPointerDownCapture={startSliderGesture}>
+    <div
+      className="line-editor-page"
+      style={
+        {
+          '--line-list-width': `${layout.listWidth}px`,
+          '--line-editor-phrase-height': `${layout.phraseHeight}px`,
+        } as CSSProperties
+      }
+      onPointerDownCapture={startSliderGesture}
+    >
       <LineEditorList
         lines={lines}
         selectedId={line?.id ?? null}
@@ -185,7 +217,17 @@ export function LineEditorPage({ active }: { active: boolean }) {
         onSelect={openLineEditor}
         onAdd={addLine}
       />
-      <section className="column line-editor-main">
+      <Splitter
+        label="行の一覧の幅"
+        orientation="vertical"
+        value={layout.listWidth}
+        min={LIST_WIDTH_RANGE.min}
+        max={LIST_WIDTH_RANGE.max}
+        direction={1}
+        onChange={(listWidth) => changeLayout({ listWidth })}
+        onReset={() => changeLayout({ listWidth: DEFAULT_LAYOUT.listWidth })}
+      />
+      <section className="column line-editor-main" ref={mainRef}>
         {scriptError && (
           <p className="notice error" role="alert">
             {scriptError}
@@ -235,6 +277,16 @@ export function LineEditorPage({ active }: { active: boolean }) {
                   </button>
                 )
               }
+            />
+            <Splitter
+              label="プレビューと句の欄の高さ"
+              orientation="horizontal"
+              value={layout.phraseHeight}
+              min={PHRASE_HEIGHT_MIN}
+              max={PHRASE_HEIGHT_MAX}
+              direction={-1}
+              onChange={(h) => changeLayout({ phraseHeight: Math.min(h, phraseHeightMax()) })}
+              onReset={() => changeLayout({ phraseHeight: DEFAULT_LAYOUT.phraseHeight })}
             />
             <PhraseEditor
               key={line.id}
