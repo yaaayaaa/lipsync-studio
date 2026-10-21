@@ -1372,10 +1372,10 @@ input[type='color'] {
   color: var(--selected-fg);
 }
 
-/* タブを切り替えても枠の高さが変わらず、下の再生ボタンが動かないよう、いちばん背の高い「長さ」のタブの分を取っておく。
-   高さは縦のつまみ（120px）と、その上下の数値・文字の行から決まる */
+/* タブを切り替えても枠の高さが変わらず、下の再生ボタンが動かないよう、背の高い「高さ」「長さ」のタブの分を取っておく。
+   高さは縦のつまみ（120px）と、その上下の数値・文字の行から決まる（2つのタブは同じ高さに揃えてある） */
 .phrase-tab-panel {
-  min-height: 198px;
+  min-height: 180px;
 }
 
 /* 句が多いときは横に流す */
@@ -1587,6 +1587,12 @@ input[type='color'] {
 .mora-lengths .mora-slider-caption {
   color: var(--muted);
   font-size: 11px;
+  line-height: 14px;
+}
+
+/* 「長さ」は子音・母音の見出しの行（14px と隙間 2px）が「高さ」より1段多いので、そのぶんつまみを短くして句の枠の高さを揃える */
+.mora-lengths .mora-slider input[type='range'] {
+  height: calc(120px - 16px);
 }
 
 .mora-lengths.pause {
