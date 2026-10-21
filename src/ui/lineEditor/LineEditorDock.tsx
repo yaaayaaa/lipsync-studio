@@ -9,9 +9,14 @@ import type {
   IDockviewPanelProps,
 } from 'dockview-react'
 import 'dockview-react/dist/styles/dockview.css'
-import { LayoutTemplate } from 'lucide-react'
-import { iconProps } from '../icons'
-import { DEFAULT_PROPORTIONS, PANEL_IDS, PANEL_TITLES, loadDockLayout, saveDockLayout } from './dockLayout'
+import {
+  DEFAULT_PROPORTIONS,
+  PANEL_IDS,
+  PANEL_TITLES,
+  loadDockLayout,
+  onDockLayoutReset,
+  saveDockLayout,
+} from './dockLayout'
 import type { PanelId } from './dockLayout'
 
 /** 各パネルの中身。画面（LineEditorPage）が毎回作って渡す */
@@ -100,6 +105,17 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     return () => observer.disconnect()
   }, [openWhenVisible])
 
+  // 設定画面の「初めの並びに戻す」。この画面は隠れていて大きさが 0 なので、片付けておいて次に見えたときに並べ直す
+  useEffect(
+    () =>
+      onDockLayoutReset(() => {
+        openedRef.current = false
+        apiRef.current?.clear()
+        openWhenVisible()
+      }),
+    [openWhenVisible],
+  )
+
   const onReady = ({ api }: DockviewReadyEvent) => {
     apiRef.current = api
     // 並べる前と、隠れて大きさが 0 の間の並びは覚えない（次に開いたとき潰れたままになるため）
@@ -109,21 +125,8 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     openWhenVisible()
   }
 
-  const reset = () => {
-    const api = apiRef.current
-    if (!api) return
-    // 並べ直すと onDidLayoutChange で初めの並びが覚えられる
-    addDefaultPanels(api)
-  }
-
   return (
     <div className="line-dock" ref={rootRef}>
-      <div className="line-dock-bar">
-        <button type="button" className="line-dock-reset" onClick={reset}>
-          <LayoutTemplate {...iconProps} />
-          配置を元に戻す
-        </button>
-      </div>
       <PanelsContext value={panels}>
         <DockviewReact
           ref={viewRef}

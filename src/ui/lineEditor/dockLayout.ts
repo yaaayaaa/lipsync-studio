@@ -25,7 +25,7 @@ export const DEFAULT_PROPORTIONS = {
 
 const DOCK_LAYOUT_KEY = 'zunda-lipsync.lineEditorDock'
 
-type DockStorage = Pick<Storage, 'getItem' | 'setItem'>
+type DockStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
 
@@ -58,4 +58,22 @@ export function saveDockLayout(layout: SerializedDockview, storage: DockStorage 
   } catch {
     // 次に開いたときに初めの並びに戻るだけ
   }
+}
+
+const resetListeners = new Set<() => void>()
+
+/** 覚えた並びを捨て、1行編集を初めの並びに戻す（設定画面から呼ぶ。1行編集は裏で開いたままなので知らせる） */
+export function resetDockLayout(storage: DockStorage = localStorage): void {
+  try {
+    storage.removeItem(DOCK_LAYOUT_KEY)
+  } catch {
+    // 消せなくても、1行編集は初めの並びに戻り、その並びで上書きされる
+  }
+  for (const listener of resetListeners) listener()
+}
+
+/** resetDockLayout が呼ばれたら知らせる。戻り値で知らせを止める */
+export function onDockLayoutReset(listener: () => void): () => void {
+  resetListeners.add(listener)
+  return () => resetListeners.delete(listener)
 }

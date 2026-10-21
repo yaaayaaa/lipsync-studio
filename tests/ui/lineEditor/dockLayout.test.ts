@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import type { SerializedDockview } from 'dockview-react'
-import { PANEL_IDS, loadDockLayout, saveDockLayout } from '../../../src/ui/lineEditor/dockLayout'
+import {
+  PANEL_IDS,
+  loadDockLayout,
+  onDockLayoutReset,
+  resetDockLayout,
+  saveDockLayout,
+} from '../../../src/ui/lineEditor/dockLayout'
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial))
   return {
     getItem: (key: string) => data.get(key) ?? null,
     setItem: (key: string, value: string) => void data.set(key, value),
+    removeItem: (key: string) => void data.delete(key),
   }
 }
 
@@ -24,6 +31,9 @@ const throwing = {
     throw new Error('blocked')
   },
   setItem: () => {
+    throw new Error('blocked')
+  },
+  removeItem: () => {
     throw new Error('blocked')
   },
 }
@@ -67,5 +77,25 @@ describe('line editor dock layout', () => {
   it('keeps working when the storage is blocked', () => {
     expect(loadDockLayout(throwing)).toBeNull()
     expect(() => saveDockLayout(layoutWith(PANEL_IDS), throwing)).not.toThrow()
+  })
+
+  it('forgets the saved layout and tells the line editor on reset', () => {
+    const storage = memoryStorage()
+    saveDockLayout(layoutWith(PANEL_IDS), storage)
+    let told = 0
+    const stop = onDockLayoutReset(() => told++)
+    resetDockLayout(storage)
+    stop()
+    resetDockLayout(storage)
+    expect(loadDockLayout(storage)).toBeNull()
+    expect(told).toBe(1)
+  })
+
+  it('still tells the line editor when the storage is blocked', () => {
+    let told = 0
+    const stop = onDockLayoutReset(() => told++)
+    expect(() => resetDockLayout(throwing)).not.toThrow()
+    stop()
+    expect(told).toBe(1)
   })
 })
