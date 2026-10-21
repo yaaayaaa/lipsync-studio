@@ -1550,9 +1550,49 @@ input[type='color'] {
   text-overflow: ellipsis;
 }
 
-/* 文の欄の包み（取り消しの履歴をまとめるため）。下に行の高さ分の隙間を作らない */
+/* 「セリフ」パネルは全体を文の欄にする（枠と余白はパネルが受け持つ）。
+   包み（取り消しの履歴をまとめるため）ごとパネルいっぱいに広げ、作り込みの知らせは欄の下に出す */
+.dock-pane-text {
+  padding: 0;
+  gap: 0;
+}
+
+.dock-pane-text > .line-text-field {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .line-text-field .line-text {
+  flex: 1 1 0;
+  min-height: 3em;
   display: block;
+  resize: none;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* 枠がないので、キーボードの現在地は外に出すと隣のパネルにかかる。内側に描く */
+.line-text-field .line-text:focus-visible {
+  outline-offset: -2px;
+}
+
+.line-text-field .stale-tuning {
+  margin: 0 12px 10px;
+}
+
+.dock-pane-text > .hint {
+  padding: 10px 12px;
+}
+
+/* 選択はスライダーと値の欄の両方の幅を使う */
+.global-param select {
+  grid-column: span 2;
+  width: 100%;
+  min-width: 0;
 }
 
 .line-editor-actions {

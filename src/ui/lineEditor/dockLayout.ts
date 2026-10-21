@@ -14,14 +14,14 @@ export const PANEL_TITLES: Record<PanelId, string> = {
   accent: 'アクセント',
   pitch: '高さ',
   length: '長さ',
-  params: '数値',
+  params: 'その他',
 }
 
 /** 初めの並びの大きさ。画面全体に対する割合で決める（画面の大きさが違っても同じ見え方になるように） */
 export const DEFAULT_PROPORTIONS = {
   /** 左の一覧の幅（全体の幅に対して） */
   linesWidth: 0.12,
-  /** 右の数値の列の幅（全体の幅に対して）。残りは真ん中の列 */
+  /** 右のその他の列の幅（全体の幅に対して）。残りは真ん中の列 */
   paramsWidth: 0.2,
   /** 真ん中の列の下のアクセント・高さ・長さ・セリフの束の高さ（全体の高さに対して）。残りはプレビュー */
   phraseHeight: 0.3,

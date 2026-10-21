@@ -223,16 +223,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
           line={line}
           disabled={locked}
           label={`${index + 1}行目のセリフ`}
-          rows={3}
           onEdit={(fn) => void editLine(line.id, fn)}
-        />
-      </div>
-      <div className="line-controls">
-        <LineCharacterSelects
-          line={line}
-          characters={characters}
-          disabled={locked}
-          onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
         />
       </div>
     </>
@@ -242,6 +233,17 @@ export function LineEditorPage({ active }: { active: boolean }) {
 
   const paramsPanel = (
     <GlobalParams
+      selects={
+        line && (
+          <LineCharacterSelects
+            line={line}
+            characters={characters}
+            disabled={locked}
+            labeled
+            onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
+          />
+        )
+      }
       speedScale={line?.speedScale ?? 1}
       values={tuning.shown}
       disabled={!line || locked}

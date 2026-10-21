@@ -53,7 +53,7 @@ interface DefaultPlacement {
   inactive?: boolean
 }
 
-/** 初めの並び：左に一覧、真ん中の列に上からプレビューとアクセント・高さ・長さ・セリフの束、右の列に数値 */
+/** 初めの並び：左に一覧、真ん中の列に上からプレビューとアクセント・高さ・長さ・セリフの束、右の列にその他 */
 function addDefaultPanels(api: DockviewApi) {
   api.clear()
   const add = (id: PanelId, more: DefaultPlacement = {}) =>
@@ -97,8 +97,11 @@ const DROP_LINE_GRACE_MS = 100
 function openLayout(api: DockviewApi) {
   const saved = loadDockLayout()
   try {
-    if (saved) api.fromJSON(saved)
-    else addDefaultPanels(api)
+    if (saved) {
+      api.fromJSON(saved)
+      // 覚えた並びにはタブの名前も入っている。名前を変えたときに古い名前で開かないよう、今の名前を付け直す
+      for (const id of PANEL_IDS) api.getPanel(id)?.api.setTitle(PANEL_TITLES[id])
+    } else addDefaultPanels(api)
   } catch {
     // 覚えた並びが今の dockview で読めない（形が壊れている）ときは初めの並びで開く
     addDefaultPanels(api)

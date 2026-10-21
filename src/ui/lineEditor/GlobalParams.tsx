@@ -24,6 +24,8 @@ interface Props {
   status: string | null
   onSpeedChange(value: number): void
   onChange(key: GlobalParam, value: number): void
+  /** スライダーの前に置くもの（キャラ・スタイルの選択） */
+  selects?: ReactNode
   /** スライダーの後ろに置くもの（終端の長さ） */
   children?: ReactNode
 }
@@ -58,7 +60,7 @@ function Slider({
   )
 }
 
-/** 全体の数値（1行編集の「数値」パネル。見出しはパネルのタブが兼ねる） */
+/** 行のキャラ・スタイルと全体の数値（1行編集の「その他」パネル。見出しはパネルのタブが兼ねる） */
 export function GlobalParams({
   speedScale,
   values,
@@ -67,10 +69,12 @@ export function GlobalParams({
   status,
   onSpeedChange,
   onChange,
+  selects,
   children,
 }: Props) {
   return (
     <>
+      {selects}
       <Slider range={GLOBAL_PARAM_RANGES.speedScale} value={speedScale} disabled={disabled} onChange={onSpeedChange} />
       {PARAMS.map((key) => (
         <Slider

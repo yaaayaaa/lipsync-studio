@@ -93,11 +93,13 @@ interface SelectProps {
   line: ScriptLine
   characters: Character[]
   disabled: boolean
+  /** 選択の前に名前を出す（1行編集の「その他」で、数値のスライダーと並べる） */
+  labeled?: boolean
   onChange(patch: Partial<Pick<ScriptLine, 'characterId' | 'expressionId'>>): void
 }
 
 /** キャラとスタイルの選択。キャラを変えたら、そのキャラの最初のスタイルにする */
-export function LineCharacterSelects({ line, characters, disabled, onChange }: SelectProps) {
+export function LineCharacterSelects({ line, characters, disabled, labeled = false, onChange }: SelectProps) {
   const character = characters.find((c) => c.id === line.characterId)
   const expressionKnown = character?.expressions.some((e) => e.id === line.expressionId) ?? false
 
@@ -106,36 +108,55 @@ export function LineCharacterSelects({ line, characters, disabled, onChange }: S
     onChange({ characterId: next?.id ?? null, expressionId: next?.expressions[0]?.id ?? null })
   }
 
+  const characterSelect = (
+    <select
+      value={character ? character.id : ''}
+      disabled={disabled}
+      aria-label="キャラ"
+      onChange={(e) => selectCharacter(e.target.value)}
+    >
+      <option value="">{line.characterId && !character ? '（削除されたキャラ）' : 'キャラを選択'}</option>
+      {characters.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name}
+        </option>
+      ))}
+    </select>
+  )
+  const expressionSelect = (
+    <select
+      value={expressionKnown ? (line.expressionId ?? '') : ''}
+      disabled={disabled || !character}
+      aria-label="スタイル"
+      onChange={(e) => onChange({ expressionId: e.target.value || null })}
+    >
+      <option value="">
+        {line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択'}
+      </option>
+      {character?.expressions.map((e) => (
+        <option key={e.id} value={e.id}>
+          {e.name}
+        </option>
+      ))}
+    </select>
+  )
+  if (!labeled)
+    return (
+      <>
+        {characterSelect}
+        {expressionSelect}
+      </>
+    )
   return (
     <>
-      <select
-        value={character ? character.id : ''}
-        disabled={disabled}
-        aria-label="キャラ"
-        onChange={(e) => selectCharacter(e.target.value)}
-      >
-        <option value="">{line.characterId && !character ? '（削除されたキャラ）' : 'キャラを選択'}</option>
-        {characters.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <select
-        value={expressionKnown ? (line.expressionId ?? '') : ''}
-        disabled={disabled || !character}
-        aria-label="スタイル"
-        onChange={(e) => onChange({ expressionId: e.target.value || null })}
-      >
-        <option value="">
-          {line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択'}
-        </option>
-        {character?.expressions.map((e) => (
-          <option key={e.id} value={e.id}>
-            {e.name}
-          </option>
-        ))}
-      </select>
+      <label className="global-param">
+        <span>キャラ</span>
+        {characterSelect}
+      </label>
+      <label className="global-param">
+        <span>スタイル</span>
+        {expressionSelect}
+      </label>
     </>
   )
 }
