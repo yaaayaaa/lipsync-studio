@@ -118,9 +118,15 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
 
   const onReady = ({ api }: DockviewReadyEvent) => {
     apiRef.current = api
-    // 並べる前と、隠れて大きさが 0 の間の並びは覚えない（次に開いたとき潰れたままになるため）
+    // 開発中のホットリロードでは、この部品の状態（ref）を残したまま dockview だけが空で作り直される。
+    // 新しい dockview はまだ何も並べていないので、並べ直す
+    openedRef.current = false
+    // 並べる前と、隠れて大きさが 0 の間の並びは覚えない（次に開いたとき潰れたままになるため）。
+    // 作り直される前の古い dockview からの知らせも、今の並びを上書きしないよう無視する
     api.onDidLayoutChange(() => {
-      if (openedRef.current && api.width > 0 && api.height > 0) saveDockLayout(api.toJSON())
+      if (apiRef.current === api && openedRef.current && api.width > 0 && api.height > 0) {
+        saveDockLayout(api.toJSON())
+      }
     })
     openWhenVisible()
   }
