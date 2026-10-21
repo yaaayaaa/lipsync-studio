@@ -1651,14 +1651,49 @@ input[type='color'] {
 }
 
 .style-picker-character {
-  padding: 4px 4px 0;
+  width: 100%;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 4px;
+  border-color: transparent;
+  background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  border-radius: var(--radius-sm);
 }
 
+.style-picker-character:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--hover-bg);
+  color: var(--fg);
+}
+
+/* 検索中は畳めないが、見出しとしては普通に見せる */
+.style-picker-character:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.style-picker-character[aria-expanded='true'] .style-picker-chevron {
+  transform: rotate(90deg);
+}
+
+.style-picker-character-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.style-picker-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* スタイルはキャラ名より一段下げて、どのキャラのものか分かるようにする */
 .style-picker-option {
   width: 100%;
   justify-content: flex-start;
+  padding-left: 26px;
   border-color: transparent;
   background: transparent;
   color: var(--fg);
