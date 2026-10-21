@@ -1629,19 +1629,36 @@ input[type='color'] {
   gap: 8px;
 }
 
+/* 動画編集ソフトのパネルと同じ、下線で今のタブを示す形。ボタンの枠と地は使わない */
 .phrase-tabs {
   display: flex;
+  flex: 1;
   gap: 4px;
+  border-bottom: 1px solid var(--border);
 }
 
 .phrase-tabs button {
-  border-color: transparent;
+  /* 下線を区切り線の上に重ねる */
+  margin-bottom: -1px;
+  padding: 4px 10px 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
 }
 
-.phrase-tabs button.active {
-  background: var(--selected-bg);
-  border-color: var(--selected-bg);
-  color: var(--selected-fg);
+/* ボタン共通のホバー（枠を濃くする）が下線に出ないよう、色だけ変える */
+.phrase-tabs button:hover:not(:disabled) {
+  border-bottom-color: transparent;
+  color: var(--fg);
+}
+
+/* 太字にすると幅が変わって隣のタブが動くので、下線と文字色だけで示す */
+.phrase-tabs button.active,
+.phrase-tabs button.active:hover:not(:disabled) {
+  border-bottom-color: var(--fg);
+  color: var(--fg);
 }
 
 /* タブを切り替えても枠の高さが変わらないよう、句の枠と横スクロールの帯（4px）の分を取っておく */
