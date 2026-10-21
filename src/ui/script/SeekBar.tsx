@@ -26,7 +26,7 @@ export function SeekBar({ store, enabled, onSeek }: Props) {
       disabled={!enabled || duration === 0}
       aria-label="再生位置"
       aria-valuetext={`${time.toFixed(2)} 秒 / ${duration.toFixed(2)} 秒`}
-      style={{ '--seek-progress': `${progress * 100}%` } as CSSProperties}
+      style={{ '--seek-ratio': progress } as CSSProperties}
       onChange={(e) => onSeek(Number(e.target.value))}
     />
   )
