@@ -1,5 +1,6 @@
 import { MORA_LENGTH_RANGE, MORA_PITCH_RANGE, PAUSE_LENGTH_RANGE, setMoraLength, setMoraPitch, setPauseLength } from '../../core/voicevox/phraseEdit'
 import type { AccentPhrase } from '../../core/voicevox/types'
+import { phonemeLabel } from './phoneme'
 
 interface TabProps {
   phrases: AccentPhrase[]
@@ -71,20 +72,23 @@ export function LengthTab({ phrases, disabled, onChange }: TabProps) {
           {p.moras.map((m, mi) => (
             <div key={mi} className="mora-lengths">
               <div className="mora-lengths-pair">
-                <VerticalSlider
-                  label={`${where(pi, mi, m.text)}の子音の長さ`}
-                  range={MORA_LENGTH_RANGE}
-                  value={m.consonant === null ? null : m.consonant_length}
-                  disabled={disabled}
-                  caption="子"
-                  onChange={(v) => onChange((ps) => setMoraLength(ps, pi, mi, 'consonant', v))}
-                />
+                {/* 子音のないモーラ（ア・ン など）は、子音のつまみ自体を出さない */}
+                {m.consonant !== null && (
+                  <VerticalSlider
+                    label={`${where(pi, mi, m.text)}の子音の長さ`}
+                    range={MORA_LENGTH_RANGE}
+                    value={m.consonant_length}
+                    disabled={disabled}
+                    caption={phonemeLabel(m.consonant)}
+                    onChange={(v) => onChange((ps) => setMoraLength(ps, pi, mi, 'consonant', v))}
+                  />
+                )}
                 <VerticalSlider
                   label={`${where(pi, mi, m.text)}の母音の長さ`}
                   range={MORA_LENGTH_RANGE}
                   value={m.vowel_length}
                   disabled={disabled}
-                  caption="母"
+                  caption={phonemeLabel(m.vowel)}
                   onChange={(v) => onChange((ps) => setMoraLength(ps, pi, mi, 'vowel', v))}
                 />
               </div>
