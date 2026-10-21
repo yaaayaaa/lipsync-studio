@@ -4,6 +4,7 @@ import type { ScriptLine } from '../../core/character/types'
 import { createFrameStore } from '../../core/export/frames'
 import { useApp } from '../useApp'
 import { loadParsedPsd } from '../usePsd'
+import { loadEditingLine, resolveEditingLine, saveEditingLine } from './editingLine'
 import { errorMessage } from './lineJobs'
 import { MouthFrameCache } from './mouthFrameCache'
 import { ScriptContext } from './useScriptLines'
@@ -83,13 +84,14 @@ export function ScriptProvider({ onOpenLineEditor, children }: { onOpenLineEdito
   )
   useEffect(() => () => frameCache.dispose(), [frameCache])
 
-  const [openedLineId, setOpenedLineId] = useState<string | null>(null)
-  // 開いている行が消されたら未選択にする（覚えている ID は残るが、同じ ID の行は二度と現れない）
-  const editingLineId = openedLineId !== null && lines?.some((l) => l.id === openedLineId) ? openedLineId : null
+  // 前に開いていた行（再読み込みしても続きから）。その行が消されていたら1行目を開く
+  const [openedLineId, setOpenedLineId] = useState(loadEditingLine)
+  const editingLineId = resolveEditingLine(lines, openedLineId)
 
   const openLineEditor = useCallback(
     (lineId: string) => {
       setOpenedLineId(lineId)
+      saveEditingLine(lineId)
       onOpenLineEditor()
     },
     [onOpenLineEditor],

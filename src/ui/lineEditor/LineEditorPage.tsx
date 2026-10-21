@@ -233,9 +233,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
             {scriptError}
           </p>
         )}
-        {!line ? (
-          <p className="notice">左の一覧から行を選んでください</p>
-        ) : (
+        {/* 開くと前の行か1行目が選ばれるので、行がないとき（左の「行を追加」で作る）以外は必ず中身がある */}
+        {line && (
           <>
             {problem && <p className="line-problem">{PROBLEM_LABELS[problem]}</p>}
             {tuning.refreshed && (
