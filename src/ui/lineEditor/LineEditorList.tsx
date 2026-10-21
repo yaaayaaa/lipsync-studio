@@ -12,11 +12,10 @@ interface Props {
   onAdd(): void
 }
 
-/** 左の列：行の番号と先頭の文。並べ替えと削除は「セリフ」の画面で行う */
+/** 行の番号と先頭の文。並べ替えと削除は「セリフ」の画面で行う。見出しはパネルのタブが兼ねる */
 export function LineEditorList({ lines, selectedId, locked, onSelect, onAdd }: Props) {
   return (
-    <section className="column line-editor-list">
-      <h2>行</h2>
+    <section className="line-editor-list" aria-label="セリフ一覧">
       <ol>
         {lines.map((line, index) => (
           <li key={line.id}>

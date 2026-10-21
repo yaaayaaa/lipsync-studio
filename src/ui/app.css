@@ -1373,78 +1373,127 @@ input[type='color'] {
 
 /* ---- 1行編集 ---- */
 
+/* パネルは dockview で並べる（Premiere Pro のように、タブのドラッグで分けたり束ねたりできる） */
 .line-editor-page {
   min-height: 0;
-  display: grid;
-  /* 行の一覧の幅は境目をドラグして変えられる。境目そのものは幅 0 で、触れる範囲だけ左右に広げる */
-  grid-template-columns: var(--line-list-width, 220px) 0 minmax(420px, 1fr);
+  display: flex;
 }
 
-/* ---- 境目のつまみ（Premiere Pro のパネルの境目のように、ドラグで大きさを変える） ---- */
+.line-dock {
+  /* パネルの間の隙間。各パネルの周りに半分ずつ余白を取って作る（dockview の gap を使わない理由は LineEditorDock.tsx） */
+  --dock-gap: 8px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* 外周はパネルの周りの余白（隙間の半分）と合わせて 8px にする */
+  padding: 6px calc(8px - var(--dock-gap) / 2) calc(8px - var(--dock-gap) / 2);
+}
 
-.splitter {
-  position: relative;
-  z-index: 2;
+.line-dock-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-inline: calc(var(--dock-gap) / 2);
+}
+
+.line-dock-reset {
+  padding: 2px 8px;
+  border-color: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.line-dock-reset:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.line-dock-view {
+  flex: 1;
+  min-height: 0;
+}
+
+/* dockview の色と形を、アプリの変数と部品に合わせる。テーマのクラス（変数の土台）と同じ要素に、より強い指定で当てる */
+.line-dock .dockview-theme-light {
+  color-scheme: inherit;
+  --dv-group-view-background-color: var(--surface);
+  --dv-tabs-and-actions-container-background-color: var(--surface);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--surface);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--surface);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--surface);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--surface);
+  --dv-activegroup-visiblepanel-tab-color: var(--fg);
+  --dv-activegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--fg);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-tab-divider-color: transparent;
+  --dv-separator-border: transparent;
+  --dv-drag-over-background-color: var(--hover-bg);
+  --dv-drag-over-border-color: var(--fg);
+  --dv-sash-color: transparent;
+  /* パネルの間の境目は、触れたときだけ線を出す（前の境目のつまみと同じ） */
+  --dv-active-sash-color: var(--muted);
+  --dv-icon-hover-background-color: var(--hover-bg);
+  --dv-scrollbar-background-color: var(--scrollbar-thumb);
+  --dv-tabs-and-actions-container-font-size: 13px;
+  --dv-tabs-and-actions-container-height: 32px;
+  font-family: inherit;
+}
+
+/* パネルの周りの余白。隣のパネルとの間で合わせて --dock-gap になる */
+.line-dock .dv-view:has(> .dv-groupview) {
+  box-sizing: border-box;
+  padding: calc(var(--dock-gap) / 2);
+}
+
+/* パネルは .panel と同じ枠で囲む */
+.line-dock .dv-groupview {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* タブはアプリの他のタブと同じく、下線で今のタブを示す（今触っていないパネルの下線は薄く） */
+.line-dock .dv-tabs-and-actions-container {
+  border-bottom: 1px solid var(--border);
+}
+
+.line-dock .dv-tab {
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+}
+
+.line-dock .dv-tab:hover {
+  color: var(--fg);
+}
+
+.line-dock .dv-tab.dv-active-tab {
+  border-bottom-color: var(--fg);
+}
+
+.line-dock .dv-groupview:not(.dv-active-group) .dv-tab.dv-active-tab {
+  border-bottom-color: var(--muted);
+}
+
+.line-dock .dv-tab:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+/* パネルの中身。収まらないときはパネルの中でスクロールする */
+.dock-pane {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dock-pane > * {
   flex: none;
-  touch-action: none;
-}
-
-/* 触れる範囲は見た目の線より広く取る */
-.splitter::before {
-  content: '';
-  position: absolute;
-}
-
-.splitter::after {
-  content: '';
-  position: absolute;
-  background: var(--fg);
-  opacity: 0;
-  transition: opacity 0.12s;
-}
-
-.splitter:hover::after,
-.splitter.dragging::after,
-.splitter:focus-visible::after {
-  opacity: 0.6;
-}
-
-.splitter:focus-visible {
-  outline: none;
-}
-
-/* 左右に動かす境目（縦の線） */
-.splitter[aria-orientation='vertical'] {
-  cursor: col-resize;
-}
-
-.splitter[aria-orientation='vertical']::before {
-  inset: 0 -4px;
-}
-
-.splitter[aria-orientation='vertical']::after {
-  top: 0;
-  bottom: 0;
-  left: -1px;
-  width: 2px;
-}
-
-/* 上下に動かす境目（横の線）。パネルの間の隙間（8px）にちょうど収める */
-.splitter[aria-orientation='horizontal'] {
-  height: 8px;
-  margin-block: -8px;
-  cursor: row-resize;
-}
-
-.splitter[aria-orientation='horizontal']::before {
-  inset: 0;
-}
-
-.splitter[aria-orientation='horizontal']::after {
-  left: 0;
-  right: 0;
-  top: 3px;
-  height: 2px;
 }
 
 .line-editor-list {
@@ -1503,28 +1552,9 @@ input[type='color'] {
   text-overflow: ellipsis;
 }
 
-.line-editor-main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* 中身が列より高いときは縮めずに列ごとスクロールする（文の欄やつまみが潰れないように） */
-.line-editor-main > * {
-  flex: none;
-}
-
 /* 文の欄の包み（取り消しの履歴をまとめるため）。下に行の高さ分の隙間を作らない */
 .line-text-field .line-text {
   display: block;
-}
-
-.line-editor-main h2 {
-  margin-bottom: 0;
-}
-
-.line-editor-main .panel {
-  flex: none;
 }
 
 .line-editor-actions {
@@ -1568,15 +1598,17 @@ input[type='color'] {
   gap: 8px;
 }
 
-/* 再生と書き出しのボタンが画面の下へ押し出されないよう、プレビューの高さを抑える */
-/* プレビューは列の空いた高さをすべて使い、幅と高さの両方に収まる大きさで描く。
-   ウィンドウが低くても潰れきらないよう、最小の高さは残す（そのときは列ごとスクロールする） */
-.line-editor-main .line-preview {
+/* プレビューはパネルの空いた高さをすべて使い、幅と高さの両方に収まる大きさで描く。
+   パネルが低くても潰れきらないよう、最小の高さは残す（そのときはパネルの中でスクロールする） */
+.dock-pane-preview .line-preview {
   flex: 1 1 0;
-  min-height: 220px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.line-editor-main .line-preview-stage {
+.dock-pane-preview .line-preview-stage {
   flex: 1;
   min-height: 0;
   container-type: size;
@@ -1606,64 +1638,36 @@ input[type='color'] {
   border-radius: 50%;
 }
 
-.line-editor-main .line-preview-frame {
+.dock-pane-preview .line-preview-frame {
   width: min(100cqw, 100cqh * var(--preview-aspect));
 }
 
-/* ---- アクセント句の編集（1行編集の中央） ---- */
+/* ---- アクセント句の編集（1行編集のアクセント・高さ・長さのパネル） ---- */
 
 .phrase-editor {
   --mora-width: 2.4em;
-  /* 句の枠の高さ。1行編集で境目をドラグすると変わる（既定 176px）。3つのタブの中身はこの高さから決める */
-  --phrase-card-height: var(--line-editor-phrase-height, 176px);
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 句の枠はパネルの空いた高さに合わせる（パネルの境目をドラッグすると変わる）。
+   低すぎるとつまみや文字が重なるので 120px は残し、そのときはパネルの中でスクロールする */
+.phrase-editor-body {
+  flex: 1 1 0;
+  min-height: 124px;
+  container-type: size;
+}
+
+.phrase-editor-body > * {
+  /* 横スクロールの帯（4px）の分を除いた残り */
+  --phrase-card-height: max(120px, calc(100cqh - 4px));
   /* 高さのつまみ：数値と文字の行（56px）を除いた残り */
   --mora-slider-height: calc(var(--phrase-card-height) - 56px);
   /* アクセントの点と線の段：文字と鉛筆の行（73px）を除いた残り */
   --accent-area: calc(var(--phrase-card-height) - 73px);
-  gap: 8px;
-}
-
-.phrase-editor-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 動画編集ソフトのパネルと同じ、下線で今のタブを示す形。ボタンの枠と地は使わない */
-.phrase-tabs {
-  display: flex;
-  flex: 1;
-  gap: 4px;
-  border-bottom: 1px solid var(--border);
-}
-
-.phrase-tabs button {
-  /* 下線を区切り線の上に重ねる */
-  margin-bottom: -1px;
-  padding: 4px 10px 6px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: var(--muted);
-}
-
-/* ボタン共通のホバー（枠を濃くする）が下線に出ないよう、色だけ変える */
-.phrase-tabs button:hover:not(:disabled) {
-  border-bottom-color: transparent;
-  color: var(--fg);
-}
-
-/* 太字にすると幅が変わって隣のタブが動くので、下線と文字色だけで示す */
-.phrase-tabs button.active,
-.phrase-tabs button.active:hover:not(:disabled) {
-  border-bottom-color: var(--fg);
-  color: var(--fg);
-}
-
-/* タブを切り替えても枠の高さが変わらないよう、句の枠と横スクロールの帯（4px）の分を取っておく */
-.phrase-tab-panel {
-  min-height: calc(var(--phrase-card-height) + 4px);
 }
 
 /* 句が多いときは横に流す */

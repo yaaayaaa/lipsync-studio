@@ -26,6 +26,8 @@ interface Props {
   busy?: boolean
   /** 映像の最下部のシークバー。なければ出さない */
   seek?: { store: PositionStore; enabled: boolean; onSeek(time: number): void }
+  /** 自分の枠と見出しを持つ（false は、名前の付いたパネルの中に置くとき） */
+  standalone?: boolean
 }
 
 /** 書き出しと同じ解像度・配置・背景で、その時点の口を描く。 */
@@ -37,6 +39,7 @@ export function LinePreview({
   controls,
   busy = false,
   seek,
+  standalone = true,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -52,8 +55,8 @@ export function LinePreview({
   }, [frame, settings])
 
   return (
-    <section className="panel line-preview">
-      <h2>プレビュー</h2>
+    <section className={standalone ? 'panel line-preview' : 'line-preview'} aria-label="プレビュー">
+      {standalone && <h2>プレビュー</h2>}
       {/* 置き場所の大きさに合わせて縮むときに使う、動画の縦横比 */}
       <div
         className="line-preview-stage"

@@ -1,19 +1,11 @@
-import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { AccentPhrase } from '../../core/voicevox/types'
-import { errorMessage } from '../script/lineJobs'
 import { AccentTab } from './AccentTab'
 import { LengthTab, PitchTab } from './MoraSliders'
 import type { EditResult } from './useLineTuning'
 
-type Tab = 'accent' | 'pitch' | 'length'
-
-const TABS: readonly { id: Tab; label: string }[] = [
-  { id: 'accent', label: 'アクセント' },
-  { id: 'pitch', label: '高さ' },
-  { id: 'length', label: '長さ' },
-]
+export type PhraseEditorKind = 'accent' | 'pitch' | 'length'
 
 /** 今の句と声から、エンジンを呼んで次の句を作る */
 export type ComputePhrases = (phrases: AccentPhrase[], styleId: number) => Promise<AccentPhrase[]>
@@ -21,14 +13,8 @@ export type ComputePhrases = (phrases: AccentPhrase[], styleId: number) => Promi
 /** エンジンを呼んで句を作り直す（取り直し・読みの変更）。失敗したら行は変えずに投げる */
 export type ChangePhrasesAsync = (compute: ComputePhrases) => Promise<EditResult>
 
-/** 結果を入れられなかったときの知らせ */
-const NOT_APPLIED: Record<Exclude<EditResult, 'applied'>, string> = {
-  dropped: '内容が変わったため反映しませんでした',
-  locked: '書き出し中のため反映しませんでした',
-  stale: '作り込みが文と合っていないため反映しませんでした。作り込みを捨てるか、文を戻してください',
-}
-
 interface Props {
+  kind: PhraseEditorKind
   /** 表示するアクセント句。取得できるまでは null */
   phrases: AccentPhrase[] | null
   /** 書き出し中・声がない・文が空など */
@@ -38,64 +24,43 @@ interface Props {
   onRetry(): void
   /** その場で決まる変更（高さ・長さ・無音） */
   onChange(fn: (phrases: AccentPhrase[]) => AccentPhrase[]): void
-  onChangeAsync: ChangePhrasesAsync
+  /** エンジンを呼ぶ変更（usePhraseAsync の run）。行に入ったら true */
+  onChangeAsync(compute: ComputePhrases): Promise<boolean>
+  /** エンジンを呼ぶ変更を待っている間。3つの欄とも止める */
+  busy: boolean
+  /** エンジンを呼ぶ変更が失敗した・入れなかった知らせ */
+  error: string | null
 }
 
-/** アクセント句の編集欄（アクセント・区切り・読み／高さ／長さ）。行を変えたら作り直す（key に行 ID を渡す） */
-export function PhraseEditor({ phrases, disabled, loadError, onRetry, onChange, onChangeAsync }: Props) {
-  const [tab, setTab] = useState<Tab>('accent')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  /** 取り直しの間は編集欄を止める。行に入ったら true（失敗・入れなかったときは知らせて false） */
-  const runAsync = async (compute: ComputePhrases): Promise<boolean> => {
-    setBusy(true)
-    setError(null)
-    try {
-      const result = await onChangeAsync(compute)
-      if (result === 'applied') return true
-      setError(NOT_APPLIED[result])
-      return false
-    } catch (e) {
-      setError(errorMessage(e))
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
+/**
+ * アクセント句の編集欄の1つ（アクセント・区切り・読み／高さ／長さ）。1行編集ではそれぞれが別のパネルになる。
+ * 行を変えたら作り直す（key に行 ID を渡す）
+ */
+export function PhraseEditor({
+  kind,
+  phrases,
+  disabled,
+  loadError,
+  onRetry,
+  onChange,
+  onChangeAsync,
+  busy,
+  error,
+}: Props) {
   const off = disabled || busy || phrases === null
   return (
-    <section className="panel phrase-editor" aria-busy={busy}>
-      <div className="phrase-editor-head">
-        <div className="phrase-tabs" role="tablist" aria-label="アクセント句の編集">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              id={`phrase-tab-${t.id}`}
-              aria-selected={tab === t.id}
-              aria-controls="phrase-tab-panel"
-              className={tab === t.id ? 'active' : undefined}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {busy && (
-          <span className="hint" role="status">
-            取り直し中…
-          </span>
-        )}
-      </div>
+    <div className="phrase-editor" aria-busy={busy}>
+      {busy && (
+        <p className="hint" role="status">
+          取り直し中…
+        </p>
+      )}
       {error && (
         <p className="notice error" role="alert">
           {error}
         </p>
       )}
-      <div id="phrase-tab-panel" className="phrase-tab-panel" role="tabpanel" aria-labelledby={`phrase-tab-${tab}`}>
+      <div className="phrase-editor-body">
         {phrases === null && disabled ? (
           <p className="hint">セリフと声があると編集できます</p>
         ) : phrases === null && loadError ? (
@@ -110,14 +75,14 @@ export function PhraseEditor({ phrases, disabled, loadError, onRetry, onChange, 
           </div>
         ) : phrases === null ? (
           <p className="hint">アクセント句を取得中…</p>
-        ) : tab === 'accent' ? (
-          <AccentTab phrases={phrases} disabled={off} onChangeAsync={runAsync} />
-        ) : tab === 'pitch' ? (
+        ) : kind === 'accent' ? (
+          <AccentTab phrases={phrases} disabled={off} onChangeAsync={onChangeAsync} />
+        ) : kind === 'pitch' ? (
           <PitchTab phrases={phrases} disabled={off} onChange={onChange} />
         ) : (
           <LengthTab phrases={phrases} disabled={off} onChange={onChange} />
         )}
       </div>
-    </section>
+    </div>
   )
 }

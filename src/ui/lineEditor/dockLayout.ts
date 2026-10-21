@@ -1,0 +1,54 @@
+// 1行編集のパネルの並び（タブのドラッグで分けたり束ねたりした結果）。見る人・画面ごとの好みなので、
+// IndexedDB の設定ではなくブラウザ（localStorage）に覚える。読めない・壊れている・パネルが足りないときは
+// 初めの並びで開く（パネルが欠けた並びを開くと、その部品を出す場所がなくなるため）。
+import type { SerializedDockview } from 'dockview-react'
+
+/** パネルの ID。dockview の部品名も同じにする */
+export const PANEL_IDS = ['lines', 'preview', 'accent', 'pitch', 'length', 'credit'] as const
+export type PanelId = (typeof PANEL_IDS)[number]
+
+export const PANEL_TITLES: Record<PanelId, string> = {
+  lines: 'セリフ一覧',
+  preview: 'プレビュー',
+  accent: 'アクセント',
+  pitch: '高さ',
+  length: '長さ',
+  credit: 'クレジット',
+}
+
+const DOCK_LAYOUT_KEY = 'zunda-lipsync.lineEditorDock'
+
+type DockStorage = Pick<Storage, 'getItem' | 'setItem'>
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+
+/** 6つのパネルがちょうど1つずつ、それぞれの部品で入っているか */
+function hasEveryPanel(saved: unknown): saved is SerializedDockview {
+  if (!isObject(saved) || !isObject(saved.grid) || !isObject(saved.panels)) return false
+  const { panels } = saved
+  return (
+    Object.keys(panels).length === PANEL_IDS.length &&
+    PANEL_IDS.every((id) => {
+      const panel = panels[id]
+      return isObject(panel) && panel.contentComponent === id
+    })
+  )
+}
+
+export function loadDockLayout(storage: DockStorage = localStorage): SerializedDockview | null {
+  try {
+    const saved: unknown = JSON.parse(storage.getItem(DOCK_LAYOUT_KEY) ?? 'null')
+    return hasEveryPanel(saved) ? saved : null
+  } catch {
+    return null
+  }
+}
+
+/** 覚えられなくても（プライベートモードなど）、今開いている画面ではその並びのまま */
+export function saveDockLayout(layout: SerializedDockview, storage: DockStorage = localStorage): void {
+  try {
+    storage.setItem(DOCK_LAYOUT_KEY, JSON.stringify(layout))
+  } catch {
+    // 次に開いたときに初めの並びに戻るだけ
+  }
+}

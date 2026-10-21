@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
-import type { CSSProperties, PointerEvent } from 'react'
+import { useCallback, useEffect, useEffectEvent, useState } from 'react'
+import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { newId } from '../../core/id'
@@ -13,31 +13,26 @@ import { useExportJob } from '../script/useExportJob'
 import { useLinePlayback } from '../script/useLinePlayback'
 import { useRenderLine } from '../script/useRenderLine'
 import { useScriptLines } from '../script/useScriptLines'
-import { Splitter } from '../Splitter'
 import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
+import { LineEditorDock } from './LineEditorDock'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
+import type { PhraseEditorKind } from './PhraseEditor'
 import { isTextEntry, shortcutAction } from './history'
-import { DEFAULT_LAYOUT, LIST_WIDTH_RANGE, PHRASE_HEIGHT_MIN, loadLayout, saveLayout } from './layout'
-import type { LineEditorLayout } from './layout'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
 import { useLineHistory } from './useLineHistory'
+import { usePhraseAsync } from './usePhraseAsync'
 import { useLineTuning } from './useLineTuning'
 
 const REFRESHED_NOTICE = '声が変わったので高さと長さを取り直しました'
-
-/** プレビューに最低限残す高さ（app.css の .line-editor-main .line-preview の min-height と同じ） */
-const PREVIEW_MIN_HEIGHT = 220
-/** 句の枠の高さの上限の目安（読み上げ用）。実際の上限は、そのときのプレビューの高さで決まる */
-const PHRASE_HEIGHT_MAX = 600
 
 type ExportState = { lineId: string } & (
   | { state: 'exporting'; progress: number }
   | { state: 'done' | 'error' | 'aborted'; message: string }
 )
 
-/** 1行編集：左に行の一覧、中央に文と声・プレビュー・再生と書き出し、右に全体の数値 */
+/** 1行編集：行の一覧・プレビュー・アクセント・高さ・長さ・クレジットを、並べ替えられるパネルに置く */
 export function LineEditorPage({ active }: { active: boolean }) {
   const { characters, settings } = useApp()
   const { lines, update, error: scriptError, editingLineId, openLineEditor, exportLocked } = useScriptLines()
@@ -63,20 +58,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const { exportSingle } = useRenderLine(speak)
   const job = useExportJob()
 
-  // パネルの大きさ（行の一覧の幅・句の枠の高さ）。ドラグするたびに覚える
-  const [layout, setLayout] = useState(loadLayout)
-  const changeLayout = (patch: Partial<LineEditorLayout>) => {
-    const next = { ...layout, ...patch }
-    setLayout(next)
-    saveLayout(next)
-  }
-  const mainRef = useRef<HTMLElement>(null)
-  /** 句の枠を伸ばせる上限：プレビューを最低限の高さまで縮めた分まで（操作のたびに測る） */
-  const phraseHeightMax = () => {
-    const preview = mainRef.current?.querySelector('.line-preview')
-    const spare = preview ? preview.getBoundingClientRect().height - PREVIEW_MIN_HEIGHT : 0
-    return Math.max(layout.phraseHeight + spare, PHRASE_HEIGHT_MIN)
-  }
+  // アクセント・高さ・長さは別々のパネルなので、取り直しの状態はここで持って3つに配る
+  const phraseAsync = usePhraseAsync(lineId, tuning.changePhrases)
 
   // 結果の表示は、その行を開いている間だけ見せる
   const [playError, setPlayError] = useState<{ lineId: string; message: string } | null>(null)
@@ -199,171 +182,169 @@ export function LineEditorPage({ active }: { active: boolean }) {
     window.addEventListener('pointercancel', finish, { signal: done.signal })
   }
 
-  return (
-    <div
-      className="line-editor-page"
-      style={
-        {
-          '--line-list-width': `${layout.listWidth}px`,
-          '--line-editor-phrase-height': `${layout.phraseHeight}px`,
-        } as CSSProperties
-      }
-      onPointerDownCapture={startSliderGesture}
-    >
-      <LineEditorList
-        lines={lines}
-        selectedId={line?.id ?? null}
-        locked={locked}
-        onSelect={openLineEditor}
-        onAdd={addLine}
+  const phraseEditor = (kind: PhraseEditorKind) =>
+    line && (
+      <PhraseEditor
+        key={line.id}
+        kind={kind}
+        phrases={canTune ? (tuning.shown?.accentPhrases ?? null) : null}
+        disabled={locked || !canTune}
+        loadError={tuning.queryError}
+        onRetry={tuning.retryQuery}
+        onChange={(fn) => tuning.changeTuning((t) => ({ ...t, accentPhrases: fn(t.accentPhrases) }))}
+        onChangeAsync={phraseAsync.run}
+        busy={phraseAsync.busy}
+        error={phraseAsync.error}
       />
-      <Splitter
-        label="行の一覧の幅"
-        orientation="vertical"
-        value={layout.listWidth}
-        min={LIST_WIDTH_RANGE.min}
-        max={LIST_WIDTH_RANGE.max}
-        direction={1}
-        onChange={(listWidth) => changeLayout({ listWidth })}
-        onReset={() => changeLayout({ listWidth: DEFAULT_LAYOUT.listWidth })}
-      />
-      <section className="column line-editor-main" ref={mainRef}>
-        {scriptError && (
-          <p className="notice error" role="alert">
-            {scriptError}
-          </p>
-        )}
-        {/* 開くと前の行か1行目が選ばれるので、行がないとき（左の「行を追加」で作る）以外は必ず中身がある */}
-        {line && (
-          <>
-            {problem && <p className="line-problem">{PROBLEM_LABELS[problem]}</p>}
-            {tuning.refreshed && (
-              <p className="notice" role="status">
-                {REFRESHED_NOTICE}
-              </p>
-            )}
-            <LinePreview
-              frame={playback.preview}
-              settings={settings.export}
-              caption={caption}
-              busy={loading}
-              seek={{
-                store: playback.position,
-                enabled: (playing && !loading) || playback.canSeek(line),
-                onSeek: (time) => playback.seek(line, time),
-              }}
-              controls={
-                playing ? (
-                  <button
-                    type="button"
-                    className="transport-button"
-                    aria-label={loading ? '合成中（押すと止める）' : '停止'}
-                    title="停止（Space）"
-                    onClick={playback.stop}
-                  >
-                    <Square {...iconProps} size={16} fill="currentColor" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="transport-button"
-                    aria-label="再生"
-                    title="再生（Space）"
-                    disabled={!canPlay}
-                    onClick={play}
-                  >
-                    <Play {...iconProps} size={18} fill="currentColor" />
-                  </button>
-                )
-              }
-            />
-            <Splitter
-              label="プレビューと句の欄の高さ"
-              orientation="horizontal"
-              value={layout.phraseHeight}
-              min={PHRASE_HEIGHT_MIN}
-              max={PHRASE_HEIGHT_MAX}
-              direction={-1}
-              onChange={(h) => changeLayout({ phraseHeight: Math.min(h, phraseHeightMax()) })}
-              onReset={() => changeLayout({ phraseHeight: DEFAULT_LAYOUT.phraseHeight })}
-            />
-            <PhraseEditor
-              key={line.id}
-              phrases={canTune ? (tuning.shown?.accentPhrases ?? null) : null}
-              disabled={locked || !canTune}
-              loadError={tuning.queryError}
-              onRetry={tuning.retryQuery}
-              onChange={(fn) => tuning.changeTuning((t) => ({ ...t, accentPhrases: fn(t.accentPhrases) }))}
-              onChangeAsync={tuning.changePhrases}
-            />
-            <div className="line-editor-actions">
-              {exportState?.state === 'exporting' ? (
-                <button type="button" onClick={job.abort}>
-                  中止
+    )
+
+  const previewPanel = (
+    <>
+      {scriptError && (
+        <p className="notice error" role="alert">
+          {scriptError}
+        </p>
+      )}
+      {/* 開くと前の行か1行目が選ばれるので、行がないとき（一覧の「行を追加」で作る）以外は必ず中身がある */}
+      {line ? (
+        <>
+          {problem && <p className="line-problem">{PROBLEM_LABELS[problem]}</p>}
+          {tuning.refreshed && (
+            <p className="notice" role="status">
+              {REFRESHED_NOTICE}
+            </p>
+          )}
+          <LinePreview
+            frame={playback.preview}
+            settings={settings.export}
+            caption={caption}
+            busy={loading}
+            standalone={false}
+            seek={{
+              store: playback.position,
+              enabled: (playing && !loading) || playback.canSeek(line),
+              onSeek: (time) => playback.seek(line, time),
+            }}
+            controls={
+              playing ? (
+                <button
+                  type="button"
+                  className="transport-button"
+                  aria-label={loading ? '合成中（押すと止める）' : '停止'}
+                  title="停止（Space）"
+                  onClick={playback.stop}
+                >
+                  <Square {...iconProps} size={16} fill="currentColor" />
                 </button>
               ) : (
                 <button
                   type="button"
-                  disabled={problem !== null || locked || tuning.busy}
-                  onClick={() => void exportLine()}
+                  className="transport-button"
+                  aria-label="再生"
+                  title="再生（Space）"
+                  disabled={!canPlay}
+                  onClick={play}
                 >
-                  <Download {...iconProps} />
-                  この行を書き出し
+                  <Play {...iconProps} size={18} fill="currentColor" />
                 </button>
-              )}
-              <span className="spacer" />
+              )
+            }
+          />
+          <div className="line-editor-actions">
+            {exportState?.state === 'exporting' ? (
+              <button type="button" onClick={job.abort}>
+                中止
+              </button>
+            ) : (
               <button
                 type="button"
-                disabled={!history.canUndo(line.id) || locked}
-                aria-label="取り消し"
-                title="取り消し（Ctrl/Cmd+Z）"
-                onClick={() => undo(line.id)}
+                disabled={problem !== null || locked || tuning.busy}
+                onClick={() => void exportLine()}
               >
-                <Undo2 {...iconProps} />
+                <Download {...iconProps} />
+                この行を書き出し
               </button>
-              <button
-                type="button"
-                disabled={!history.canRedo(line.id) || locked}
-                aria-label="やり直し"
-                title="やり直し（Ctrl/Cmd+Shift+Z、Ctrl+Y）"
-                onClick={() => redo(line.id)}
-              >
-                <Redo2 {...iconProps} />
-              </button>
-              <button
-                type="button"
-                disabled={!line.tuning || locked}
-                title="作り込みを捨てて、自動の状態に戻します"
-                onClick={() => void editLine(line.id, dropTuning)}
-              >
-                <RotateCcw {...iconProps} />
-                元に戻す
-              </button>
-            </div>
-            {shownPlayError && (
-              <p className="line-problem" role="alert">
-                {shownPlayError}
-              </p>
             )}
-            {shownExport?.state === 'exporting' && (
-              <p className="hint" role="status">
-                書き出し中… <progress max={1} value={shownExport.progress} /> {Math.round(shownExport.progress * 100)}%
-              </p>
-            )}
-            {shownExport && shownExport.state !== 'exporting' && (
-              <p className={shownExport.state === 'error' ? 'line-problem' : 'hint'} role="status">
-                {shownExport.message}
-              </p>
-            )}
-            {credit && (
+            <span className="spacer" />
+            <button
+              type="button"
+              disabled={!history.canUndo(line.id) || locked}
+              aria-label="取り消し"
+              title="取り消し（Ctrl/Cmd+Z）"
+              onClick={() => undo(line.id)}
+            >
+              <Undo2 {...iconProps} />
+            </button>
+            <button
+              type="button"
+              disabled={!history.canRedo(line.id) || locked}
+              aria-label="やり直し"
+              title="やり直し（Ctrl/Cmd+Shift+Z、Ctrl+Y）"
+              onClick={() => redo(line.id)}
+            >
+              <Redo2 {...iconProps} />
+            </button>
+            <button
+              type="button"
+              disabled={!line.tuning || locked}
+              title="作り込みを捨てて、自動の状態に戻します"
+              onClick={() => void editLine(line.id, dropTuning)}
+            >
+              <RotateCcw {...iconProps} />
+              元に戻す
+            </button>
+          </div>
+          {shownPlayError && (
+            <p className="line-problem" role="alert">
+              {shownPlayError}
+            </p>
+          )}
+          {shownExport?.state === 'exporting' && (
+            <p className="hint" role="status">
+              書き出し中… <progress max={1} value={shownExport.progress} /> {Math.round(shownExport.progress * 100)}%
+            </p>
+          )}
+          {shownExport && shownExport.state !== 'exporting' && (
+            <p className={shownExport.state === 'error' ? 'line-problem' : 'hint'} role="status">
+              {shownExport.message}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="hint">セリフ一覧の「行を追加」で行を作ると、ここで再生できます</p>
+      )}
+    </>
+  )
+
+  return (
+    <div className="line-editor-page" onPointerDownCapture={startSliderGesture}>
+      <LineEditorDock
+        panels={{
+          lines: (
+            <LineEditorList
+              lines={lines}
+              selectedId={line?.id ?? null}
+              locked={locked}
+              onSelect={openLineEditor}
+              onAdd={addLine}
+            />
+          ),
+          preview: previewPanel,
+          accent: phraseEditor('accent'),
+          pitch: phraseEditor('pitch'),
+          length: phraseEditor('length'),
+          credit:
+            line && credit ? (
               <CreditPanel
                 credit={credit}
+                standalone={false}
                 onError={(message) => setExportState({ lineId: line.id, state: 'error', message })}
               />
-            )}
-          </>
-        )}
-      </section>
+            ) : (
+              <p className="hint">この行を書き出すと、使った声のクレジットがここに出ます</p>
+            ),
+        }}
+      />
     </div>
   )
 }
