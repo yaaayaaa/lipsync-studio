@@ -19,7 +19,8 @@ import {
   saveDockLayout,
 } from './dockLayout'
 import type { PanelId } from './dockLayout'
-import { isNoOpTabDrop } from './tabDrop'
+import { dropGapAtTab, gapX, isNoOpDrop } from './tabDrop'
+import type { DropGap } from './tabDrop'
 
 /** 各パネルの中身。画面（LineEditorPage）が毎回作って渡す */
 export type DockPanels = Record<PanelId, ReactNode>
@@ -67,24 +68,26 @@ function addDefaultPanels(api: DockviewApi) {
   api.getPanel('accent')?.group.api.setSize({ height: Math.round(api.height * DEFAULT_PROPORTIONS.phraseHeight) })
 }
 
-/** 同じ束の中で、離しても並びが変わらない位置なら、入る位置の線を出さない（離しても何も起きない） */
-function hideNoOpTabDrop(event: DockviewWillShowOverlayLocationEvent) {
-  const dragged = event.getData()
+type DockGroup = NonNullable<DockviewWillShowOverlayLocationEvent['group']>
+
+/** タブの帯に重ねているときの入る位置。帯の外（パネルの中身や画面の端）なら null */
+function tabDropTarget(
+  event: DockviewWillShowOverlayLocationEvent,
+): { group: DockGroup; tabs: string[]; gap: DropGap } | null {
   const group = event.group
-  if (!dragged?.panelId || !group || dragged.groupId !== group.id) return
+  if (!group) return null
   const tabs = group.panels.map((p) => p.id)
   // タブの右の空き：束の最後に入る
-  if (event.kind === 'header_space') {
-    if (tabs.at(-1) === dragged.panelId) event.preventDefault()
-    return
-  }
-  if (event.kind !== 'tab') return
-  // 重ねている先のタブは知らせに入っていないので、マウスの下の要素から読む
-  const target = event.nativeEvent.target
-  const over =
-    target instanceof Element ? target.closest<HTMLElement>('[data-tab-panel-id]')?.dataset.tabPanelId : undefined
+  if (event.kind === 'header_space') return { group, tabs, gap: tabs.length }
+  if (event.kind !== 'tab') return null
+  // 重ねている先のタブは知らせに入っていないので、ポインタの下の要素から読む
+  // （タッチのドラッグでは event.target が押し始めた要素のままなので、位置から引く）
+  const { clientX, clientY } = event.nativeEvent
+  const over = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>('[data-tab-panel-id]')
+    ?.dataset.tabPanelId
   const side = event.position === 'left' ? 'left' : event.position === 'right' ? 'right' : null
-  if (over && side && isNoOpTabDrop({ tabs, dragged: dragged.panelId, over, side })) event.preventDefault()
+  const gap = over && side ? dropGapAtTab(tabs, over, side) : null
+  return gap === null ? null : { group, tabs, gap }
 }
 
 /** 覚えた並び、なければ初めの並びで並べる */
@@ -107,6 +110,7 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
   const apiRef = useRef<DockviewApi | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<HTMLDivElement>(null)
+  const dropLineRef = useRef<HTMLDivElement>(null)
   const openedRef = useRef(false)
 
   // 隠れている間（別の画面を開いている間）は大きさが 0 で、パネルの幅・高さを決められない。
@@ -140,6 +144,62 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     [openWhenVisible],
   )
 
+  // 入る位置の線は、ドラッグが動くたびに一度消し、dockview が入る位置を知らせてきたときだけ引き直す。dockview は
+  // 知らせを同じ合図の処理の中ですぐ出すので（ここは先に動く capture）、消して引き直す間に画面は描き変わらない。
+  // こうすると、知らせが来ない所（帯の外・ドラッグしているタブ自身の上）では線が残らない。離したとき・やめたときも消す。
+  // dockview はマウスでは HTML5 のドラッグ、タッチとペンではポインタのイベントで動かすので、両方を見る
+  useEffect(() => {
+    const line = dropLineRef.current
+    if (!line) return
+    const hide = () => {
+      line.hidden = true
+    }
+    const types = ['dragover', 'pointermove', 'drop', 'dragend', 'pointerup', 'pointercancel']
+    for (const type of types) document.addEventListener(type, hide, { capture: true })
+    return () => {
+      for (const type of types) document.removeEventListener(type, hide, { capture: true })
+    }
+  }, [])
+
+  /**
+   * タブを帯に重ねたときの入る位置の線。dockview は線を重ねている先のタブの内側に描き、同じ境目でも
+   * 「前のタブの後ろ」と「次のタブの前」で位置が分かれるので、dockview の線は隠して（app.css）、境目の真上に1本だけ引く。
+   * 離しても並びが変わらない位置では、線を出さず、離しても何もしない
+   */
+  const showTabDropLine = (event: DockviewWillShowOverlayLocationEvent) => {
+    const line = dropLineRef.current
+    const root = rootRef.current
+    if (!line || !root) return
+    const target = tabDropTarget(event)
+    if (!target) {
+      line.hidden = true
+      return
+    }
+    const { group, tabs, gap } = target
+    const dragged = event.getData()
+    if (dragged?.panelId && dragged.groupId === group.id && isNoOpDrop(tabs, dragged.panelId, gap)) {
+      event.preventDefault()
+      line.hidden = true
+      return
+    }
+    const header = group.element.querySelector('.dv-tabs-and-actions-container')
+    const rects = tabs.map((id) =>
+      group.element.querySelector(`[data-tab-panel-id="${CSS.escape(id)}"]`)?.getBoundingClientRect(),
+    )
+    const x = rects.every((r) => r !== undefined) ? gapX(rects, gap) : null
+    if (!header || x === null) {
+      line.hidden = true
+      return
+    }
+    const rootBox = root.getBoundingClientRect()
+    const headerBox = header.getBoundingClientRect()
+    // 先頭の前の線（2px）はパネルの枠と重なって見えなくなるので、枠の内側に寄せる
+    line.style.left = `${Math.max(x, headerBox.left + 2) - rootBox.left}px`
+    line.style.top = `${headerBox.top - rootBox.top}px`
+    line.style.height = `${headerBox.height}px`
+    line.hidden = false
+  }
+
   const onReady = ({ api }: DockviewReadyEvent) => {
     apiRef.current = api
     // 開発中のホットリロードでは、この部品の状態（ref）を残したまま dockview だけが空で作り直される。
@@ -152,7 +212,7 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
         saveDockLayout(api.toJSON())
       }
     })
-    api.onWillShowOverlay(hideNoOpTabDrop)
+    api.onWillShowOverlay(showTabDropLine)
     openWhenVisible()
   }
 
@@ -170,6 +230,7 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
           onReady={onReady}
         />
       </PanelsContext>
+      <div ref={dropLineRef} className="line-dock-drop-line" hidden aria-hidden />
     </div>
   )
 }
