@@ -106,7 +106,7 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
       onError(errorMessage(e))
       return
     }
-    const { character, expression } = ready
+    const { character, expression, voice } = ready
 
     let lease: FramesLease | null = null
     if (mode === 'preview') {
@@ -129,7 +129,7 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
 
     const handle = startSamplePlayback(
       async () => {
-        const [prepared, sample] = await Promise.all([lease?.frames, speak(line, character.voice.styleId)])
+        const [prepared, sample] = await Promise.all([lease?.frames, speak(line, voice.styleId)])
         if (prepared && isCurrent()) {
           // 描画は同期で行うので、再生前に使う口と目の組み合わせを全部合成しておく
           const spec = prepared.frames.blink

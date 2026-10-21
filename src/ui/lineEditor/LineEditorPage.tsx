@@ -2,6 +2,7 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
+import { lineVoice } from '../../core/character/voice'
 import { newId } from '../../core/id'
 import { clampTail, effectiveTail } from '../../core/export/tail'
 import { lineProblem } from '../../core/storage/db'
@@ -23,6 +24,7 @@ import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
 import { StylePicker } from './StylePicker'
+import { VoiceSelect } from '../VoiceSelect'
 import { TailLength } from './TailLength'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
@@ -47,7 +49,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const index = lines?.findIndex((l) => l.id === editingLineId) ?? -1
   const line = index >= 0 ? lines![index]! : null
   const character = characters.find((c) => c.id === line?.characterId)
-  const styleId = character?.voice?.styleId ?? null
+  const styleId = line ? (lineVoice(line, character)?.styleId ?? null) : null
   const problem = line ? lineProblem(line, characters) : null
 
   const history = useLineHistory(lines)
@@ -236,12 +238,35 @@ export function LineEditorPage({ active }: { active: boolean }) {
     <GlobalParams
       selects={
         line && (
-          <StylePicker
-            line={line}
-            characters={characters}
-            disabled={locked}
-            onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
-          />
+          <>
+            <StylePicker
+              line={line}
+              characters={characters}
+              disabled={locked}
+              onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
+            />
+            {/* 声はこの行だけの上書き。選ばなければキャラ設定の声を使う */}
+            <div className="line-voice">
+              <span>声</span>
+              <VoiceSelect
+                voice={line.voice ?? null}
+                noneLabel={
+                  character?.voice
+                    ? `キャラの声（${character.voice.speakerName}・${character.voice.styleName}）`
+                    : 'キャラの声（未設定）'
+                }
+                label="この行の声"
+                disabled={locked}
+                onChange={(voice) =>
+                  void editLine(line.id, (l) => {
+                    if (voice) return { ...l, voice }
+                    const { voice: _own, ...rest } = l
+                    return rest
+                  })
+                }
+              />
+            </div>
+          </>
         )
       }
       speedScale={line?.speedScale ?? 1}

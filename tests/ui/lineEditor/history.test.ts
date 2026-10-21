@@ -147,6 +147,35 @@ describe('snapshots', () => {
     expect(sameSnapshot(snap('あ'), snap('い'))).toBe(false)
   })
 
+  describe('voice', () => {
+    const metan = { styleId: 2, speakerName: '四国めたん', styleName: 'ノーマル' }
+
+    it('round-trips the line voice; absence removes the key', () => {
+      const withVoice: ScriptLine = { ...line, voice: metan }
+      expect(snapshotOf(withVoice).voice).toBe(metan)
+      expect('voice' in snapshotOf(line)).toBe(false)
+      expect(applySnapshot(line, snapshotOf(withVoice)).voice).toBe(metan)
+      expect('voice' in applySnapshot(withVoice, snapshotOf(line))).toBe(false)
+    })
+
+    it('treats a different voice as a different snapshot', () => {
+      expect(sameSnapshot(snap('あ'), snap('あ', { voice: metan }))).toBe(false)
+      expect(sameSnapshot(snap('あ', { voice: metan }), snap('あ', { voice: metan }))).toBe(true)
+    })
+
+    it('clears the history when only the voice changed elsewhere', () => {
+      expect(outsideChange(snap('あ'), snap('あ', { voice: metan }))).toBe('clear')
+      expect(outsideChange(snap('あ', { voice: metan }), snap('あ', { voice: { ...metan } }))).toBe('none')
+    })
+
+    it('puts back only the voice when a gesture changed only the voice', () => {
+      const g = noteGestureEdit(startGesture(noGesture, 'l1', snap('あ')).state.current!, snap('あ'), snap('あ', { voice: metan }))
+      const entry = gestureEntry(g, snap('あ', { voice: metan }))
+      expect(entry).not.toBeNull()
+      expect('voice' in entry!).toBe(false)
+    })
+  })
+
   describe('tailSeconds', () => {
     it('round-trips with and without a line value; absence removes the key', () => {
       const withTail: ScriptLine = { ...line, tailSeconds: 1.5 }

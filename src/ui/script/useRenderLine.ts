@@ -30,12 +30,12 @@ export function useRenderLine(speak: SpeakLine) {
 
   const render = useCallback(
     async (line: ScriptLine, { signal, onProgress, onRefreshed }: RenderOptions): Promise<RenderedLine> => {
-      const { character, expression } = resolveLine(line, characters)
+      const { character, expression, voice } = resolveLine(line, characters)
       const lease = frameCache.acquire(character, expression)
       try {
         const [{ frames, psdSize }, { wav, timeline }] = await Promise.all([
           lease.frames,
-          speak(line, character.voice.styleId, onRefreshed),
+          speak(line, voice.styleId, onRefreshed),
         ])
         const blob = await renderLineMp4({
           wav,
@@ -48,7 +48,7 @@ export function useRenderLine(speak: SpeakLine) {
           onProgress,
           signal,
         })
-        return { blob, characterName: character.name, speakerName: character.voice.speakerName }
+        return { blob, characterName: character.name, speakerName: voice.speakerName }
       } finally {
         lease.release()
       }

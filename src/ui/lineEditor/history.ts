@@ -4,7 +4,10 @@ import type { ScriptLine } from '../../core/character/types'
 // 作り込み（tuning）は丸ごと持つ。中身は書き換えずに新しいオブジェクトを作る約束なので、参照を持つだけで足りる。
 
 /** 取り消しで戻す項目。文を戻すときは、捨てた作り込みも一緒に戻す */
-export type Snapshot = Pick<ScriptLine, 'text' | 'speedScale' | 'tuning' | 'tailSeconds' | 'characterId' | 'expressionId'>
+export type Snapshot = Pick<
+  ScriptLine,
+  'text' | 'speedScale' | 'tuning' | 'tailSeconds' | 'voice' | 'characterId' | 'expressionId'
+>
 
 export interface History {
   /** 古い順。最後が直前の状態 */
@@ -39,19 +42,21 @@ export function redo(h: History, current: Snapshot): { history: History; snapsho
 }
 
 export function snapshotOf(line: ScriptLine): Snapshot {
-  const { text, speedScale, characterId, expressionId, tuning, tailSeconds } = line
+  const { text, speedScale, characterId, expressionId, tuning, tailSeconds, voice } = line
   const snapshot: Snapshot = { text, speedScale, characterId, expressionId }
   if (tuning) snapshot.tuning = tuning
   if (tailSeconds !== undefined) snapshot.tailSeconds = tailSeconds
+  if (voice) snapshot.voice = voice
   return snapshot
 }
 
-/** 行を Snapshot の状態にする。作り込み・終端の長さのない状態なら、その項目ごと消す（ないことも状態） */
+/** 行を Snapshot の状態にする。作り込み・終端の長さ・行の声のない状態なら、その項目ごと消す（ないことも状態） */
 export function applySnapshot(line: ScriptLine, s: Snapshot): ScriptLine {
-  const { tuning: _droppedTuning, tailSeconds: _droppedTail, ...rest } = line
+  const { tuning: _droppedTuning, tailSeconds: _droppedTail, voice: _droppedVoice, ...rest } = line
   const next: ScriptLine = { ...rest, text: s.text, speedScale: s.speedScale, characterId: s.characterId, expressionId: s.expressionId }
   if (s.tuning) next.tuning = s.tuning
   if (s.tailSeconds !== undefined) next.tailSeconds = s.tailSeconds
+  if (s.voice) next.voice = s.voice
   return next
 }
 
@@ -63,7 +68,8 @@ export function sameSnapshot(a: Snapshot, b: Snapshot): boolean {
     a.characterId === b.characterId &&
     a.expressionId === b.expressionId &&
     a.tuning === b.tuning &&
-    a.tailSeconds === b.tailSeconds
+    a.tailSeconds === b.tailSeconds &&
+    a.voice === b.voice
   )
 }
 
@@ -84,7 +90,8 @@ export function outsideChange(seen: Snapshot, current: Snapshot): 'none' | 'reba
     seen.speedScale === current.speedScale &&
     seen.characterId === current.characterId &&
     seen.expressionId === current.expressionId &&
-    seen.tailSeconds === current.tailSeconds
+    seen.tailSeconds === current.tailSeconds &&
+    seen.voice?.styleId === current.voice?.styleId
   if (restSame && sameTuning(seen.tuning, current.tuning)) return 'none'
   const refreshed =
     restSame &&
@@ -99,7 +106,15 @@ export function outsideChange(seen: Snapshot, current: Snapshot): 'none' | 'reba
 // 操作は始めた側が token で持ち、その token でしか終わらない（別の操作の終わりの知らせで切れないように）。
 
 type SnapshotField = keyof Snapshot
-const SNAPSHOT_FIELDS: readonly SnapshotField[] = ['text', 'speedScale', 'tuning', 'tailSeconds', 'characterId', 'expressionId']
+const SNAPSHOT_FIELDS: readonly SnapshotField[] = [
+  'text',
+  'speedScale',
+  'tuning',
+  'tailSeconds',
+  'voice',
+  'characterId',
+  'expressionId',
+]
 
 export interface Gesture {
   token: number
@@ -150,6 +165,7 @@ export function gestureEntry(g: Gesture, after: Snapshot): Snapshot | null {
   for (const f of g.owned) Object.assign(entry, { [f]: g.before[f] })
   if (entry.tuning === undefined) delete entry.tuning
   if (entry.tailSeconds === undefined) delete entry.tailSeconds
+  if (entry.voice === undefined) delete entry.voice
   return entry
 }
 

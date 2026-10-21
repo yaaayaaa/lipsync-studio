@@ -2,6 +2,7 @@ import { openDB } from 'idb'
 import type { DBSchema } from 'idb'
 import { resolveMouthLayer } from '../character/mouth'
 import { DEFAULT_EXPORT_SETTINGS, VOWELS } from '../character/types'
+import { lineVoice } from '../character/voice'
 import type { Character, ExportSettings, ScriptLine } from '../character/types'
 
 export interface AppSettings {
@@ -114,7 +115,7 @@ export function lineProblem(line: ScriptLine, characters: Character[]): LineProb
   const character = characters.find((c) => c.id === line.characterId)
   if (!character) return 'no-character'
   if (!character.expressions.some((e) => e.id === line.expressionId)) return 'no-expression'
-  if (!character.voice) return 'no-voice'
+  if (!lineVoice(line, character)) return 'no-voice'
   if (!hasMouth(character)) return 'no-mouth'
   if (line.text.trim() === '') return 'empty-text'
   return null

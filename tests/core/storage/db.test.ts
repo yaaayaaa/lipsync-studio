@@ -161,6 +161,10 @@ describe('lineProblem', () => {
   it('detects a character without voice', () => {
     expect(lineProblem(line(), [character({ voice: null })])).toBe('no-voice')
   })
+  it('accepts a line that has its own voice even when the character has none', () => {
+    const voice = { styleId: 2, speakerName: '四国めたん', styleName: 'ノーマル' }
+    expect(lineProblem(line({ voice }), [character({ voice: null })])).toBeNull()
+  })
   it('detects a character without a mouth group or assignment', () => {
     expect(lineProblem(line(), [character({ mouthGroupId: null })])).toBe('no-mouth')
     expect(lineProblem(line(), [character({ mouthMap: {} })])).toBe('no-mouth')

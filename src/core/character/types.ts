@@ -71,6 +71,8 @@ export interface ScriptLine {
   speedScale: number
   /** 喋り終わったあと立ち絵を映し続ける秒数。ない＝書き出し設定の既定を使う（0 も行の値として効く） */
   tailSeconds?: number
+  /** この行だけの声。ない＝キャラの声（lineVoice） */
+  voice?: VoiceRef
   tuning?: LineTuning
 }
 

@@ -1,4 +1,5 @@
-import type { Character, Expression, ExportSettings, LineTuning, ScriptLine } from '../../core/character/types'
+import type { Character, Expression, ExportSettings, LineTuning, ScriptLine, VoiceRef } from '../../core/character/types'
+import { lineVoice } from '../../core/character/voice'
 import { placement } from '../../core/export/frames'
 import type { FrameKey, FrameStore } from '../../core/export/frames'
 import { lineProblem } from '../../core/storage/db'
@@ -7,14 +8,16 @@ import type { LineProblem } from '../../core/storage/db'
 export const PROBLEM_LABELS: Record<LineProblem, string> = {
   'no-character': 'キャラが選ばれていないか、削除されています',
   'no-expression': 'スタイルが選ばれていないか、削除されています',
-  'no-voice': 'このキャラには声が設定されていません（キャラ設定で選んでください）',
+  'no-voice': '声が設定されていません（キャラ設定か1行編集で選んでください）',
   'no-mouth': 'キャラ設定で口グループと口の割り当てをしてください',
   'empty-text': 'セリフが空です',
 }
 
 export interface ReadyLine {
-  character: Character & { voice: NonNullable<Character['voice']> }
+  character: Character
   expression: Expression
+  /** 行で使う声（行の声、なければキャラの声） */
+  voice: VoiceRef
 }
 
 /** 声があれば鳴らせる。口が未設定でも試聴はできる（プレビューと書き出しは不可）。 */
@@ -22,13 +25,13 @@ export function canListen(problem: LineProblem | null): boolean {
   return problem === null || problem === 'no-mouth'
 }
 
-/** 合成できる行ならキャラとスタイルを、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
+/** 合成できる行ならキャラ・スタイル・声を、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
 export function resolveLine(line: ScriptLine, characters: Character[], listenOnly = false): ReadyLine {
   const problem = lineProblem(line, characters)
   if (problem && !(listenOnly && canListen(problem))) throw new Error(PROBLEM_LABELS[problem])
   const character = characters.find((c) => c.id === line.characterId)!
   const expression = character.expressions.find((e) => e.id === line.expressionId)!
-  return { character: character as ReadyLine['character'], expression }
+  return { character, expression, voice: lineVoice(line, character)! }
 }
 
 /**

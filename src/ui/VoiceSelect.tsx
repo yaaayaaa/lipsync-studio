@@ -1,0 +1,89 @@
+import { useEffect, useState } from 'react'
+import type { VoiceRef } from '../core/character/types'
+import type { Speaker } from '../core/voicevox/types'
+import { useApp } from './useApp'
+
+interface Props {
+  voice: VoiceRef | null
+  onChange(voice: VoiceRef | null): void
+  /** 声を選ばない（null）ときの項目の名前。キャラ設定では「未設定」、1行編集では「キャラの声」 */
+  noneLabel: string
+  label: string
+  disabled?: boolean
+}
+
+type SpeakersState =
+  { status: 'loading' } | { status: 'ready'; speakers: Speaker[] } | { status: 'error'; detail: string }
+
+/** VOICEVOX の話者とスタイルから声を選ぶ。話者はエンジンから読み、つながらなければ再接続できる */
+export function VoiceSelect({ voice, onChange, noneLabel, label, disabled = false }: Props) {
+  const { client } = useApp()
+  const [state, setState] = useState<SpeakersState>({ status: 'loading' })
+
+  // 再接続ボタンで数字を進めて読み直す
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    client.speakers().then(
+      (speakers) => !cancelled && setState({ status: 'ready', speakers }),
+      (e: unknown) => !cancelled && setState({ status: 'error', detail: e instanceof Error ? e.message : String(e) }),
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [client, attempt])
+
+  const retry = () => {
+    setState({ status: 'loading' })
+    setAttempt((n) => n + 1)
+  }
+
+  const select = (value: string) => {
+    if (value === '' || state.status !== 'ready') return onChange(null)
+    const styleId = Number(value)
+    for (const sp of state.speakers) {
+      const style = sp.styles.find((s) => s.id === styleId)
+      if (style) return onChange({ styleId, speakerName: sp.name, styleName: style.name })
+    }
+  }
+
+  const known = state.status === 'ready' && state.speakers.some((sp) => sp.styles.some((s) => s.id === voice?.styleId))
+
+  return (
+    <>
+      <select
+        value={voice ? String(voice.styleId) : ''}
+        onChange={(e) => select(e.target.value)}
+        disabled={disabled || state.status !== 'ready'}
+        aria-label={label}
+      >
+        <option value="">{state.status === 'loading' ? '話者を読み込み中…' : noneLabel}</option>
+        {voice && !known && (
+          <option value={String(voice.styleId)}>
+            {voice.speakerName}（{voice.styleName}）
+          </option>
+        )}
+        {state.status === 'ready' &&
+          state.speakers.map((sp) => (
+            <optgroup key={`${sp.speaker_uuid}:${sp.name}`} label={sp.name}>
+              {sp.styles.map((s) => (
+                <option key={s.id} value={String(s.id)}>
+                  {sp.name}（{s.name}）
+                </option>
+              ))}
+            </optgroup>
+          ))}
+      </select>
+      {state.status === 'error' && (
+        <div className="notice error">
+          <p>VOICEVOX に接続できません</p>
+          <p className="detail">{state.detail}</p>
+          <button type="button" onClick={retry}>
+            再接続
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
