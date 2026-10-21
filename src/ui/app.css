@@ -405,17 +405,23 @@ li.selected .row-menu-button[aria-expanded='true'] {
 
 /* ---- レイヤーツリー ---- */
 
+/* 行の左端のチェック・ラジオ・常時表示の印の大きさと、行の左の余白。子の並びの点線は、この印の真ん中に来るよう両方から決める */
+.layer-tree {
+  --layer-control: 13px;
+  --layer-row-pad: 4px;
+}
+
 .layer-tree ul {
   padding-left: 18px;
   border-left: 1px dotted var(--border);
-  margin-left: 7px;
+  margin-left: calc(var(--layer-row-pad) + var(--layer-control) / 2 - 0.5px);
 }
 
 .layer-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 4px;
+  padding: 2px var(--layer-row-pad);
   border-radius: var(--radius-sm);
   cursor: pointer;
   user-select: none;
@@ -426,6 +432,9 @@ li.selected .row-menu-button[aria-expanded='true'] {
 }
 
 .layer-row input {
+  flex: none;
+  width: var(--layer-control);
+  height: var(--layer-control);
   margin: 0;
   accent-color: var(--fg);
 }
@@ -456,9 +465,10 @@ li.selected .row-menu-button[aria-expanded='true'] {
 }
 
 .layer-forced {
+  flex: none;
   display: inline-block;
-  width: 13px;
-  height: 13px;
+  width: var(--layer-control);
+  height: var(--layer-control);
   border-radius: 3px;
   background: repeating-linear-gradient(45deg, var(--border) 0 2px, transparent 2px 4px);
 }
