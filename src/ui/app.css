@@ -840,8 +840,10 @@ li.selected .row-menu-button[aria-expanded='true'] {
   background: var(--surface);
 }
 
+/* 真ん中寄せのアイコンが、広げたとき（余白8＋枠1＋内側10）と同じ横位置に来る幅。
+   8+1+10 を左右に取り、アイコン18と右の境界線1を足す */
 .side-nav.collapsed {
-  width: 52px;
+  width: 57px;
 }
 
 .side-nav-head {
@@ -917,9 +919,13 @@ li.selected .row-menu-button[aria-expanded='true'] {
   display: flex;
   align-items: center;
   gap: 6px;
+  /* たたんで文字が消えても高さが変わらないよう、行の高さを決めておく */
+  height: 16px;
   margin: 0 0 4px;
-  padding: 0 10px;
+  /* 丸印(8px)の中心を、上の項目のアイコン(18px)の中心にそろえる: 枠1 + 内側10 + (18 - 8) / 2 */
+  padding: 0 10px 0 16px;
   font-size: 11px;
+  line-height: 16px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
