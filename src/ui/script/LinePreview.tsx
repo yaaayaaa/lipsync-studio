@@ -16,7 +16,7 @@ interface Props {
   settings: ExportSettings
   /** 合成中・再生中などの一言 */
   caption: string | null
-  /** まだ何も再生していないときの案内 */
+  /** まだ何も再生していないときの案内（controls があるときは出さない） */
   idleHint?: string
   /** 映像のすぐ下の真ん中に置く再生の操作（動画編集ソフトのプレビューと同じ並び）。なければ案内の一言だけ */
   controls?: ReactNode
@@ -61,7 +61,8 @@ export function LinePreview({
       </div>
       {controls ? (
         <div className="preview-transport">
-          <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>
+          {/* 再生ボタンが見えているので、まだ再生していないときの案内は出さない */}
+          <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : null)}</p>
           <div className="preview-transport-controls">{controls}</div>
         </div>
       ) : (

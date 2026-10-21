@@ -204,7 +204,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
               frame={playback.preview}
               settings={settings.export}
               caption={caption}
-              idleHint="▶ か Space で、口パクを音声付きで再生します"
               controls={
                 playing ? (
                   <button
