@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { ExportSettings } from '../../core/character/types'
 import type { FrameKey } from '../../core/export/frames'
 import type { PreparedFrames } from './mouthFrameCache'
@@ -18,6 +18,8 @@ interface Props {
   caption: string | null
   /** まだ何も再生していないときの案内 */
   idleHint?: string
+  /** 映像のすぐ下の真ん中に置く再生の操作（動画編集ソフトのプレビューと同じ並び）。なければ案内の一言だけ */
+  controls?: ReactNode
 }
 
 /** 書き出しと同じ解像度・配置・背景で、その時点の口を描く。 */
@@ -26,6 +28,7 @@ export function LinePreview({
   settings,
   caption,
   idleHint = '行の「プレビュー」を押すと、口パクを音声付きで再生します',
+  controls,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -56,7 +59,14 @@ export function LinePreview({
           aria-label="セリフのプレビュー"
         />
       </div>
-      <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>
+      {controls ? (
+        <div className="preview-transport">
+          <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>
+          <div className="preview-transport-controls">{controls}</div>
+        </div>
+      ) : (
+        <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>
+      )}
     </section>
   )
 }

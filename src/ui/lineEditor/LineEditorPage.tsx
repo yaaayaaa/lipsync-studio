@@ -204,7 +204,31 @@ export function LineEditorPage({ active }: { active: boolean }) {
               frame={playback.preview}
               settings={settings.export}
               caption={caption}
-              idleHint="「再生」か Space で、口パクを音声付きで再生します"
+              idleHint="▶ か Space で、口パクを音声付きで再生します"
+              controls={
+                playing ? (
+                  <button
+                    type="button"
+                    className="transport-button"
+                    aria-label={loading ? '合成中（押すと止める）' : '停止'}
+                    title="停止（Space）"
+                    onClick={playback.stop}
+                  >
+                    <Square {...iconProps} size={16} fill="currentColor" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="transport-button"
+                    aria-label="再生"
+                    title="再生（Space）"
+                    disabled={!canPlay}
+                    onClick={play}
+                  >
+                    <Play {...iconProps} size={18} fill="currentColor" />
+                  </button>
+                )
+              }
             />
             <PhraseEditor
               key={line.id}
@@ -216,17 +240,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
               onChangeAsync={tuning.changePhrases}
             />
             <div className="line-editor-actions">
-              {playing ? (
-                <button type="button" title="停止（Space）" onClick={playback.stop}>
-                  <Square {...iconProps} />
-                  {loading ? '合成中…' : '停止'}
-                </button>
-              ) : (
-                <button type="button" className="primary" title="再生（Space）" disabled={!canPlay} onClick={play}>
-                  <Play {...iconProps} />
-                  再生
-                </button>
-              )}
               {exportState?.state === 'exporting' ? (
                 <button type="button" onClick={job.abort}>
                   中止

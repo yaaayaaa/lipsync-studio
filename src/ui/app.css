@@ -1339,6 +1339,27 @@ input[type='color'] {
   justify-content: center;
 }
 
+/* 映像の下の操作の段。左に状態の一言、真ん中に再生ボタン（Premiere Pro などのプレビューと同じ並び） */
+.preview-transport {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-transport-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.transport-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 50%;
+}
+
 .line-editor-main .line-preview-canvas {
   width: min(100cqw, 100cqh * var(--preview-aspect));
   height: auto;
