@@ -1236,7 +1236,6 @@ input[type='range'] {
   margin-top: calc((var(--seek-track) - var(--seek-thumb)) / 2);
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
   opacity: 0;
   transition: opacity 0.12s;
 }
@@ -1247,7 +1246,6 @@ input[type='range'] {
   border: none;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
   opacity: 0;
   transition: opacity 0.12s;
 }
