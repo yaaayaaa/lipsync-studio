@@ -90,6 +90,9 @@ function tabDropTarget(
   return gap === null ? null : { group, tabs, gap }
 }
 
+/** 入る位置の知らせが来なくなってから線を消すまで。タブの境目で知らせが1回抜けても線がちらつかない長さ */
+const DROP_LINE_GRACE_MS = 100
+
 /** 覚えた並び、なければ初めの並びで並べる */
 function openLayout(api: DockviewApi) {
   const saved = loadDockLayout()
@@ -144,22 +147,33 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     [openWhenVisible],
   )
 
-  // 入る位置の線は、ドラッグが動くたびに一度消し、dockview が入る位置を知らせてきたときだけ引き直す。dockview は
-  // 知らせを同じ合図の処理の中ですぐ出すので（ここは先に動く capture）、消して引き直す間に画面は描き変わらない。
-  // こうすると、知らせが来ない所（帯の外・ドラッグしているタブ自身の上）では線が残らない。離したとき・やめたときも消す。
-  // dockview はマウスでは HTML5 のドラッグ、タッチとペンではポインタのイベントで動かすので、両方を見る
-  useEffect(() => {
-    const line = dropLineRef.current
-    if (!line) return
-    const hide = () => {
-      line.hidden = true
-    }
-    const types = ['dragover', 'pointermove', 'drop', 'dragend', 'pointerup', 'pointercancel']
-    for (const type of types) document.addEventListener(type, hide, { capture: true })
-    return () => {
-      for (const type of types) document.removeEventListener(type, hide, { capture: true })
-    }
+  // 入る位置の線は、dockview が入る位置を知らせてきたときだけ引く。知らせが来ない所（帯の外・ドラッグしているタブ
+  // 自身の上）で線が残らないよう、ドラッグが動いてから少しの間（DROP_LINE_GRACE_MS）知らせがなければ消す。
+  // 動くたびにすぐ消すと、タブの境目をまたぐときなど知らせが1回抜けただけで線がちらつくため、少し待つ。
+  // 離したとき・やめたときはすぐ消す。dockview はマウスでは HTML5 のドラッグ、タッチとペンではポインタのイベントで
+  // 動かすので、両方を見る
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideDropLine = useCallback(() => {
+    if (hideTimerRef.current !== null) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = null
+    if (dropLineRef.current) dropLineRef.current.hidden = true
   }, [])
+
+  useEffect(() => {
+    const hideSoon = () => {
+      if (hideTimerRef.current !== null || dropLineRef.current?.hidden !== false) return
+      hideTimerRef.current = setTimeout(hideDropLine, DROP_LINE_GRACE_MS)
+    }
+    const moves = ['dragover', 'pointermove']
+    const ends = ['drop', 'dragend', 'pointerup', 'pointercancel']
+    for (const type of moves) document.addEventListener(type, hideSoon, { capture: true })
+    for (const type of ends) document.addEventListener(type, hideDropLine, { capture: true })
+    return () => {
+      for (const type of moves) document.removeEventListener(type, hideSoon, { capture: true })
+      for (const type of ends) document.removeEventListener(type, hideDropLine, { capture: true })
+      hideDropLine()
+    }
+  }, [hideDropLine])
 
   /**
    * タブを帯に重ねたときの入る位置の線。dockview は線を重ねている先のタブの内側に描き、同じ境目でも
@@ -172,14 +186,14 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     if (!line || !root) return
     const target = tabDropTarget(event)
     if (!target) {
-      line.hidden = true
+      hideDropLine()
       return
     }
     const { group, tabs, gap } = target
     const dragged = event.getData()
     if (dragged?.panelId && dragged.groupId === group.id && isNoOpDrop(tabs, dragged.panelId, gap)) {
       event.preventDefault()
-      line.hidden = true
+      hideDropLine()
       return
     }
     const header = group.element.querySelector('.dv-tabs-and-actions-container')
@@ -188,7 +202,7 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     )
     const x = rects.every((r) => r !== undefined) ? gapX(rects, gap) : null
     if (!header || x === null) {
-      line.hidden = true
+      hideDropLine()
       return
     }
     const rootBox = root.getBoundingClientRect()
@@ -197,6 +211,9 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     line.style.left = `${Math.max(x, headerBox.left + 2) - rootBox.left}px`
     line.style.top = `${headerBox.top - rootBox.top}px`
     line.style.height = `${headerBox.height}px`
+    // 次の知らせを待って消そうとしていた分は取り消す
+    if (hideTimerRef.current !== null) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = null
     line.hidden = false
   }
 
