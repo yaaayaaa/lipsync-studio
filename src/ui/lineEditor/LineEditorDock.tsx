@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { DockviewDefaultTab, DockviewReact, themeLight } from 'dockview-react'
 import type {
   DockviewApi,
+  DockviewWillShowOverlayLocationEvent,
   DockviewReadyEvent,
   DockviewTheme,
   IDockviewPanelHeaderProps,
@@ -18,6 +19,7 @@ import {
   saveDockLayout,
 } from './dockLayout'
 import type { PanelId } from './dockLayout'
+import { isNoOpTabDrop } from './tabDrop'
 
 /** 各パネルの中身。画面（LineEditorPage）が毎回作って渡す */
 export type DockPanels = Record<PanelId, ReactNode>
@@ -63,6 +65,26 @@ function addDefaultPanels(api: DockviewApi) {
   // 足すたびに等分されるので、並べ終えてから大きさを決める（パネルの周りの余白を含む）
   api.getPanel('lines')?.group.api.setSize({ width: Math.round(api.width * DEFAULT_PROPORTIONS.linesWidth) })
   api.getPanel('accent')?.group.api.setSize({ height: Math.round(api.height * DEFAULT_PROPORTIONS.phraseHeight) })
+}
+
+/** 同じ束の中で、離しても並びが変わらない位置なら、入る位置の線を出さない（離しても何も起きない） */
+function hideNoOpTabDrop(event: DockviewWillShowOverlayLocationEvent) {
+  const dragged = event.getData()
+  const group = event.group
+  if (!dragged?.panelId || !group || dragged.groupId !== group.id) return
+  const tabs = group.panels.map((p) => p.id)
+  // タブの右の空き：束の最後に入る
+  if (event.kind === 'header_space') {
+    if (tabs.at(-1) === dragged.panelId) event.preventDefault()
+    return
+  }
+  if (event.kind !== 'tab') return
+  // 重ねている先のタブは知らせに入っていないので、マウスの下の要素から読む
+  const target = event.nativeEvent.target
+  const over =
+    target instanceof Element ? target.closest<HTMLElement>('[data-tab-panel-id]')?.dataset.tabPanelId : undefined
+  const side = event.position === 'left' ? 'left' : event.position === 'right' ? 'right' : null
+  if (over && side && isNoOpTabDrop({ tabs, dragged: dragged.panelId, over, side })) event.preventDefault()
 }
 
 /** 覚えた並び、なければ初めの並びで並べる */
@@ -130,6 +152,7 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
         saveDockLayout(api.toJSON())
       }
     })
+    api.onWillShowOverlay(hideNoOpTabDrop)
     openWhenVisible()
   }
 
