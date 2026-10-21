@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChoiceDialog } from '../ChoiceDialog'
 import { iconProps } from '../icons'
 import { applyEyes, blinkSpec } from '../../core/character/eyes'
 import { applyMouth, resolveMouthLayer } from '../../core/character/mouth'
@@ -37,6 +38,8 @@ export function CharacterPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // 削除してよいか尋ねている最中のキャラ
+  const [removing, setRemoving] = useState<Character | null>(null)
 
   const selected = characters.find((c) => c.id === selectedId) ?? null
   const refocus = useRefocus()
@@ -81,7 +84,6 @@ export function CharacterPage() {
   }
 
   const remove = async (c: Character) => {
-    if (!confirm(`キャラ「${c.name}」を削除しますか？ PSD とスタイルも消えます。`)) return
     try {
       await store.deleteCharacter(c.id)
       forgetPsd(c.id)
@@ -126,7 +128,7 @@ export function CharacterPage() {
                   label="キャラの操作"
                   items={[
                     { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(c.id) },
-                    { label: '削除', icon: Trash2, danger: true, onSelect: () => void remove(c) },
+                    { label: '削除', icon: Trash2, danger: true, onSelect: () => setRemoving(c) },
                   ]}
                 />
               )}
@@ -167,6 +169,18 @@ export function CharacterPage() {
           <p>PSD を選んでキャラを追加してください。</p>
         </div>
       )}
+      <ChoiceDialog
+        open={removing !== null}
+        title={`キャラ「${removing?.name ?? ''}」を削除しますか？`}
+        choices={[{ value: 'remove', label: '削除', icon: Trash2, danger: true }]}
+        cancelLabel="やめる"
+        onClose={(choice) => {
+          if (choice === 'remove' && removing) void remove(removing)
+          setRemoving(null)
+        }}
+      >
+        <p>PSD とスタイルも消えます。元に戻せません。</p>
+      </ChoiceDialog>
     </div>
   )
 }

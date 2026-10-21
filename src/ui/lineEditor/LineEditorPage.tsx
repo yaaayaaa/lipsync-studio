@@ -23,6 +23,7 @@ import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
 import { TailLength } from './TailLength'
+import { revealDockPanel } from './dockLayout'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
@@ -207,7 +208,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
 
   const textPanel = line ? (
     <>
-      {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む。
+      {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定のあとに作り込みを捨てる・文を戻すと
+          選んだら、それは別の1件になる（取り消すと、食い違ったままの文に戻る）。
           作り込みと文が合っていない知らせのボタンは、押したら消えて blur が来ないので、操作にしない（1回ずつ積む） */}
       <div
         className="line-text-field"
@@ -223,6 +225,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
           line={line}
           disabled={locked}
           label={`${index + 1}行目のセリフ`}
+          reveal={() => revealDockPanel('text')}
           onEdit={(fn) => void editLine(line.id, fn)}
         />
       </div>

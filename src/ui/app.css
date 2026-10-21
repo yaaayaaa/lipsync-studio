@@ -1118,6 +1118,40 @@ progress {
   color: var(--fg);
 }
 
+/* ブラウザの確認の代わりのダイアログ。画面の真ん中に出し、後ろを暗くする */
+.choice-dialog {
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--popover-shadow);
+}
+
+.choice-dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.choice-dialog h2 {
+  margin: 0 0 8px;
+  color: var(--fg);
+  font-size: 15px;
+}
+
+.choice-dialog p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.choice-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .phrase-load-error {
   display: flex;
   flex-direction: column;

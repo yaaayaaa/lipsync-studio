@@ -81,3 +81,16 @@ export function onDockLayoutReset(listener: () => void): () => void {
   resetListeners.add(listener)
   return () => resetListeners.delete(listener)
 }
+
+const revealListeners = new Set<(id: PanelId) => void>()
+
+/** パネルを前に出す（束の中で隠れたタブなら、そのタブを開く）。パネルの中身から呼ぶ */
+export function revealDockPanel(id: PanelId): void {
+  for (const listener of revealListeners) listener(id)
+}
+
+/** revealDockPanel が呼ばれたら知らせる。戻り値で知らせを止める */
+export function onRevealDockPanel(listener: (id: PanelId) => void): () => void {
+  revealListeners.add(listener)
+  return () => revealListeners.delete(listener)
+}

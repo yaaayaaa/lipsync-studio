@@ -8,6 +8,7 @@ import { importPfv, nextExpressionName, pfvImportMessage } from './expressions'
 import { InlineName } from './InlineName'
 import { RowMenu } from './RowMenu'
 import { useRefocus } from './useRefocus'
+import { ChoiceDialog } from '../ChoiceDialog'
 
 const expressionNameId = (id: string) => `expression-name-${id}`
 
@@ -24,6 +25,8 @@ interface Props {
 export function ExpressionPanel({ tree, expressions, selectedId, visibility, onChange, onSelect }: Props) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
+  // 削除してよいか尋ねている最中のスタイル
+  const [removing, setRemoving] = useState<Expression | null>(null)
 
   const saveNew = () => {
     const expression = { id: newId(), name: nextExpressionName(expressions), visibility }
@@ -50,7 +53,6 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
   }
 
   const remove = (expression: Expression) => {
-    if (!confirm(`スタイル「${expression.name}」を削除しますか？`)) return
     onChange(expressions.filter((e) => e.id !== expression.id))
   }
 
@@ -103,7 +105,7 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
                         onSelect: () => overwrite(e),
                       },
                       { label: '名前を変更', icon: Pencil, onSelect: () => setRenamingId(e.id) },
-                      { label: '削除', icon: Trash2, danger: true, onSelect: () => remove(e) },
+                      { label: '削除', icon: Trash2, danger: true, onSelect: () => setRemoving(e) },
                     ]}
                   />
                 )}
@@ -131,6 +133,16 @@ export function ExpressionPanel({ tree, expressions, selectedId, visibility, onC
         </label>
       </div>
       {message && <p className={`notice${message.error ? ' error' : ''}`}>{message.text}</p>}
+      <ChoiceDialog
+        open={removing !== null}
+        title={`スタイル「${removing?.name ?? ''}」を削除しますか？`}
+        choices={[{ value: 'remove', label: '削除', icon: Trash2, danger: true }]}
+        cancelLabel="やめる"
+        onClose={(choice) => {
+          if (choice === 'remove' && removing) remove(removing)
+          setRemoving(null)
+        }}
+      />
     </section>
   )
 }
