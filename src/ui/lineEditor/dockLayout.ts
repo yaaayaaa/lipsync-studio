@@ -18,7 +18,7 @@ export const PANEL_TITLES: Record<PanelId, string> = {
 /** 初めの並びの大きさ。画面全体に対する割合で決める（画面の大きさが違っても同じ見え方になるように） */
 export const DEFAULT_PROPORTIONS = {
   /** 左の一覧の幅（全体の幅に対して） */
-  linesWidth: 0.18,
+  linesWidth: 0.12,
   /** アクセント・高さ・長さの束の高さ（右の列の高さに対して）。残りはプレビュー */
   phraseHeight: 0.3,
 }
