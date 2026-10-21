@@ -22,7 +22,7 @@ import { LineEditorDock } from './LineEditorDock'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
-import { TailLengthPanel } from './TailLengthPanel'
+import { TailLength } from './TailLength'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
@@ -253,23 +253,21 @@ export function LineEditorPage({ active }: { active: boolean }) {
       }
       onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
       onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}
-    />
-  )
-
-  const tailPanel = (
-    <TailLengthPanel
-      seconds={line ? effectiveTail(line, settings.export) : clampTail(settings.export.tailSeconds)}
-      own={line?.tailSeconds !== undefined}
-      disabled={!line || locked}
-      onChange={(v) => line && void editLine(line.id, (l) => ({ ...l, tailSeconds: clampTail(v) }))}
-      onReset={() =>
-        line &&
-        void editLine(line.id, (l) => {
-          const { tailSeconds: _own, ...rest } = l
-          return rest
-        })
-      }
-    />
+    >
+      <TailLength
+        seconds={line ? effectiveTail(line, settings.export) : clampTail(settings.export.tailSeconds)}
+        own={line?.tailSeconds !== undefined}
+        disabled={!line || locked}
+        onChange={(v) => line && void editLine(line.id, (l) => ({ ...l, tailSeconds: clampTail(v) }))}
+        onReset={() =>
+          line &&
+          void editLine(line.id, (l) => {
+            const { tailSeconds: _own, ...rest } = l
+            return rest
+          })
+        }
+      />
+    </GlobalParams>
   )
 
   const previewPanel = (
@@ -409,7 +407,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
           pitch: phraseEditor('pitch'),
           length: phraseEditor('length'),
           params: paramsPanel,
-          tail: tailPanel,
         }}
       />
     </div>

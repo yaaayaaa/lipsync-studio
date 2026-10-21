@@ -14,11 +14,11 @@ interface Props {
   onReset(): void
 }
 
-/** 喋り終わったあと立ち絵を映し続ける秒数（1行編集の「終端」パネル）。動かすとその行だけの値になる */
-export function TailLengthPanel({ seconds, own, disabled, onChange, onReset }: Props) {
+/** 喋り終わったあと立ち絵を映し続ける秒数（1行編集の「数値」パネルの下）。動かすとその行だけの値になる */
+export function TailLength({ seconds, own, disabled, onChange, onReset }: Props) {
   return (
     <>
-      <label className="global-param tail-param">
+      <label className="global-param">
         <span>終端</span>
         <input
           type="range"

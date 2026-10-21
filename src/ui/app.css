@@ -1574,7 +1574,8 @@ input[type='color'] {
 
 .global-param {
   display: grid;
-  grid-template-columns: 6em 1fr 3em;
+  /* 値の欄は「0.5 秒」（終端）が入る幅にそろえる。スライダーの長さが行ごとにずれないように */
+  grid-template-columns: 6em 1fr 4em;
   align-items: center;
   gap: 8px;
   color: var(--muted);
@@ -1583,10 +1584,6 @@ input[type='color'] {
 .global-param input[type='range'] {
   width: 100%;
   min-width: 0;
-}
-
-.tail-param {
-  grid-template-columns: 6em 1fr 4em;
 }
 
 .tail-state {

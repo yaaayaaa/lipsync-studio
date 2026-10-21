@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { LineTuning } from '../../core/character/types'
 import { GLOBAL_PARAM_RANGES } from './editTuning'
 import type { GlobalParam, ParamRange } from './editTuning'
@@ -23,6 +24,8 @@ interface Props {
   status: string | null
   onSpeedChange(value: number): void
   onChange(key: GlobalParam, value: number): void
+  /** スライダーの後ろに置くもの（終端の長さ） */
+  children?: ReactNode
 }
 
 function Slider({
@@ -56,7 +59,16 @@ function Slider({
 }
 
 /** 全体の数値（1行編集の「数値」パネル。見出しはパネルのタブが兼ねる） */
-export function GlobalParams({ speedScale, values, disabled, paramsDisabled, status, onSpeedChange, onChange }: Props) {
+export function GlobalParams({
+  speedScale,
+  values,
+  disabled,
+  paramsDisabled,
+  status,
+  onSpeedChange,
+  onChange,
+  children,
+}: Props) {
   return (
     <>
       <Slider range={GLOBAL_PARAM_RANGES.speedScale} value={speedScale} disabled={disabled} onChange={onSpeedChange} />
@@ -69,12 +81,13 @@ export function GlobalParams({ speedScale, values, disabled, paramsDisabled, sta
           onChange={(v) => onChange(key, v)}
         />
       ))}
-      <p className="hint">開始の無音・終了の無音は秒。話速は「セリフ」の一覧の話速と同じ値です。</p>
       {status && (
         <p className="hint" role="status">
           {status}
         </p>
       )}
+      <p className="hint">開始の無音・終了の無音は秒。話速は「セリフ」の一覧の話速と同じ値です。</p>
+      {children}
     </>
   )
 }

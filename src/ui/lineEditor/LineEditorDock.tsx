@@ -53,7 +53,7 @@ interface DefaultPlacement {
   inactive?: boolean
 }
 
-/** 初めの並び：左に一覧、真ん中の列に上からセリフ・プレビュー・アクセントの束、右の列に数値と終端 */
+/** 初めの並び：左に一覧、真ん中の列に上からセリフ・プレビュー・アクセントの束、右の列に数値 */
 function addDefaultPanels(api: DockviewApi) {
   api.clear()
   const add = (id: PanelId, more: DefaultPlacement = {}) =>
@@ -66,7 +66,6 @@ function addDefaultPanels(api: DockviewApi) {
   add('length', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
   // 右端に、上から下まで通しの列を足す
   add('params', { position: { direction: 'right' } })
-  add('tail', { position: { referencePanel: 'params', direction: 'below' } })
   // 足すたびに等分されるので、並べ終えてから大きさを決める（パネルの周りの余白を含む）。
   // 大きさを変えると隣のパネルが伸び縮みするので、真ん中の列とプレビューが残りを受け持つ順に決める
   const size = (id: PanelId, box: { width?: number; height?: number }) => api.getPanel(id)?.group.api.setSize(box)
@@ -75,7 +74,6 @@ function addDefaultPanels(api: DockviewApi) {
   size('params', { width: Math.round(width * DEFAULT_PROPORTIONS.paramsWidth) })
   size('text', { height: Math.round(height * DEFAULT_PROPORTIONS.textHeight) })
   size('accent', { height: Math.round(height * DEFAULT_PROPORTIONS.phraseHeight) })
-  size('tail', { height: Math.round(height * DEFAULT_PROPORTIONS.tailHeight) })
 }
 
 type DockGroup = NonNullable<DockviewWillShowOverlayLocationEvent['group']>

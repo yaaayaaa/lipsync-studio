@@ -4,7 +4,7 @@
 import type { SerializedDockview } from 'dockview-react'
 
 /** パネルの ID。dockview の部品名も同じにする */
-export const PANEL_IDS = ['lines', 'text', 'preview', 'accent', 'pitch', 'length', 'params', 'tail'] as const
+export const PANEL_IDS = ['lines', 'text', 'preview', 'accent', 'pitch', 'length', 'params'] as const
 export type PanelId = (typeof PANEL_IDS)[number]
 
 export const PANEL_TITLES: Record<PanelId, string> = {
@@ -15,21 +15,18 @@ export const PANEL_TITLES: Record<PanelId, string> = {
   pitch: '高さ',
   length: '長さ',
   params: '数値',
-  tail: '終端',
 }
 
 /** 初めの並びの大きさ。画面全体に対する割合で決める（画面の大きさが違っても同じ見え方になるように） */
 export const DEFAULT_PROPORTIONS = {
   /** 左の一覧の幅（全体の幅に対して） */
   linesWidth: 0.12,
-  /** 右の数値・終端の列の幅（全体の幅に対して）。残りは真ん中の列 */
+  /** 右の数値の列の幅（全体の幅に対して）。残りは真ん中の列 */
   paramsWidth: 0.2,
   /** 真ん中の列の上のセリフの高さ（全体の高さに対して） */
   textHeight: 0.21,
   /** 真ん中の列の下のアクセント・高さ・長さの束の高さ（全体の高さに対して）。残りはプレビュー */
   phraseHeight: 0.3,
-  /** 右の列の下の終端の高さ（全体の高さに対して）。残りは数値 */
-  tailHeight: 0.22,
 }
 
 const DOCK_LAYOUT_KEY = 'zunda-lipsync.lineEditorDock'
