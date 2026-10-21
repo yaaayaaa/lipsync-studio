@@ -1,4 +1,5 @@
 import { SlidersHorizontal } from 'lucide-react'
+import { Dropdown } from '../Dropdown'
 import { iconProps } from '../icons'
 import type { Character, ScriptLine } from '../../core/character/types'
 import { applyTextChange } from './lineText'
@@ -50,34 +51,31 @@ export function LineCharacterSelects({ line, characters, disabled, onChange }: S
 
   return (
     <>
-      <select
+      <Dropdown
+        label="キャラ"
+        className="line-select"
+        items={[
+          { value: '', label: line.characterId && !character ? '（削除されたキャラ）' : 'キャラを選択' },
+          ...characters.map((c) => ({ value: c.id, label: c.name })),
+        ]}
         value={character ? character.id : ''}
         disabled={disabled}
-        aria-label="キャラ"
-        onChange={(e) => selectCharacter(e.target.value)}
-      >
-        <option value="">{line.characterId && !character ? '（削除されたキャラ）' : 'キャラを選択'}</option>
-        {characters.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <select
+        onChange={selectCharacter}
+      />
+      <Dropdown
+        label="スタイル"
+        className="line-select"
+        items={[
+          {
+            value: '',
+            label: line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択',
+          },
+          ...(character?.expressions.map((e) => ({ value: e.id, label: e.name })) ?? []),
+        ]}
         value={expressionKnown ? (line.expressionId ?? '') : ''}
         disabled={disabled || !character}
-        aria-label="スタイル"
-        onChange={(e) => onChange({ expressionId: e.target.value || null })}
-      >
-        <option value="">
-          {line.expressionId && character && !expressionKnown ? '（削除されたスタイル）' : 'スタイルを選択'}
-        </option>
-        {character?.expressions.map((e) => (
-          <option key={e.id} value={e.id}>
-            {e.name}
-          </option>
-        ))}
-      </select>
+        onChange={(id) => onChange({ expressionId: id || null })}
+      />
     </>
   )
 }

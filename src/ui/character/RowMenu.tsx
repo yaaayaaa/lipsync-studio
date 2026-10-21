@@ -3,7 +3,7 @@ import { EllipsisVertical } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { CSSProperties, KeyboardEvent } from 'react'
-import { placePopover } from './dropdown'
+import { placePopover } from '../dropdownState'
 import { menuReduce } from './menu'
 import type { MenuEvent } from './menu'
 

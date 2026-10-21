@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Dropdown } from '../Dropdown'
 import type { ExportSettings } from '../../core/character/types'
 import { TAIL_RANGE } from '../../core/export/tail'
 import { useApp } from '../useApp'
@@ -37,23 +38,19 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
   return (
     <section className="panel">
       <h2>書き出し</h2>
-      <label className="field">
+      <div className="field">
         <span>解像度</span>
-        <select
+        <Dropdown
+          label="解像度"
+          items={RESOLUTIONS.map((r) => ({ value: `${r.width}x${r.height}`, label: `${r.width}×${r.height}` }))}
           value={`${current.width}x${current.height}`}
           disabled={disabled}
-          onChange={(e) => {
-            const r = RESOLUTIONS.find((x) => `${x.width}x${x.height}` === e.target.value)
+          onChange={(value) => {
+            const r = RESOLUTIONS.find((x) => `${x.width}x${x.height}` === value)
             if (r) update({ width: r.width, height: r.height })
           }}
-        >
-          {RESOLUTIONS.map((r) => (
-            <option key={r.width} value={`${r.width}x${r.height}`}>
-              {r.width}×{r.height}
-            </option>
-          ))}
-        </select>
-      </label>
+        />
+      </div>
       <label className="field">
         <span>拡大率</span>
         <input

@@ -621,35 +621,29 @@ li.selected .row-menu-button[aria-expanded='true'] {
   min-width: 1.5em;
 }
 
-/* ---- 縮小画像付きのドロップダウン（口グループと母音の口） ---- */
+/* ---- 自前のドロップダウン（ブラウザ標準の select の代わり） ---- */
 
-.layer-select {
-  flex: 1;
+.dropdown {
   min-width: 0;
 }
 
-.layer-select-button {
+.dropdown-button {
   width: 100%;
   justify-content: flex-start;
   gap: 6px;
-  padding: 2px 6px 2px 2px;
+  padding: 4px 6px 4px 10px;
+  color: var(--fg);
 }
 
-.layer-select-button:hover:not(:disabled) {
+.dropdown-button:hover:not(:disabled) {
   background: var(--hover-bg);
 }
 
-.layer-select-button[aria-expanded='true'] {
+.dropdown-button[aria-expanded='true'] {
   border-color: var(--fg);
 }
 
-.layer-select-button .layer-thumb {
-  width: 24px;
-  height: 24px;
-  background-size: 6px 6px;
-}
-
-.layer-select-name {
+.dropdown-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -658,15 +652,17 @@ li.selected .row-menu-button[aria-expanded='true'] {
   text-align: left;
 }
 
-.layer-select-caret {
+.dropdown-caret {
   flex: none;
   color: var(--muted);
 }
 
-.layer-select-list {
-  z-index: 10;
+.dropdown-list {
+  z-index: 1100;
+  box-sizing: border-box;
   margin: 0;
   padding: 4px;
+  list-style: none;
   overflow-y: auto;
   background: var(--surface);
   color: var(--fg);
@@ -675,11 +671,17 @@ li.selected .row-menu-button[aria-expanded='true'] {
   box-shadow: var(--popover-shadow);
 }
 
-.layer-select-list:focus {
+.dropdown-list:focus {
   outline: none;
 }
 
-.layer-select-option {
+.dropdown-group {
+  padding: 6px 8px 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dropdown-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -688,25 +690,55 @@ li.selected .row-menu-button[aria-expanded='true'] {
   cursor: pointer;
 }
 
-.layer-select-option .layer-thumb {
-  width: 32px;
-  height: 32px;
+/* 見出しのある一覧では、項目を見出しより一段下げる */
+.dropdown-group ~ .dropdown-option {
+  padding-left: 16px;
 }
 
-.layer-select-option.active {
+.dropdown-option.active {
   background: var(--hover-bg);
 }
 
 /* 選択中は行全体を反転させる */
-.layer-select-option.selected {
+.dropdown-option.selected {
   background: var(--selected-bg);
   color: var(--selected-fg);
 }
 
 /* 選択中の行を強調しているときは、反転を保ったまま内側の縁で示す */
-.layer-select-option.selected.active {
+.dropdown-option.selected.active {
   outline: 2px solid var(--hover-bg);
   outline-offset: -2px;
+}
+
+/* 名前の横に並べるときは、残りの幅を使う */
+.field > .dropdown {
+  flex: 1;
+}
+
+/* 「セリフ」の一覧の行のキャラ・スタイル */
+.line-select {
+  width: 160px;
+}
+
+/* 縮小画像付き（口グループと母音の口、目） */
+.layer-select {
+  flex: 1;
+}
+
+.layer-select .dropdown-button {
+  padding: 2px 6px 2px 2px;
+}
+
+.layer-select .dropdown-button .layer-thumb {
+  width: 24px;
+  height: 24px;
+  background-size: 6px 6px;
+}
+
+.layer-select-list .layer-thumb {
+  width: 32px;
+  height: 32px;
 }
 
 .button-row {
@@ -1151,12 +1183,6 @@ progress {
   align-items: center;
 }
 
-.line-controls select {
-  width: auto;
-  min-width: 120px;
-  max-width: 200px;
-}
-
 .speed {
   display: inline-flex;
   align-items: center;
@@ -1585,18 +1611,14 @@ input[type='color'] {
   padding: 10px 12px;
 }
 
-/* 1行編集の行の声。名前はスライダーの名前と同じ幅にそろえ、つながらないときの知らせは下に全幅で出す */
+/* 1行編集の行の声。声の名前は長いので、名前の欄は「声」の幅だけにして選ぶ欄を広く取る。
+   つながらないときの知らせは下に全幅で出す */
 .line-voice {
   display: grid;
-  grid-template-columns: 6em 1fr;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
   color: var(--muted);
-}
-
-.line-voice select {
-  width: 100%;
-  min-width: 0;
 }
 
 .line-voice .notice {

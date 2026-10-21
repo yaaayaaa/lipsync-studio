@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LayoutTemplate } from 'lucide-react'
+import { Dropdown } from '../Dropdown'
 import { iconProps } from '../icons'
 import { resetDockLayout } from '../lineEditor/dockLayout'
 import { THEMES, applyTheme, loadTheme, saveTheme } from '../theme'
@@ -20,22 +21,15 @@ export function AppearanceSettingsPanel() {
   return (
     <section className="panel">
       <h2>表示</h2>
-      <label className="field">
+      <div className="field">
         <span>テーマ</span>
-        <select
+        <Dropdown
+          label="テーマ"
+          items={THEMES.map((t) => ({ value: t.id, label: t.label }))}
           value={theme}
-          onChange={(e) => {
-            const next = THEMES.find((t) => t.id === e.target.value)
-            if (next) change(next.id)
-          }}
-        >
-          {THEMES.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          onChange={change}
+        />
+      </div>
       <div className="field">
         <span>1行編集のパネル</span>
         <button

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { dropdownReduce, placePopover } from '../../../src/ui/character/dropdown'
-import type { DropdownState } from '../../../src/ui/character/dropdown'
+import { dropdownReduce, placePopover } from '../../src/ui/dropdownState'
+import type { DropdownState } from '../../src/ui/dropdownState'
 
 const closed: DropdownState = { open: false, active: 0 }
 const openAt = (active: number): DropdownState => ({ open: true, active })
