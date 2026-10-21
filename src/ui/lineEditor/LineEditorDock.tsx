@@ -11,7 +11,7 @@ import type {
 import 'dockview-react/dist/styles/dockview.css'
 import { LayoutTemplate } from 'lucide-react'
 import { iconProps } from '../icons'
-import { PANEL_IDS, PANEL_TITLES, loadDockLayout, saveDockLayout } from './dockLayout'
+import { DEFAULT_PROPORTIONS, PANEL_IDS, PANEL_TITLES, loadDockLayout, saveDockLayout } from './dockLayout'
 import type { PanelId } from './dockLayout'
 
 /** 各パネルの中身。画面（LineEditorPage）が毎回作って渡す */
@@ -43,7 +43,7 @@ interface DefaultPlacement {
   inactive?: boolean
 }
 
-/** 初めの並び：左に一覧、右上にプレビュー、その下にアクセント・高さ・長さの束、一番下にクレジット */
+/** 初めの並び：左に一覧、右上にプレビュー、その下にアクセント・高さ・長さの束 */
 function addDefaultPanels(api: DockviewApi) {
   api.clear()
   const add = (id: PanelId, more: DefaultPlacement = {}) =>
@@ -53,12 +53,9 @@ function addDefaultPanels(api: DockviewApi) {
   add('accent', { position: { referencePanel: 'preview', direction: 'below' } })
   add('pitch', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
   add('length', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
-  add('credit', { position: { referencePanel: 'accent', direction: 'below' } })
-  // 足すたびに等分されるので、並べ終えてから大きさを決める（パネルの周りの余白を含む）。大きさを変えると
-  // 隣のパネルが伸び縮みするため、下のクレジット→上のプレビューの順に決めて、間のアクセントの束を残りの 240px にする
-  api.getPanel('lines')?.group.api.setSize({ width: 228 })
-  api.getPanel('credit')?.group.api.setSize({ height: 110 })
-  api.getPanel('preview')?.group.api.setSize({ height: api.height - 240 - 110 })
+  // 足すたびに等分されるので、並べ終えてから大きさを決める（パネルの周りの余白を含む）
+  api.getPanel('lines')?.group.api.setSize({ width: Math.round(api.width * DEFAULT_PROPORTIONS.linesWidth) })
+  api.getPanel('accent')?.group.api.setSize({ height: Math.round(api.height * DEFAULT_PROPORTIONS.phraseHeight) })
 }
 
 /** 覚えた並び、なければ初めの並びで並べる */

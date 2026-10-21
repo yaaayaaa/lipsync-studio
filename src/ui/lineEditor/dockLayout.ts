@@ -4,7 +4,7 @@
 import type { SerializedDockview } from 'dockview-react'
 
 /** パネルの ID。dockview の部品名も同じにする */
-export const PANEL_IDS = ['lines', 'preview', 'accent', 'pitch', 'length', 'credit'] as const
+export const PANEL_IDS = ['lines', 'preview', 'accent', 'pitch', 'length'] as const
 export type PanelId = (typeof PANEL_IDS)[number]
 
 export const PANEL_TITLES: Record<PanelId, string> = {
@@ -13,7 +13,14 @@ export const PANEL_TITLES: Record<PanelId, string> = {
   accent: 'アクセント',
   pitch: '高さ',
   length: '長さ',
-  credit: 'クレジット',
+}
+
+/** 初めの並びの大きさ。画面全体に対する割合で決める（画面の大きさが違っても同じ見え方になるように） */
+export const DEFAULT_PROPORTIONS = {
+  /** 左の一覧の幅（全体の幅に対して） */
+  linesWidth: 0.18,
+  /** アクセント・高さ・長さの束の高さ（右の列の高さに対して）。残りはプレビュー */
+  phraseHeight: 0.3,
 }
 
 const DOCK_LAYOUT_KEY = 'zunda-lipsync.lineEditorDock'
@@ -22,7 +29,7 @@ type DockStorage = Pick<Storage, 'getItem' | 'setItem'>
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
 
-/** 6つのパネルがちょうど1つずつ、それぞれの部品で入っているか */
+/** パネルがちょうど1つずつ、それぞれの部品で入っているか */
 function hasEveryPanel(saved: unknown): saved is SerializedDockview {
   if (!isObject(saved) || !isObject(saved.grid) || !isObject(saved.panels)) return false
   const { panels } = saved

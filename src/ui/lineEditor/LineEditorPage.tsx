@@ -5,7 +5,6 @@ import { iconProps } from '../icons'
 import { newId } from '../../core/id'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
-import { CreditPanel } from '../script/CreditPanel'
 import { LinePreview } from '../script/LinePreview'
 import { PROBLEM_LABELS, appendLine, errorMessage, isAbortError } from '../script/lineJobs'
 import { dropTuning } from '../script/lineText'
@@ -32,7 +31,7 @@ type ExportState = { lineId: string } & (
   | { state: 'done' | 'error' | 'aborted'; message: string }
 )
 
-/** 1行編集：行の一覧・プレビュー・アクセント・高さ・長さ・クレジットを、並べ替えられるパネルに置く */
+/** 1行編集：行の一覧・プレビュー・アクセント・高さ・長さを、並べ替えられるパネルに置く */
 export function LineEditorPage({ active }: { active: boolean }) {
   const { characters, settings } = useApp()
   const { lines, update, error: scriptError, editingLineId, openLineEditor, exportLocked } = useScriptLines()
@@ -64,7 +63,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
   // 結果の表示は、その行を開いている間だけ見せる
   const [playError, setPlayError] = useState<{ lineId: string; message: string } | null>(null)
   const [exportState, setExportState] = useState<ExportState | null>(null)
-  const [credit, setCredit] = useState<string | null>(null)
 
   // 別の行を開いたら、前の行の再生とプレビューは片付ける
   const { clearPreview } = playback
@@ -137,7 +135,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
     const signal = job.start()
     if (!signal) return
     playback.stop()
-    setCredit(null)
     setExportState({ lineId, state: 'exporting', progress: 0 })
     try {
       const r = await exportSingle(line, {
@@ -146,7 +143,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
         onRefreshed: markRefreshed,
       })
       setExportState({ lineId, state: 'done', message: `書き出しました：${r.fileName}` })
-      setCredit(r.credit)
     } catch (e) {
       setExportState(
         isAbortError(e)
@@ -333,16 +329,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
           accent: phraseEditor('accent'),
           pitch: phraseEditor('pitch'),
           length: phraseEditor('length'),
-          credit:
-            line && credit ? (
-              <CreditPanel
-                credit={credit}
-                standalone={false}
-                onError={(message) => setExportState({ lineId: line.id, state: 'error', message })}
-              />
-            ) : (
-              <p className="hint">この行を書き出すと、使った声のクレジットがここに出ます</p>
-            ),
         }}
       />
     </div>

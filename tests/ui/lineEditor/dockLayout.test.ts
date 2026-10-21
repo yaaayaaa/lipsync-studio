@@ -45,7 +45,7 @@ describe('line editor dock layout', () => {
   })
 
   it('ignores a layout that lacks one of the panels', () => {
-    const storage = memoryStorage({ [KEY]: JSON.stringify(layoutWith(PANEL_IDS.filter((id) => id !== 'credit'))) })
+    const storage = memoryStorage({ [KEY]: JSON.stringify(layoutWith(PANEL_IDS.filter((id) => id !== 'length'))) })
     expect(loadDockLayout(storage)).toBeNull()
   })
 
