@@ -1,28 +1,22 @@
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import { newId } from '../../core/id'
-import { clampTail, effectiveTail } from '../../core/export/tail'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
 import { CreditPanel } from '../script/CreditPanel'
-import { LineCharacterSelects, LineTextArea } from '../script/LineFields'
 import { LinePreview } from '../script/LinePreview'
 import { PROBLEM_LABELS, appendLine, errorMessage, isAbortError } from '../script/lineJobs'
 import { dropTuning } from '../script/lineText'
-import { clampSpeed } from '../script/speed'
 import { useExportJob } from '../script/useExportJob'
 import { useLinePlayback } from '../script/useLinePlayback'
 import { useRenderLine } from '../script/useRenderLine'
 import { useScriptLines } from '../script/useScriptLines'
 import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
-import { GlobalParams } from './GlobalParams'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
-import { TailLengthPanel } from './TailLengthPanel'
-import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
 import { useLineHistory } from './useLineHistory'
@@ -50,8 +44,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const history = useLineHistory(lines)
   const { editLine, beginGesture, endGesture, undo, redo } = history
   const lineId = line?.id ?? null
-  // 文の欄の操作（フォーカスから確定まで）の token
-  const textGesture = useRef<number | null>(null)
 
   const tuning = useLineTuning({ line, styleId, locked, editLine })
   const { markRefreshed } = tuning
@@ -202,35 +194,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
           <p className="notice">左の一覧から行を選んでください</p>
         ) : (
           <>
-            <h2>{index + 1}行目</h2>
-            {/* 打ち始めから確定（フォーカスを外す）までを1件の履歴にする。確定で作り込みを捨てたらそれも含む。
-                作り込みと文が合っていない知らせのボタンは、押したら消えて blur が来ないので、操作にしない（1回ずつ積む） */}
-            <div
-              className="line-text-field"
-              onFocus={(e) => {
-                if (e.target instanceof HTMLTextAreaElement) textGesture.current = beginGesture(line.id)
-              }}
-              onBlur={() => {
-                if (textGesture.current !== null) endGesture(textGesture.current)
-                textGesture.current = null
-              }}
-            >
-              <LineTextArea
-                line={line}
-                disabled={locked}
-                label={`${index + 1}行目のセリフ`}
-                rows={3}
-                onEdit={(fn) => void editLine(line.id, fn)}
-              />
-            </div>
-            <div className="line-controls">
-              <LineCharacterSelects
-                line={line}
-                characters={characters}
-                disabled={locked}
-                onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
-              />
-            </div>
             {problem && <p className="line-problem">{PROBLEM_LABELS[problem]}</p>}
             {tuning.refreshed && (
               <p className="notice" role="status">
@@ -322,43 +285,15 @@ export function LineEditorPage({ active }: { active: boolean }) {
                 {shownExport.message}
               </p>
             )}
+            {credit && (
+              <CreditPanel
+                credit={credit}
+                onError={(message) => setExportState({ lineId: line.id, state: 'error', message })}
+              />
+            )}
           </>
         )}
       </section>
-      <aside className="column panel-column line-editor-side">
-        <GlobalParams
-          speedScale={line?.speedScale ?? 1}
-          values={tuning.shown}
-          disabled={!line || locked}
-          paramsDisabled={!canTune}
-          status={
-            tuning.stale
-              ? '作り込みが文と合っていないため変えられません'
-              : (tuning.error ?? tuning.queryError ?? (canTune && !tuning.shown ? '数値を取得中…' : null))
-          }
-          onSpeedChange={(v) => line && void editLine(line.id, (l) => ({ ...l, speedScale: clampSpeed(v) }))}
-          onChange={(key, value) => tuning.changeTuning((t) => setGlobalParam(t, key, value))}
-        />
-        <TailLengthPanel
-          seconds={line ? effectiveTail(line, settings.export) : clampTail(settings.export.tailSeconds)}
-          own={line?.tailSeconds !== undefined}
-          disabled={!line || locked}
-          onChange={(v) => line && void editLine(line.id, (l) => ({ ...l, tailSeconds: clampTail(v) }))}
-          onReset={() =>
-            line &&
-            void editLine(line.id, (l) => {
-              const { tailSeconds: _own, ...rest } = l
-              return rest
-            })
-          }
-        />
-        {credit && (
-          <CreditPanel
-            credit={credit}
-            onError={(message) => line && setExportState({ lineId: line.id, state: 'error', message })}
-          />
-        )}
-      </aside>
     </div>
   )
 }
