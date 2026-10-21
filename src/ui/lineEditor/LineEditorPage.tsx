@@ -24,7 +24,7 @@ import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
 import { StylePicker } from './StylePicker'
-import { VoiceSelect } from '../VoiceSelect'
+import { VoicePicker } from '../VoicePicker'
 import { TailLength } from './TailLength'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
@@ -247,15 +247,14 @@ export function LineEditorPage({ active }: { active: boolean }) {
             />
             {/* 声はこの行だけの上書き。選ばなければキャラ設定の声を使う */}
             <div className="line-voice">
-              <span>声</span>
-              <VoiceSelect
+              <VoicePicker
                 voice={line.voice ?? null}
                 noneLabel={
                   character?.voice
                     ? `キャラの声（${character.voice.speakerName}・${character.voice.styleName}）`
                     : 'キャラの声（未設定）'
                 }
-                label="この行の声"
+                caption="声"
                 disabled={locked}
                 onChange={(voice) =>
                   void editLine(line.id, (l) => {

@@ -1,5 +1,5 @@
 import type { VoiceRef } from '../../core/character/types'
-import { VoiceSelect } from '../VoiceSelect'
+import { VoicePicker } from '../VoicePicker'
 
 interface Props {
   voice: VoiceRef | null
@@ -10,7 +10,7 @@ export function VoicePanel({ voice, onChange }: Props) {
   return (
     <section className="panel">
       <h2>声</h2>
-      <VoiceSelect voice={voice} onChange={onChange} noneLabel="未設定" label="話者とスタイル" />
+      <VoicePicker voice={voice} onChange={onChange} noneLabel="未設定" />
     </section>
   )
 }

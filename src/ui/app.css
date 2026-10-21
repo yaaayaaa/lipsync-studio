@@ -1611,28 +1611,21 @@ input[type='color'] {
   padding: 10px 12px;
 }
 
-/* 1行編集の行の声。声の名前は長いので、名前の欄は「声」の幅だけにして選ぶ欄を広く取る。
-   つながらないときの知らせは下に全幅で出す */
+/* 1行編集の行の声。つながらないときの知らせは選択欄の下に出す */
 .line-voice {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  color: var(--muted);
 }
 
-.line-voice .notice {
-  grid-column: 1 / -1;
-}
-
-/* キャラ・スタイルの選択欄（1行編集の「その他」）。閉じているときは今の選択を1行で、開くと検索窓と候補を下に出す */
-.style-picker {
+/* 畳める選択欄（キャラ・スタイル、話者・声）。閉じているときは今の選択を1行で、開くと検索窓と候補を下に出す */
+.group-picker {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
 }
 
-.style-picker-toggle {
+.group-picker-toggle {
   width: 100%;
   justify-content: space-between;
   border: 0;
@@ -1640,22 +1633,29 @@ input[type='color'] {
   color: var(--fg);
 }
 
-.style-picker-current {
+.group-picker-caption {
+  flex: none;
+  color: var(--muted);
+}
+
+.group-picker-current {
+  flex: 1;
   min-width: 0;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.style-picker-chevron {
+.group-picker-chevron {
   flex: none;
   transition: transform 0.15s;
 }
 
-.style-picker-toggle[aria-expanded='true'] .style-picker-chevron {
+.group-picker-toggle[aria-expanded='true'] .group-picker-chevron {
   transform: rotate(180deg);
 }
 
-.style-picker-body {
+.group-picker-body {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1669,7 +1669,7 @@ input[type='color'] {
   container-type: size;
 }
 
-.style-picker-list {
+.group-picker-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1677,7 +1677,7 @@ input[type='color'] {
   overflow-y: auto;
 }
 
-.style-picker-search {
+.group-picker-search {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1688,7 +1688,7 @@ input[type='color'] {
   color: var(--muted);
 }
 
-.style-picker-search input {
+.group-picker-search input {
   flex: 1;
   min-width: 0;
   padding: 2px 0;
@@ -1700,11 +1700,11 @@ input[type='color'] {
 }
 
 /* 枠の中の入力欄は自分の枠を消しているので、キーボードの現在地は包みの枠で示す */
-.style-picker-search:focus-within {
+.group-picker-search:focus-within {
   border-color: var(--fg);
 }
 
-.style-picker-character {
+.group-picker-heading {
   width: 100%;
   justify-content: flex-start;
   gap: 4px;
@@ -1715,36 +1715,37 @@ input[type='color'] {
   border-radius: var(--radius-sm);
 }
 
-.style-picker-character:hover:not(:disabled) {
+.group-picker-heading:hover:not(:disabled) {
   border-color: transparent;
   background: var(--hover-bg);
   color: var(--fg);
 }
 
 /* 検索中は畳めないが、見出しとしては普通に見せる */
-.style-picker-character:disabled {
+.group-picker-heading:disabled {
   opacity: 1;
   cursor: default;
 }
 
-.style-picker-character[aria-expanded='true'] .style-picker-chevron {
+.group-picker-heading[aria-expanded='true'] .group-picker-chevron {
   transform: rotate(90deg);
 }
 
-.style-picker-character-name {
+.group-picker-heading-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.style-picker-count {
+.group-picker-count {
   margin-left: auto;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
-/* スタイルはキャラ名より一段下げて、どのキャラのものか分かるようにする */
-.style-picker-option {
+/* 項目は見出しより一段下げて、どの見出しのものか分かるようにする */
+.group-picker-option,
+.group-picker-none {
   width: 100%;
   justify-content: flex-start;
   padding-left: 26px;
@@ -1754,13 +1755,28 @@ input[type='color'] {
   border-radius: var(--radius-sm);
 }
 
-.style-picker-option:hover:not(:disabled) {
+/* 長い名前は欄の幅で「…」にする */
+.group-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 「選ばない」項目は見出しと同じ高さに置く */
+.group-picker-none {
+  padding-left: 8px;
+}
+
+.group-picker-option:hover:not(:disabled),
+.group-picker-none:hover:not(:disabled) {
   border-color: transparent;
   background: var(--hover-bg);
 }
 
-.style-picker-option.selected,
-.style-picker-option.selected:hover:not(:disabled) {
+.group-picker-option.selected,
+.group-picker-option.selected:hover:not(:disabled),
+.group-picker-none.selected,
+.group-picker-none.selected:hover:not(:disabled) {
   background: var(--selected-bg);
   color: var(--selected-fg);
 }
