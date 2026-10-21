@@ -897,6 +897,11 @@ li.selected .row-menu-button[aria-expanded='true'] {
   white-space: nowrap;
 }
 
+/* 文字の行の高さ（21px）がアイコン（18px）より高いと、たたんで文字が消えたときに項目が縮む */
+.nav-item > span {
+  line-height: 18px;
+}
+
 .side-nav.collapsed .nav-item {
   justify-content: center;
   padding: 7px 0;
