@@ -1,21 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { dropGapAtTab, gapX, isNoOpDrop } from '../../../src/ui/lineEditor/tabDrop'
+import { dropGapAtX, gapX, isNoOpDrop } from '../../../src/ui/lineEditor/tabDrop'
 
 const tabs = ['accent', 'pitch', 'length']
 
-describe('dropGapAtTab', () => {
+const rects = [
+  { left: 10, right: 100 },
+  { left: 100, right: 160 },
+  { left: 160, right: 220 },
+]
+
+describe('dropGapAtX', () => {
   it('puts the right half of a tab and the left half of the next tab on the same gap', () => {
-    expect(dropGapAtTab(tabs, 'pitch', 'right')).toBe(2)
-    expect(dropGapAtTab(tabs, 'length', 'left')).toBe(2)
+    expect(dropGapAtX(rects, 140)).toBe(2)
+    expect(dropGapAtX(rects, 170)).toBe(2)
+  })
+
+  it('gives one gap on both sides of a boundary, even a fractional pixel apart', () => {
+    expect(dropGapAtX(rects, 159.75)).toBe(2)
+    expect(dropGapAtX(rects, 160)).toBe(2)
+    expect(dropGapAtX(rects, 160.25)).toBe(2)
   })
 
   it('numbers the gap before the first tab 0 and after the last tab tabs.length', () => {
-    expect(dropGapAtTab(tabs, 'accent', 'left')).toBe(0)
-    expect(dropGapAtTab(tabs, 'length', 'right')).toBe(3)
-  })
-
-  it('has no gap for a tab that is not in the group', () => {
-    expect(dropGapAtTab(tabs, 'preview', 'left')).toBeNull()
+    expect(dropGapAtX(rects, 20)).toBe(0)
+    expect(dropGapAtX(rects, 300)).toBe(3)
   })
 })
 
@@ -42,12 +50,6 @@ describe('isNoOpDrop', () => {
 })
 
 describe('gapX', () => {
-  const rects = [
-    { left: 10, right: 100 },
-    { left: 100, right: 160 },
-    { left: 160, right: 220 },
-  ]
-
   it('uses the left edge of the tab after the gap', () => {
     expect(gapX(rects, 0)).toBe(10)
     expect(gapX(rects, 2)).toBe(160)

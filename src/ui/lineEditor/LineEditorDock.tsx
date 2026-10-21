@@ -19,8 +19,7 @@ import {
   saveDockLayout,
 } from './dockLayout'
 import type { PanelId } from './dockLayout'
-import { dropGapAtTab, gapX, isNoOpDrop } from './tabDrop'
-import type { DropGap } from './tabDrop'
+import { dropGapAtX, gapX, isNoOpDrop } from './tabDrop'
 
 /** 各パネルの中身。画面（LineEditorPage）が毎回作って渡す */
 export type DockPanels = Record<PanelId, ReactNode>
@@ -70,24 +69,17 @@ function addDefaultPanels(api: DockviewApi) {
 
 type DockGroup = NonNullable<DockviewWillShowOverlayLocationEvent['group']>
 
-/** タブの帯に重ねているときの入る位置。帯の外（パネルの中身や画面の端）なら null */
-function tabDropTarget(
+/** タブの帯に重ねているときの、束のタブ（並び順）とその位置。帯の外（パネルの中身や画面の端）なら null */
+function tabStrip(
   event: DockviewWillShowOverlayLocationEvent,
-): { group: DockGroup; tabs: string[]; gap: DropGap } | null {
+): { group: DockGroup; tabs: string[]; rects: DOMRect[] } | null {
   const group = event.group
-  if (!group) return null
+  if (!group || (event.kind !== 'tab' && event.kind !== 'header_space')) return null
   const tabs = group.panels.map((p) => p.id)
-  // タブの右の空き：束の最後に入る
-  if (event.kind === 'header_space') return { group, tabs, gap: tabs.length }
-  if (event.kind !== 'tab') return null
-  // 重ねている先のタブは知らせに入っていないので、ポインタの下の要素から読む
-  // （タッチのドラッグでは event.target が押し始めた要素のままなので、位置から引く）
-  const { clientX, clientY } = event.nativeEvent
-  const over = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>('[data-tab-panel-id]')
-    ?.dataset.tabPanelId
-  const side = event.position === 'left' ? 'left' : event.position === 'right' ? 'right' : null
-  const gap = over && side ? dropGapAtTab(tabs, over, side) : null
-  return gap === null ? null : { group, tabs, gap }
+  const rects = tabs.map((id) =>
+    group.element.querySelector(`[data-tab-panel-id="${CSS.escape(id)}"]`)?.getBoundingClientRect(),
+  )
+  return rects.every((r) => r !== undefined) ? { group, tabs, rects } : null
 }
 
 /** 入る位置の知らせが来なくなってから線を消すまで。タブの境目で知らせが1回抜けても線がちらつかない長さ */
@@ -184,24 +176,23 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
     const line = dropLineRef.current
     const root = rootRef.current
     if (!line || !root) return
-    const target = tabDropTarget(event)
-    if (!target) {
+    const strip = tabStrip(event)
+    const header = strip?.group.element.querySelector('.dv-tabs-and-actions-container')
+    if (!strip || !header) {
       hideDropLine()
       return
     }
-    const { group, tabs, gap } = target
+    const { group, tabs, rects } = strip
+    // 入る位置はポインタの横位置だけから決める（タブの右の空きなら、どのタブよりも右なので最後の後ろ）
+    const gap = dropGapAtX(rects, event.nativeEvent.clientX)
     const dragged = event.getData()
     if (dragged?.panelId && dragged.groupId === group.id && isNoOpDrop(tabs, dragged.panelId, gap)) {
       event.preventDefault()
       hideDropLine()
       return
     }
-    const header = group.element.querySelector('.dv-tabs-and-actions-container')
-    const rects = tabs.map((id) =>
-      group.element.querySelector(`[data-tab-panel-id="${CSS.escape(id)}"]`)?.getBoundingClientRect(),
-    )
-    const x = rects.every((r) => r !== undefined) ? gapX(rects, gap) : null
-    if (!header || x === null) {
+    const x = gapX(rects, gap)
+    if (x === null) {
       hideDropLine()
       return
     }
