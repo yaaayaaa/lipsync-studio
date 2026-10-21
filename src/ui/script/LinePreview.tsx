@@ -20,6 +20,8 @@ interface Props {
   idleHint?: string
   /** 映像のすぐ下の真ん中に置く再生の操作（動画編集ソフトのプレビューと同じ並び）。なければ案内の一言だけ */
   controls?: ReactNode
+  /** 声を作っている間。映像を暗くして、真ん中で輪を回す */
+  busy?: boolean
 }
 
 /** 書き出しと同じ解像度・配置・背景で、その時点の口を描く。 */
@@ -29,6 +31,7 @@ export function LinePreview({
   caption,
   idleHint = '行の「プレビュー」を押すと、口パクを音声付きで再生します',
   controls,
+  busy = false,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -51,13 +54,21 @@ export function LinePreview({
         className="line-preview-stage"
         style={{ '--preview-aspect': settings.width / settings.height } as CSSProperties}
       >
-        <canvas
-          ref={canvasRef}
-          className="line-preview-canvas"
-          width={settings.width}
-          height={settings.height}
-          aria-label="セリフのプレビュー"
-        />
+        <div className="line-preview-frame">
+          <canvas
+            ref={canvasRef}
+            className="line-preview-canvas"
+            width={settings.width}
+            height={settings.height}
+            aria-label="セリフのプレビュー"
+          />
+          {busy && (
+            <div className="preview-busy" role="status">
+              <span className="preview-busy-ring" aria-hidden />
+              <span className="preview-busy-label">合成中…</span>
+            </div>
+          )}
+        </div>
       </div>
       {controls ? (
         <div className="preview-transport">

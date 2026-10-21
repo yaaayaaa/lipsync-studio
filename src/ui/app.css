@@ -1175,9 +1175,56 @@ input[type='range'] {
 }
 
 .line-preview-canvas {
+  display: block;
   width: 100%;
   height: auto;
   border: 1px solid var(--border);
+}
+
+/* 映像と、その上に重ねる合成中の表示をひとまとめにする */
+.line-preview-frame {
+  position: relative;
+}
+
+/* 合成中：映像を暗くして、真ん中で輪を回す。色は書き出しの背景色に関係なく見える白と黒の半透明 */
+.preview-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.preview-busy-ring {
+  width: clamp(24px, 8%, 44px);
+  aspect-ratio: 1;
+  border: 3px solid rgb(255 255 255 / 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: preview-busy-spin 0.9s linear infinite;
+}
+
+.preview-busy-label {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+@keyframes preview-busy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 動きを減らす設定では回さず、文字だけで伝える */
+@media (prefers-reduced-motion: reduce) {
+  .preview-busy-ring {
+    animation: none;
+  }
 }
 
 .color-text {
@@ -1360,9 +1407,8 @@ input[type='color'] {
   border-radius: 50%;
 }
 
-.line-editor-main .line-preview-canvas {
+.line-editor-main .line-preview-frame {
   width: min(100cqw, 100cqh * var(--preview-aspect));
-  height: auto;
 }
 
 /* ---- アクセント句の編集（1行編集の中央） ---- */

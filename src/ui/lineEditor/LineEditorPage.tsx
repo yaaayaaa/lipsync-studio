@@ -155,7 +155,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const shownPlayError = playError && playError.lineId === line?.id ? playError.message : null
   const shownExport = exportState?.lineId === line?.id ? exportState : null
   const loading = playing && playback.playing!.loading
-  const caption = playing ? (loading ? '合成中…' : '再生中') : null
+  // 合成中はプレビューの真ん中に出すので、下の一言は再生中だけ
+  const caption = playing && !loading ? '再生中' : null
   const canTune = styleId !== null && line !== null && line.text.trim() !== ''
 
   // つまみのドラッグは、押してから離すまでを1件の履歴にまとめる（キーで動かしたときは1回ずつ）
@@ -204,6 +205,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
               frame={playback.preview}
               settings={settings.export}
               caption={caption}
+              busy={loading}
               controls={
                 playing ? (
                   <button
