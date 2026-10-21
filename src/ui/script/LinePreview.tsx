@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import type { ExportSettings } from '../../core/character/types'
 import type { FrameKey } from '../../core/export/frames'
 import type { PreparedFrames } from './mouthFrameCache'
@@ -40,18 +41,22 @@ export function LinePreview({
   }, [frame, settings])
 
   return (
-    <section className="panel">
+    <section className="panel line-preview">
       <h2>プレビュー</h2>
-      <canvas
-        ref={canvasRef}
-        className="line-preview-canvas"
-        width={settings.width}
-        height={settings.height}
-        aria-label="セリフのプレビュー"
-      />
-      <p className="hint">
-        {caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}
-      </p>
+      {/* 置き場所の大きさに合わせて縮むときに使う、動画の縦横比 */}
+      <div
+        className="line-preview-stage"
+        style={{ '--preview-aspect': settings.width / settings.height } as CSSProperties}
+      >
+        <canvas
+          ref={canvasRef}
+          className="line-preview-canvas"
+          width={settings.width}
+          height={settings.height}
+          aria-label="セリフのプレビュー"
+        />
+      </div>
+      <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>
     </section>
   )
 }
