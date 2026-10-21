@@ -1186,6 +1186,89 @@ input[type='range'] {
   position: relative;
 }
 
+/* シークバー：映像の最下部に重ねる線。丸（つまみ）はプレビューにカーソルを合わせたとき・操作中だけ出す。
+   線の色は、書き出しの背景色が何色でも見えるよう、白（済んだ所）と黒の半透明（残り）にする */
+.seek-bar {
+  --seek-track: 3px;
+  --seek-thumb: 12px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.seek-bar:disabled {
+  cursor: default;
+}
+
+.seek-bar::-webkit-slider-runnable-track {
+  height: var(--seek-track);
+  margin-top: calc(14px - var(--seek-track));
+  background: linear-gradient(
+    to right,
+    #ffffff 0 var(--seek-progress, 0%),
+    rgb(0 0 0 / 0.35) var(--seek-progress, 0%) 100%
+  );
+}
+
+.seek-bar::-moz-range-track {
+  height: var(--seek-track);
+  background: rgb(0 0 0 / 0.35);
+}
+
+.seek-bar::-moz-range-progress {
+  height: var(--seek-track);
+  background: #ffffff;
+}
+
+.seek-bar::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--seek-thumb);
+  height: var(--seek-thumb);
+  margin-top: calc((var(--seek-track) - var(--seek-thumb)) / 2);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.seek-bar::-moz-range-thumb {
+  width: var(--seek-thumb);
+  height: var(--seek-thumb);
+  border: none;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.line-preview-frame:hover .seek-bar:not(:disabled)::-webkit-slider-thumb,
+.seek-bar:not(:disabled):focus-visible::-webkit-slider-thumb,
+.seek-bar:not(:disabled):active::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.line-preview-frame:hover .seek-bar:not(:disabled)::-moz-range-thumb,
+.seek-bar:not(:disabled):focus-visible::-moz-range-thumb,
+.seek-bar:not(:disabled):active::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* キーボードで動かしているときは、枠ではなく丸が出ることで現在地を示す */
+.seek-bar:focus-visible {
+  outline: none;
+}
+
 /* 合成中：映像を暗くして、真ん中で輪を回す。色は書き出しの背景色に関係なく見える白と黒の半透明 */
 .preview-busy {
   position: absolute;

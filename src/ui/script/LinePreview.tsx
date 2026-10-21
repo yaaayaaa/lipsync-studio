@@ -3,6 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { ExportSettings } from '../../core/character/types'
 import type { FrameKey } from '../../core/export/frames'
 import type { PreparedFrames } from './mouthFrameCache'
+import { SeekBar } from './SeekBar'
+import type { PositionStore } from './playbackPosition'
 import { drawMouthFrame } from './lineJobs'
 
 export interface PreviewFrame {
@@ -22,6 +24,8 @@ interface Props {
   controls?: ReactNode
   /** 声を作っている間。映像を暗くして、真ん中で輪を回す */
   busy?: boolean
+  /** 映像の最下部のシークバー。なければ出さない */
+  seek?: { store: PositionStore; enabled: boolean; onSeek(time: number): void }
 }
 
 /** 書き出しと同じ解像度・配置・背景で、その時点の口を描く。 */
@@ -32,6 +36,7 @@ export function LinePreview({
   idleHint = '行の「プレビュー」を押すと、口パクを音声付きで再生します',
   controls,
   busy = false,
+  seek,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -62,6 +67,7 @@ export function LinePreview({
             height={settings.height}
             aria-label="セリフのプレビュー"
           />
+          {seek && <SeekBar {...seek} />}
           {busy && (
             <div className="preview-busy" role="status">
               <span className="preview-busy-ring" aria-hidden />

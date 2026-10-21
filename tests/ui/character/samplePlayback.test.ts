@@ -20,6 +20,7 @@ function fakeEnv() {
   let ended: (() => void) | null = null
   const audio = {
     currentTime: 0.5,
+    duration: 1.2,
     play: vi.fn(() => play.promise),
     pause: vi.fn(),
     addEventListener: vi.fn((_type: 'ended', fn: () => void) => {
@@ -120,5 +121,54 @@ describe('startSamplePlayback', () => {
     await expect(handle.done).rejects.toThrow('NotAllowedError')
     expect(audio.pause).toHaveBeenCalled()
     expect(env.revokeUrl).toHaveBeenCalledWith('blob:x')
+  })
+
+  it('reports the audio length when playing starts', async () => {
+    const { env, play } = fakeEnv()
+    const cb = callbacks()
+    startSamplePlayback(async () => ({ wav: new ArrayBuffer(8), timeline }), env, cb)
+    play.resolve()
+    await vi.waitFor(() => expect(cb.onPlaying).toHaveBeenCalledWith(1.2))
+  })
+
+  it('falls back to the timeline length when the audio length is unknown', async () => {
+    const { env, audio, play } = fakeEnv()
+    audio.duration = Number.NaN
+    const cb = callbacks()
+    startSamplePlayback(async () => ({ wav: new ArrayBuffer(8), timeline }), env, cb)
+    play.resolve()
+    await vi.waitFor(() => expect(cb.onPlaying).toHaveBeenCalledWith(1))
+  })
+
+  it('starts at startAt, and a seek during synthesis replaces it', async () => {
+    const { env, audio } = fakeEnv()
+    audio.currentTime = 0
+    startSamplePlayback(async () => ({ wav: new ArrayBuffer(8), timeline }), env, callbacks(), { startAt: 0.4 })
+    await vi.waitFor(() => expect(audio.play).toHaveBeenCalled())
+    expect(audio.currentTime).toBe(0.4)
+
+    const second = fakeEnv()
+    second.audio.currentTime = 0
+    const load = deferred<{ wav: ArrayBuffer; timeline: MouthTimeline }>()
+    const handle = startSamplePlayback(() => load.promise, second.env, callbacks(), { startAt: 0.4 })
+    handle.seek(0.7)
+    load.resolve({ wav: new ArrayBuffer(8), timeline })
+    await vi.waitFor(() => expect(second.audio.play).toHaveBeenCalled())
+    expect(second.audio.currentTime).toBe(0.7)
+  })
+
+  it('moves the audio while playing, and ignores seeks after cancel', async () => {
+    const { env, audio, play } = fakeEnv()
+    const cb = callbacks()
+    const handle = startSamplePlayback(async () => ({ wav: new ArrayBuffer(8), timeline }), env, cb)
+    play.resolve()
+    await vi.waitFor(() => expect(cb.onPlaying).toHaveBeenCalled())
+    handle.seek(0.9)
+    expect(audio.currentTime).toBe(0.9)
+    handle.seek(-1)
+    expect(audio.currentTime).toBe(0)
+    handle.cancel()
+    handle.seek(0.3)
+    expect(audio.currentTime).toBe(0)
   })
 })

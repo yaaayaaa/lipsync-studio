@@ -206,6 +206,11 @@ export function LineEditorPage({ active }: { active: boolean }) {
               settings={settings.export}
               caption={caption}
               busy={loading}
+              seek={{
+                store: playback.position,
+                enabled: (playing && !loading) || playback.canSeek(line),
+                onSeek: (time) => playback.seek(line, time),
+              }}
               controls={
                 playing ? (
                   <button
