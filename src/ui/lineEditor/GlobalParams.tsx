@@ -24,7 +24,7 @@ interface Props {
   status: string | null
   onSpeedChange(value: number): void
   onChange(key: GlobalParam, value: number): void
-  /** スライダーの前に置くもの（キャラ・スタイルの選択） */
+  /** スライダーの前に置くもの（キャラ・スタイルの選択欄） */
   selects?: ReactNode
   /** スライダーの後ろに置くもの（終端の長さ） */
   children?: ReactNode

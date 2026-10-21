@@ -6,7 +6,7 @@ import { newId } from '../../core/id'
 import { clampTail, effectiveTail } from '../../core/export/tail'
 import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
-import { LineCharacterSelects, LineTextArea } from '../script/LineFields'
+import { LineTextArea } from '../script/LineFields'
 import { LinePreview } from '../script/LinePreview'
 import { PROBLEM_LABELS, appendLine, errorMessage, isAbortError } from '../script/lineJobs'
 import { dropTuning } from '../script/lineText'
@@ -22,6 +22,7 @@ import { LineEditorDock } from './LineEditorDock'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
+import { StylePicker } from './StylePicker'
 import { TailLength } from './TailLength'
 import { revealDockPanel } from './dockLayout'
 import { setGlobalParam } from './editTuning'
@@ -238,11 +239,10 @@ export function LineEditorPage({ active }: { active: boolean }) {
     <GlobalParams
       selects={
         line && (
-          <LineCharacterSelects
+          <StylePicker
             line={line}
             characters={characters}
             disabled={locked}
-            labeled
             onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
           />
         )

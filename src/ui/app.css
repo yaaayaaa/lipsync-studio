@@ -1622,11 +1622,95 @@ input[type='color'] {
   padding: 10px 12px;
 }
 
-/* 選択はスライダーと値の欄の両方の幅を使う */
-.global-param select {
-  grid-column: span 2;
+/* キャラ・スタイルの選択欄（1行編集の「その他」）。閉じているときは今の選択を1行で、開くと検索窓と候補を下に出す */
+.style-picker {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.style-picker-toggle {
   width: 100%;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+}
+
+.style-picker-current {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.style-picker-chevron {
+  flex: none;
+  transition: transform 0.15s;
+}
+
+.style-picker-toggle[aria-expanded='true'] .style-picker-chevron {
+  transform: rotate(180deg);
+}
+
+.style-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.style-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+}
+
+.style-picker-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
+/* 枠の中の入力欄は自分の枠を消しているので、キーボードの現在地は包みの枠で示す */
+.style-picker-search:focus-within {
+  border-color: var(--fg);
+}
+
+.style-picker-character {
+  padding: 4px 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.style-picker-option {
+  width: 100%;
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg);
+  border-radius: var(--radius-sm);
+}
+
+.style-picker-option:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--hover-bg);
+}
+
+.style-picker-option.selected,
+.style-picker-option.selected:hover:not(:disabled) {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
 }
 
 .line-editor-actions {
