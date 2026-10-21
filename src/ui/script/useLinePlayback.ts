@@ -110,11 +110,15 @@ export function useLinePlayback(active: boolean, speak: SpeakLine) {
 
     let lease: FramesLease | null = null
     if (mode === 'preview') {
-      previewLease.current?.release()
+      // 先に次を借りてから前を返す（同じ絵なら閉じずに使い回される）
       lease = frameCache.acquire(character, expression)
+      previewLease.current?.release()
       previewLease.current = lease
-      setPreview(null)
-      if (!canSeek(line)) position.set(null)
+      // 止めた所から続けるときは、今の絵を出したままにする（合成は覚えてあるのですぐ鳴る）
+      if (!canSeek(line)) {
+        setPreview(null)
+        position.set(null)
+      }
     }
     const isCurrent = () => playbackRef.current === handle
     // 瞬きの位置は書き出しと同じ種（行の id）で決める。終端の長さは試聴・プレビューには足さない

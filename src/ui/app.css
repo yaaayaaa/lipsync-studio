@@ -1277,6 +1277,14 @@ input[type='range'] {
   justify-content: center;
   gap: 10px;
   background: rgb(0 0 0 / 0.35);
+  /* 覚えてある声ならすぐ鳴るので、少し待ってから出す（続きから再生するたびにちらつかないように） */
+  animation: preview-busy-in 0.15s ease-out 0.3s both;
+}
+
+@keyframes preview-busy-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .preview-busy-ring {
