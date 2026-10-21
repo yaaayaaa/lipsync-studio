@@ -55,17 +55,11 @@ function Slider({
   )
 }
 
-/** 全体の数値（右の列） */
+/** 全体の数値（1行編集の「数値」パネル。見出しはパネルのタブが兼ねる） */
 export function GlobalParams({ speedScale, values, disabled, paramsDisabled, status, onSpeedChange, onChange }: Props) {
   return (
-    <section className="panel">
-      <h2>全体の数値</h2>
-      <Slider
-        range={GLOBAL_PARAM_RANGES.speedScale}
-        value={speedScale}
-        disabled={disabled}
-        onChange={onSpeedChange}
-      />
+    <>
+      <Slider range={GLOBAL_PARAM_RANGES.speedScale} value={speedScale} disabled={disabled} onChange={onSpeedChange} />
       {PARAMS.map((key) => (
         <Slider
           key={key}
@@ -81,6 +75,6 @@ export function GlobalParams({ speedScale, values, disabled, paramsDisabled, sta
           {status}
         </p>
       )}
-    </section>
+    </>
   )
 }
