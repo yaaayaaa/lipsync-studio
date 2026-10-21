@@ -1463,6 +1463,20 @@ input[type='color'] {
   outline-offset: -2px;
 }
 
+/* タブの右の空きに重ねたとき（束の最後に入る）も、タブの間と同じ線で示す。dockview は空き全体を塗るので、
+   幅だけ線（4px）に絞って最後のタブのすぐ後ろに出す（幅は dockview が style に直接書くため !important で上書きする） */
+.line-dock .dv-void-container .dv-drop-target-selection.dv-drop-target-center {
+  width: 4px !important;
+}
+
+/* タブの入る位置の線。dockview の線（薄い地と片側の枠）は暗い画面で見えにくいので、4px の幅の真ん中に文字色の 2px の線を引く */
+/* dockview の枠の指定（.dv-drop-target > .dv-drop-target-dropzone > …）より強くする */
+.line-dock .dv-drop-target > .dv-drop-target-dropzone > .dv-drop-target-selection.dv-drop-target-selection-line,
+.line-dock .dv-void-container > .dv-drop-target-dropzone > .dv-drop-target-selection.dv-drop-target-center {
+  border: none;
+  background: linear-gradient(var(--fg), var(--fg)) center / 2px 100% no-repeat;
+}
+
 /* パネルの中身。収まらないときはパネルの中でスクロールする */
 .dock-pane {
   box-sizing: border-box;
