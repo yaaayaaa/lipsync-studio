@@ -41,7 +41,9 @@ function DockTab(props: IDockviewPanelHeaderProps) {
 // 色は app.css で dockview の変数をアプリの変数に差し替える。テーマのクラスは変数の土台として使うだけ。
 // パネルの間の隙間は dockview の gap ではなく app.css の余白で作る。dockview 8.4.1 では gap を付けると、
 // 覚えた並びを開くたびに境目が数 px ずつずれていく（再読み込みのたびに一覧が細くなる）ため
-const theme: DockviewTheme = { ...themeLight, gap: 0 }
+// タブを別のタブに重ねたときの入る位置は、タブの半分を塗る四角ではなく、タブの間の細い線で示す
+// （四角だと場所を空けているように見え、元の位置に戻るだけのときも何かが起きそうに見えるため）
+const theme: DockviewTheme = { ...themeLight, gap: 0, dndTabIndicator: 'line' }
 
 interface DefaultPlacement {
   position?: { referencePanel: PanelId; direction: 'right' | 'below' | 'within' }
