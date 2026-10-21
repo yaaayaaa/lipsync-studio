@@ -1623,6 +1623,20 @@ input[type='color'] {
   border-top: 1px solid var(--border);
 }
 
+/* 候補欄の高さの上限。キャラやスタイルが多くても、検索窓と下のスライダーを押し出さないよう、中だけをスクロールする。
+   上限は「その他」パネルの高さの半分（パネルの中身を大きさの基準にする） */
+.dock-pane-params {
+  container-type: size;
+}
+
+.style-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: max(160px, 50cqh);
+  overflow-y: auto;
+}
+
 .style-picker-search {
   display: flex;
   align-items: center;

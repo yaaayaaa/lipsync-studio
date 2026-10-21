@@ -94,45 +94,47 @@ export function StylePicker({ line, characters, disabled, onChange }: Props) {
               {characters.length === 0 ? 'キャラ設定でキャラを追加してください' : '見つかりません'}
             </p>
           ) : (
-            groups.map(({ character, expressions }) => {
-              const unfolded = searching || expanded.has(character.id)
-              const groupId = `${listId}-${character.id}`
-              return (
-                <div key={character.id} className="style-picker-group">
-                  <button
-                    type="button"
-                    className="style-picker-character"
-                    aria-expanded={unfolded}
-                    aria-controls={groupId}
-                    // 検索中は当たったものを全部見せるので畳めない
-                    disabled={searching}
-                    onClick={() => toggleCharacter(character.id)}
-                  >
-                    <ChevronRight {...iconProps} size={14} className="style-picker-chevron" />
-                    <span className="style-picker-character-name">{character.name}</span>
-                    <span className="style-picker-count">{expressions.length}</span>
-                  </button>
-                  {unfolded && (
-                    <div id={groupId} role="group" aria-label={character.name}>
-                      {expressions.map((e) => {
-                        const selected = line.characterId === character.id && line.expressionId === e.id
-                        return (
-                          <button
-                            key={e.id}
-                            type="button"
-                            className={selected ? 'style-picker-option selected' : 'style-picker-option'}
-                            aria-pressed={selected}
-                            onClick={() => choose(character.id, e.id)}
-                          >
-                            {e.name}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })
+            <div className="style-picker-list">
+              {groups.map(({ character, expressions }) => {
+                const unfolded = searching || expanded.has(character.id)
+                const groupId = `${listId}-${character.id}`
+                return (
+                  <div key={character.id} className="style-picker-group">
+                    <button
+                      type="button"
+                      className="style-picker-character"
+                      aria-expanded={unfolded}
+                      aria-controls={groupId}
+                      // 検索中は当たったものを全部見せるので畳めない
+                      disabled={searching}
+                      onClick={() => toggleCharacter(character.id)}
+                    >
+                      <ChevronRight {...iconProps} size={14} className="style-picker-chevron" />
+                      <span className="style-picker-character-name">{character.name}</span>
+                      <span className="style-picker-count">{expressions.length}</span>
+                    </button>
+                    {unfolded && (
+                      <div id={groupId} role="group" aria-label={character.name}>
+                        {expressions.map((e) => {
+                          const selected = line.characterId === character.id && line.expressionId === e.id
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              className={selected ? 'style-picker-option selected' : 'style-picker-option'}
+                              aria-pressed={selected}
+                              onClick={() => choose(character.id, e.id)}
+                            >
+                              {e.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       )}
