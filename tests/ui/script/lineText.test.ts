@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LineTuning, ScriptLine } from '../../../src/core/character/types'
-import { applyTextChange, dropTuning, hasStaleTuning, restoreTunedText } from '../../../src/ui/script/lineText'
+import { applyTextChange, dropTuning, isTuned } from '../../../src/ui/script/lineText'
 
 const tuning = (text: string): LineTuning => ({
   text,
@@ -24,63 +24,38 @@ const line = (patch: Partial<ScriptLine> = {}): ScriptLine => ({
 })
 
 describe('applyTextChange', () => {
-  it('changes only the text and keeps the tuning until the text is committed', () => {
-    const tuned = line({ tuning: tuning('ずんだもんなのだ') })
+  it('drops the tuning as soon as the text changes, and keeps the rest of the line', () => {
+    const tuned = line({ tuning: tuning('ずんだもんなのだ'), tailSeconds: 1.5 })
     const next = applyTextChange(tuned, 'ずんだもん')
-    expect(next.text).toBe('ずんだもん')
-    expect(next.tuning).toBe(tuned.tuning)
+    expect(next).not.toHaveProperty('tuning')
+    expect(next).toEqual({ ...dropTuning(tuned), text: 'ずんだもん' })
     expect(next.speedScale).toBe(1.3)
-  })
-})
-
-// 文の確定で作り込みを捨てる確認を出すのは、これが true のときだけ
-describe('hasStaleTuning', () => {
-  it('needs no confirmation for a line without tuning', () => {
-    const plain = line({ text: '別の文' })
-    expect(hasStaleTuning(plain)).toBe(false)
+    expect(next.tailSeconds).toBe(1.5)
   })
 
-  it('needs no confirmation when the text is back to the tuned text', () => {
+  it('keeps the tuning when the text stays the one the tuning was made for', () => {
     const tuned = line({ tuning: tuning('ずんだもんなのだ') })
-    expect(hasStaleTuning(tuned)).toBe(false)
+    expect(applyTextChange(tuned, 'ずんだもんなのだ').tuning).toBe(tuned.tuning)
   })
 
-  it('asks for confirmation when the text differs from the tuned text', () => {
-    const tuned = line({ text: 'ずんだもん', tuning: tuning('ずんだもんなのだ') })
-    expect(hasStaleTuning(tuned)).toBe(true)
+  it('just changes the text of a line without tuning', () => {
+    expect(applyTextChange(line(), '別の文')).toEqual(line({ text: '別の文' }))
   })
 })
 
 describe('dropTuning', () => {
   it('removes only the tuning and keeps the speed and the rest of the line', () => {
-    const tuned = line({ text: 'ずんだもん', tuning: tuning('ずんだもんなのだ') })
-    const dropped = dropTuning(tuned)
+    const dropped = dropTuning(line({ tuning: tuning('ずんだもんなのだ') }))
     expect(dropped).not.toHaveProperty('tuning')
-    expect(dropped).toEqual({ id: 'l1', text: 'ずんだもん', characterId: 'c1', expressionId: 'e1', speedScale: 1.3 })
+    expect(dropped).toEqual(line())
   })
 })
 
-describe('restoreTunedText', () => {
-  it('puts back the text the tuning was made for and keeps the tuning', () => {
-    const t = tuning('ずんだもんなのだ')
-    const next = restoreTunedText(line({ text: 'ずんだもん', tuning: t }))
-    expect(next.text).toBe('ずんだもんなのだ')
-    expect(next.tuning).toBe(t)
-  })
-
-  it('returns the line itself when there is nothing to restore', () => {
-    const plain = line()
-    expect(restoreTunedText(plain)).toBe(plain)
-    const tuned = line({ tuning: tuning('ずんだもんなのだ') })
-    expect(restoreTunedText(tuned)).toBe(tuned)
-  })
-})
-
-describe('tailSeconds', () => {
-  it('survives a text change that drops the tuning', () => {
-    const tuned = line({ tuning: tuning('ずんだもんなのだ'), tailSeconds: 1.5 })
-    expect(applyTextChange(tuned, 'ずんだもん').tailSeconds).toBe(1.5)
-    expect(dropTuning(applyTextChange(tuned, 'ずんだもん')).tailSeconds).toBe(1.5)
-    expect(dropTuning(tuned)).not.toHaveProperty('tuning')
+describe('isTuned', () => {
+  it('is true only for a tuning made for the current text', () => {
+    expect(isTuned(line())).toBe(false)
+    expect(isTuned(line({ tuning: tuning('ずんだもんなのだ') }))).toBe(true)
+    // 文を変えると捨てるようになる前に保存した行には、古い作り込みが残っていることがある
+    expect(isTuned(line({ tuning: tuning('ずんだ') }))).toBe(false)
   })
 })

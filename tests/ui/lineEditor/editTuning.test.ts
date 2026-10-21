@@ -182,11 +182,12 @@ describe('applyTuningEdit', () => {
     expect(applyTuningEdit(current, edit(tuning('ずんだ', 3), undefined), bump)).toBe(current)
   })
 
-  // 文を打ち替えて確定前（作り込みが古い）なら、捨てる確認を飛ばして作り直さない
-  it('refuses to edit while the line holds a stale tuning that is not yet confirmed away', () => {
+  // 古い作り込み（文を変えると捨てるが、それ以前に保存した行には残っている）は、今の文で作り直した base で置き換える
+  it('replaces a stale tuning left in an old saved line with one made for the current text', () => {
     const stale = tuning('ずんだ', 3)
     const current = line({ text: 'ずんだもん', tuning: stale })
-    expect(applyTuningEdit(current, edit(tuning('ずんだもん', 3), stale), bump)).toBe(current)
+    const base = tuning('ずんだもん', 3)
+    expect(applyTuningEdit(current, edit(base, stale), bump).tuning).toEqual(bump(base))
   })
 })
 

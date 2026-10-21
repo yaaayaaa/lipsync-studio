@@ -5,7 +5,7 @@ import type { LineProblem } from '../../core/storage/db'
 import { RowMenu } from '../character/RowMenu'
 import { LineCharacterSelects, LineTextArea, TunedMark } from './LineFields'
 import { PROBLEM_LABELS, canListen } from './lineJobs'
-import { hasStaleTuning } from './lineText'
+import { isTuned } from './lineText'
 import { SPEED_MAX, SPEED_MIN, SPEED_STEP } from './speed'
 import type { PlaybackMode } from './useLinePlayback'
 
@@ -57,10 +57,10 @@ export function LineRow(props: Props) {
     <li className={`line-row${problem ? ' has-problem' : ''}`}>
       <div className="line-index">
         {String(index + 1).padStart(3, '0')}
-        {line.tuning && <TunedMark stale={hasStaleTuning(line)} />}
+        {isTuned(line) && <TunedMark />}
       </div>
       <div className="line-main">
-        <LineTextArea line={line} disabled={locked} label={`${index + 1}行目のセリフ`} compact onEdit={props.onEdit} />
+        <LineTextArea line={line} disabled={locked} label={`${index + 1}行目のセリフ`} onEdit={props.onEdit} />
         <div className="line-controls">
           <LineCharacterSelects line={line} characters={characters} disabled={locked} onChange={props.onChange} />
           <label className="speed">

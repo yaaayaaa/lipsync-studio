@@ -1085,39 +1085,6 @@ progress {
   color: var(--fg);
 }
 
-/* 作り込みが文と合っていない（使えない）印。色だけに頼らずアイコンも替える */
-.line-tuned.stale {
-  color: var(--danger);
-}
-
-.stale-tuning {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: var(--radius);
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-size: 13px;
-}
-
-.stale-tuning.compact {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 12px;
-}
-
-.stale-tuning-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.stale-tuning-actions button {
-  color: var(--fg);
-}
-
 /* ブラウザの確認の代わりのダイアログ。画面の真ん中に出し、後ろを暗くする */
 .choice-dialog {
   box-sizing: border-box;
@@ -1585,7 +1552,7 @@ input[type='color'] {
 }
 
 /* 「セリフ」パネルは全体を文の欄にする（枠と余白はパネルが受け持つ）。
-   包み（取り消しの履歴をまとめるため）ごとパネルいっぱいに広げ、作り込みの知らせは欄の下に出す */
+   包み（取り消しの履歴をまとめるため）ごとパネルいっぱいに広げる */
 .dock-pane-text {
   padding: 0;
   gap: 0;
@@ -1612,10 +1579,6 @@ input[type='color'] {
 /* 枠がないので、キーボードの現在地は外に出すと隣のパネルにかかる。内側に描く */
 .line-text-field .line-text:focus-visible {
   outline-offset: -2px;
-}
-
-.line-text-field .stale-tuning {
-  margin: 0 12px 10px;
 }
 
 .dock-pane-text > .hint {
