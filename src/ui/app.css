@@ -95,6 +95,15 @@
   box-sizing: border-box;
 }
 
+/* 画面全体は動かさない（スクロールは各列や句の並びの中だけ）。
+   Mac のトラックパッドで端を越えたときの跳ね返りも止める */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -217,7 +226,8 @@ input[type='text'],
 
 .app {
   display: flex;
-  height: 100vh;
+  /* ツールバーが出ている間も見えている高さに収める（100vh だとその分はみ出す） */
+  height: 100dvh;
 }
 
 /* 各画面の列。上部の案内（エンジン・ブラウザ対応）もこの中に出す */
