@@ -83,11 +83,15 @@ export function SideNav({ page, onSelect }: { page: Page; onSelect(page: Page): 
   const [peek, setPeek] = useState(false)
   const peekTimer = useRef<number | undefined>(undefined)
   const { state } = useEngineStatus()
+  // 最後にメニューを押したのがマウスか。たたむボタンをキーボードで押したときと区別する
+  const pressedByMouse = useRef(false)
   const toggle = () => {
     setCollapsed(!collapsed)
     saveCollapsed(!collapsed)
     window.clearTimeout(peekTimer.current)
-    setPeek(false)
+    // マウスでたたんだときは、まだマウスが乗っているので、重ねて広げたまま残す（離したら閉じる）。
+    // その場で閉じると、目の前のメニューが急に縮む
+    setPeek(!collapsed && pressedByMouse.current)
   }
   useEffect(() => () => window.clearTimeout(peekTimer.current), [])
   // 重ねて広げるのはマウスだけ（タッチで触れたときに開いたまま残らないように）
@@ -112,6 +116,12 @@ export function SideNav({ page, onSelect }: { page: Page; onSelect(page: Page): 
         aria-label="画面"
         onPointerEnter={startPeek}
         onPointerLeave={endPeek}
+        onPointerDown={(e) => {
+          pressedByMouse.current = e.pointerType === 'mouse'
+        }}
+        onKeyDown={() => {
+          pressedByMouse.current = false
+        }}
       >
         <div className="side-nav-head">
           {showLabels && <span className="app-name">zunda-lipsync</span>}
