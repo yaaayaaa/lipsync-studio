@@ -1766,19 +1766,6 @@ input[type='color'] {
   color: var(--selected-fg);
 }
 
-.line-editor-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.line-editor-actions button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .line-editor-side .panel {
   flex: none;
 }
@@ -1834,6 +1821,20 @@ input[type='color'] {
 .preview-transport-controls {
   display: flex;
   gap: 4px;
+}
+
+/* 再生ボタンの左右（1行編集の書き出しと、取り消し・やり直し）。狭いときは折り返して、再生ボタンを真ん中に保つ */
+.preview-transport-start,
+.preview-transport-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.preview-transport-end {
+  justify-content: flex-end;
 }
 
 .transport-button {

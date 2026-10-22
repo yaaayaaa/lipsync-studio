@@ -22,6 +22,9 @@ interface Props {
   idleHint?: string
   /** 映像のすぐ下の真ん中に置く再生の操作（動画編集ソフトのプレビューと同じ並び）。なければ案内の一言だけ */
   controls?: ReactNode
+  /** 再生の操作と同じ段の左端・右端に置くもの（1行編集の書き出しと、取り消し・やり直し）。controls があるときだけ */
+  controlsStart?: ReactNode
+  controlsEnd?: ReactNode
   /** 声を作っている間。映像を暗くして、真ん中で輪を回す */
   busy?: boolean
   /** 映像の最下部のシークバー。なければ出さない */
@@ -37,6 +40,8 @@ export function LinePreview({
   caption,
   idleHint = '行の「プレビュー」を押すと、口パクを音声付きで再生します',
   controls,
+  controlsStart,
+  controlsEnd,
   busy = false,
   seek,
   standalone = true,
@@ -81,9 +86,13 @@ export function LinePreview({
       </div>
       {controls ? (
         <div className="preview-transport">
-          {/* 再生ボタンが見えているので、まだ再生していないときの案内は出さない */}
-          <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : null)}</p>
+          <div className="preview-transport-start">
+            {controlsStart}
+            {/* 再生ボタンが見えているので、まだ再生していないときの案内は出さない */}
+            <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : null)}</p>
+          </div>
           <div className="preview-transport-controls">{controls}</div>
+          <div className="preview-transport-end">{controlsEnd}</div>
         </div>
       ) : (
         <p className="hint">{caption ?? (frame ? `${frame.lineNumber}行目` : idleHint)}</p>

@@ -337,6 +337,53 @@ export function LineEditorPage({ active }: { active: boolean }) {
               enabled: (playing && !loading) || playback.canSeek(line),
               onSeek: (time) => playback.seek(line, time),
             }}
+            controlsStart={
+              exportState?.state === 'exporting' ? (
+                <button type="button" onClick={job.abort}>
+                  中止
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={problem !== null || locked || tuning.busy}
+                  onClick={() => void exportLine()}
+                >
+                  <Download {...iconProps} />
+                  この行を書き出し
+                </button>
+              )
+            }
+            controlsEnd={
+              <>
+                <button
+                  type="button"
+                  disabled={!history.canUndo(line.id) || locked}
+                  aria-label="取り消し"
+                  title="取り消し（Ctrl/Cmd+Z）"
+                  onClick={() => undo(line.id)}
+                >
+                  <Undo2 {...iconProps} />
+                </button>
+                <button
+                  type="button"
+                  disabled={!history.canRedo(line.id) || locked}
+                  aria-label="やり直し"
+                  title="やり直し（Ctrl/Cmd+Shift+Z、Ctrl+Y）"
+                  onClick={() => redo(line.id)}
+                >
+                  <Redo2 {...iconProps} />
+                </button>
+                <button
+                  type="button"
+                  disabled={!line.tuning || locked}
+                  title="作り込みを捨てて、自動の状態に戻します"
+                  onClick={() => void editLine(line.id, dropTuning)}
+                >
+                  <RotateCcw {...iconProps} />
+                  元に戻す
+                </button>
+              </>
+            }
             controls={
               playing ? (
                 <button
@@ -362,50 +409,6 @@ export function LineEditorPage({ active }: { active: boolean }) {
               )
             }
           />
-          <div className="line-editor-actions">
-            {exportState?.state === 'exporting' ? (
-              <button type="button" onClick={job.abort}>
-                中止
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={problem !== null || locked || tuning.busy}
-                onClick={() => void exportLine()}
-              >
-                <Download {...iconProps} />
-                この行を書き出し
-              </button>
-            )}
-            <span className="spacer" />
-            <button
-              type="button"
-              disabled={!history.canUndo(line.id) || locked}
-              aria-label="取り消し"
-              title="取り消し（Ctrl/Cmd+Z）"
-              onClick={() => undo(line.id)}
-            >
-              <Undo2 {...iconProps} />
-            </button>
-            <button
-              type="button"
-              disabled={!history.canRedo(line.id) || locked}
-              aria-label="やり直し"
-              title="やり直し（Ctrl/Cmd+Shift+Z、Ctrl+Y）"
-              onClick={() => redo(line.id)}
-            >
-              <Redo2 {...iconProps} />
-            </button>
-            <button
-              type="button"
-              disabled={!line.tuning || locked}
-              title="作り込みを捨てて、自動の状態に戻します"
-              onClick={() => void editLine(line.id, dropTuning)}
-            >
-              <RotateCcw {...iconProps} />
-              元に戻す
-            </button>
-          </div>
           {shownPlayError && (
             <p className="line-problem" role="alert">
               {shownPlayError}
