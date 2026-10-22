@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
-import { Download, Play, Redo2, RotateCcw, Square, Undo2 } from 'lucide-react'
+import { Download, Play, Redo2, RotateCcw, Square, Trash2, Undo2 } from 'lucide-react'
 import { iconProps } from '../icons'
+import { ChoiceDialog } from '../ChoiceDialog'
+import type { ScriptLine } from '../../core/character/types'
 import { lineVoice } from '../../core/character/voice'
 import { newId } from '../../core/id'
 import { clampTail, effectiveTail } from '../../core/export/tail'
@@ -9,8 +11,8 @@ import { lineProblem } from '../../core/storage/db'
 import { useApp } from '../useApp'
 import { LineTextArea } from '../script/LineFields'
 import { LinePreview } from '../script/LinePreview'
-import { PROBLEM_LABELS, appendLine, errorMessage, isAbortError } from '../script/lineJobs'
-import { dropTuning } from '../script/lineText'
+import { PROBLEM_LABELS, errorMessage, isAbortError } from '../script/lineJobs'
+import { dropTuning, isTuned } from '../script/lineText'
 import { clampSpeed } from '../script/speed'
 import { useExportJob } from '../script/useExportJob'
 import { useLinePlayback } from '../script/useLinePlayback'
@@ -21,6 +23,7 @@ import type { SpeakLine } from '../script/useSpeakLine'
 import { GlobalParams } from './GlobalParams'
 import { LineEditorDock } from './LineEditorDock'
 import { revealDockPanel } from './dockLayout'
+import { appendLine, duplicateLine, insertLine, moveLine, neighborAfterRemoval, removeLine } from './lineListOps'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
@@ -61,6 +64,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   // 追加した行の文の欄に、出てきたらフォーカスを移す（新しい行はまず文を打つので）。
   // セリフのタブが隠れていると欄はまだないので、出てきたときに欄の ref で移す
   const focusTextOf = useRef<string | null>(null)
+  // 削除の確認を出している行
+  const [removing, setRemoving] = useState<ScriptLine | null>(null)
 
   const tuning = useLineTuning({ line, styleId, locked, editLine })
   const { markRefreshed } = tuning
@@ -137,12 +142,42 @@ export function LineEditorPage({ active }: { active: boolean }) {
     )
   }
 
-  const addLine = () => {
-    const id = newId()
-    update((prev) => appendLine(prev, characters, id))
+  /** 足した行を開き、すぐ文を打てるようにセリフ欄へフォーカスを移す */
+  const openNewLine = (id: string) => {
     openLineEditor(id)
     focusTextOf.current = id
     revealDockPanel('text')
+  }
+  const addLine = () => {
+    const id = newId()
+    update((prev) => appendLine(prev, characters, id))
+    openNewLine(id)
+  }
+  const insertLineAt = (at: number) => {
+    const id = newId()
+    update((prev) => insertLine(prev, characters, id, at))
+    openNewLine(id)
+  }
+  const duplicate = (sourceId: string) => {
+    const id = newId()
+    update((prev) => duplicateLine(prev, sourceId, id))
+    openLineEditor(id)
+  }
+  const remove = (target: ScriptLine) => {
+    if (playback.playing?.lineId === target.id) playback.stop()
+    // 開いている行を消したら、隣の行を開く
+    if (target.id === lineId) {
+      const next = neighborAfterRemoval(lines, target.id)
+      if (next) openLineEditor(next)
+    }
+    update((prev) => removeLine(prev, target.id))
+  }
+  // 空の行はすぐ消す。文か作り込みがあれば、元に戻せないので確かめる
+  const requestRemove = (id: string) => {
+    const target = lines.find((l) => l.id === id)
+    if (!target) return
+    if (target.text.trim() === '' && !isTuned(target)) remove(target)
+    else setRemoving(target)
   }
 
   const exportLine = async () => {
@@ -442,6 +477,10 @@ export function LineEditorPage({ active }: { active: boolean }) {
               locked={locked}
               onSelect={openLineEditor}
               onAdd={addLine}
+              onInsert={insertLineAt}
+              onDuplicate={duplicate}
+              onMove={(id, gap) => update((prev) => moveLine(prev, id, gap))}
+              onRemove={requestRemove}
             />
           ),
           text: textPanel,
@@ -452,6 +491,20 @@ export function LineEditorPage({ active }: { active: boolean }) {
           params: paramsPanel,
         }}
       />
+      <ChoiceDialog
+        open={removing !== null}
+        title={`${removing ? lines.findIndex((l) => l.id === removing.id) + 1 : ''}行目を削除しますか？`}
+        choices={[{ value: 'remove', label: '削除', icon: Trash2, danger: true }]}
+        cancelLabel="やめる"
+        onClose={(choice) => {
+          if (choice === 'remove' && removing) remove(removing)
+          setRemoving(null)
+        }}
+      >
+        <p>
+          {removing && isTuned(removing) ? 'セリフと作り込みが消えます。' : 'セリフが消えます。'}元に戻せません。
+        </p>
+      </ChoiceDialog>
     </div>
   )
 }

@@ -358,6 +358,11 @@ li.selected .row-menu-button[aria-expanded='true'] {
   box-shadow: var(--popover-shadow);
 }
 
+/* 右クリックのメニューは body に置くので、パネルや浮いた一覧より上に出す */
+.row-menu-list.context-menu {
+  z-index: 1150;
+}
+
 .row-menu-item {
   display: flex;
   align-items: center;
@@ -1468,6 +1473,49 @@ input[type='color'] {
 
 .line-editor-list li > button.selected .line-tuned {
   color: inherit;
+}
+
+/* ドラッグの入る位置は、行の間（ol の gap 2px の真ん中）に線を引いて示す */
+.line-editor-list li {
+  position: relative;
+}
+
+.line-editor-list li.drop-before::before,
+.line-editor-list li.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--fg);
+  pointer-events: none;
+}
+
+.line-editor-list li.drop-before::before {
+  top: -2px;
+}
+
+.line-editor-list li.drop-after::after {
+  bottom: -2px;
+}
+
+/* つかんでいる行は薄くし、ドラッグの間は行を押せる見た目（ホバーの色）を出さない */
+.line-editor-list li.dragged > button {
+  opacity: 0.4;
+}
+
+.line-editor-list.dragging li > button {
+  cursor: grabbing;
+}
+
+.line-editor-list.dragging li > button:hover:not(:disabled):not(.selected) {
+  background: transparent;
+}
+
+/* 右クリックのメニューを出している行 */
+.line-editor-list li.menu-open > button:not(.selected) {
+  background: var(--hover-bg);
 }
 
 .line-editor-number {
