@@ -1032,26 +1032,187 @@ li.selected .row-menu-button[aria-expanded='true'] {
 
 /* ---- 設定画面 ---- */
 
+/* 設定は iPad の設定アプリのように、左に項目の一覧、右に選んだ項目の中身を置く */
 .settings-page {
   min-height: 0;
-  overflow: auto;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
-.settings-body {
+.settings-nav {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 640px;
-  padding: 16px;
 }
 
 .settings-title {
-  font-size: 17px;
+  margin: 0;
+  padding: 0 8px;
+  color: var(--fg);
+  font-size: 20px;
 }
 
-.engine-url input {
+.settings-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav-item {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-color: transparent;
+  text-align: left;
+}
+
+.settings-nav-item:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--hover-bg);
+}
+
+.settings-nav-item.current,
+.settings-nav-item.current:hover:not(:disabled) {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.settings-nav-label {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 一覧の行の右の補足（エンジンの接続状態） */
+.settings-nav-detail {
+  flex: none;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.settings-nav-detail.error {
+  color: var(--danger);
+  opacity: 1;
+}
+
+.settings-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* 広い画面でも行が横に間延びしないよう、中身の幅に上限を置く */
+  max-width: 720px;
+}
+
+.settings-section-title {
+  margin: 0;
+  color: var(--fg);
+  font-size: 20px;
+}
+
+.settings-content > .notice {
+  margin: 0;
+}
+
+/* 行をまとめる角丸の枠。行の間に細い線を引き、説明は枠の下に小さく出す */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-group-rows {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 14px;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--border);
+}
+
+.settings-row-name {
+  flex: none;
+  min-width: 7em;
+}
+
+/* 操作は右に寄せる。入力欄やドロップダウンは残りの幅を使う */
+.settings-row-control {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-row-control > .dropdown {
+  flex: 0 1 240px;
+}
+
+.settings-row-control > input[type='range'] {
+  flex: 0 1 240px;
+  min-width: 0;
+}
+
+.settings-group-footer {
+  padding: 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settings-group-footer p {
+  margin: 0;
+}
+
+.settings-group-footer .notice {
+  margin-bottom: 6px;
+}
+
+/* 色の文字欄は #RRGGBB が入る幅だけにする（入力欄は既定で行いっぱいに伸びるため） */
+.settings-row-control > .color-text {
+  flex: none;
+  width: 7em;
+}
+
+.engine-url .settings-row-control input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 狭い画面では、項目の一覧を上に、中身をその下に並べる */
+@media (max-width: 640px) {
+  .settings-page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .settings-nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .settings-content {
+    padding: 16px;
+  }
 }
 
 .engine-state {

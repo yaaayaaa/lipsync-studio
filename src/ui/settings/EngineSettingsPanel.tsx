@@ -3,6 +3,7 @@ import { engineStatusLabel, useEngineStatus } from '../engine/useEngineStatus'
 import { normalizeEngineUrl } from '../engineUrl'
 import { errorMessage } from '../script/lineJobs'
 import { useApp } from '../useApp'
+import { SettingsGroup, SettingsRow } from './SettingsGroup'
 
 /** VOICEVOX エンジンの URL と接続状態。URL が同じなら「再接続」で問い合わせ直す */
 export function EngineSettingsPanel() {
@@ -29,30 +30,46 @@ export function EngineSettingsPanel() {
   }
 
   return (
-    <section className="panel">
-      <h2>VOICEVOX エンジン</h2>
-      <form
-        className="field engine-url"
-        onSubmit={(e) => {
-          e.preventDefault()
-          apply()
-        }}
+    <>
+      <SettingsGroup
+        footer={
+          <>
+            {urlError && (
+              <p className="notice error" role="alert">
+                {urlError}
+              </p>
+            )}
+            <p>
+              既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、エンジン側で CORS
+              の許可も必要です。
+            </p>
+          </>
+        }
       >
-        <span>URL</span>
-        <input type="text" value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="VOICEVOX エンジンの URL" />
-        <button type="submit">{normalizeEngineUrl(draft) === settings.engineUrl ? '再接続' : '変更'}</button>
-      </form>
-      {urlError && (
-        <p className="notice error" role="alert">
-          {urlError}
-        </p>
-      )}
-      <p className={`engine-state ${state.status}`} role="status">
-        状態：{engineStatusLabel(state)}
-      </p>
-      <p className="hint">
-        既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、エンジン側で CORS の許可も必要です。
-      </p>
-    </section>
+        <form
+          className="settings-row engine-url"
+          onSubmit={(e) => {
+            e.preventDefault()
+            apply()
+          }}
+        >
+          <span className="settings-row-name">URL</span>
+          <span className="settings-row-control">
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              aria-label="VOICEVOX エンジンの URL"
+            />
+            <button type="submit">{normalizeEngineUrl(draft) === settings.engineUrl ? '再接続' : '変更'}</button>
+          </span>
+        </form>
+        <SettingsRow name="状態">
+          <span className={`engine-state ${state.status}`} role="status">
+            {engineStatusLabel(state)}
+          </span>
+        </SettingsRow>
+      </SettingsGroup>
+    </>
   )
 }
