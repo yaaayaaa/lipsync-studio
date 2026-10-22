@@ -8,8 +8,8 @@ import type { EngineState } from './engine/useEngineStatus'
 export type Page = 'character' | 'line' | 'settings'
 
 const MAIN_PAGES: { id: Page; label: string; icon: LucideIcon }[] = [
-  { id: 'character', label: 'キャラ設定', icon: UserRound },
   { id: 'line', label: '台本', icon: ScrollText },
+  { id: 'character', label: 'キャラ設定', icon: UserRound },
 ]
 
 const COLLAPSED_KEY = 'zunda-lipsync.sideNavCollapsed'
