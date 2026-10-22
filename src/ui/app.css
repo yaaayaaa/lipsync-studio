@@ -1143,8 +1143,9 @@ input[type='range'] {
   color: var(--danger);
 }
 
+/* セリフ一覧の「行を追加」は一覧の幅いっぱいにする（行と同じ幅で、押せる所を広く） */
 .add-line {
-  align-self: flex-start;
+  align-self: stretch;
 }
 
 .line-preview-canvas {
