@@ -16,6 +16,7 @@ import {
   PANEL_TITLES,
   loadDockLayout,
   onDockLayoutReset,
+  onRevealDockPanel,
   saveDockLayout,
 } from './dockLayout'
 import type { PanelId } from './dockLayout'
@@ -152,6 +153,8 @@ export function LineEditorDock({ panels }: { panels: DockPanels }) {
       }),
     [openWhenVisible],
   )
+
+  useEffect(() => onRevealDockPanel((id) => apiRef.current?.getPanel(id)?.api.setActive()), [])
 
   // 入る位置の線は、dockview が入る位置を知らせてきたときだけ引く。知らせが来ない所（帯の外・ドラッグしているタブ
   // 自身の上）で線が残らないよう、ドラッグが動いてから少しの間（DROP_LINE_GRACE_MS）知らせがなければ消す。

@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Dropdown } from '../Dropdown'
 import { iconProps } from '../icons'
@@ -12,12 +13,14 @@ interface TextProps {
   label: string
   rows?: number
   onEdit(fn: (line: ScriptLine) => ScriptLine): void
+  ref?: Ref<HTMLTextAreaElement>
 }
 
 /** セリフの文の欄。この欄は複数行なので Enter は改行のまま */
-export function LineTextArea({ line, disabled, label, rows = 2, onEdit }: TextProps) {
+export function LineTextArea({ line, disabled, label, rows = 2, onEdit, ref }: TextProps) {
   return (
     <textarea
+      ref={ref}
       className="line-text"
       rows={rows}
       value={line.text}

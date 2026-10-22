@@ -20,6 +20,7 @@ import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
 import { GlobalParams } from './GlobalParams'
 import { LineEditorDock } from './LineEditorDock'
+import { revealDockPanel } from './dockLayout'
 import { LineEditorList } from './LineEditorList'
 import { PhraseEditor } from './PhraseEditor'
 import type { PhraseEditorKind } from './PhraseEditor'
@@ -57,6 +58,9 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const lineId = line?.id ?? null
   // 文の欄の操作（フォーカスから確定まで）の token
   const textGesture = useRef<number | null>(null)
+  // 追加した行の文の欄に、出てきたらフォーカスを移す（新しい行はまず文を打つので）。
+  // セリフのタブが隠れていると欄はまだないので、出てきたときに欄の ref で移す
+  const focusTextOf = useRef<string | null>(null)
 
   const tuning = useLineTuning({ line, styleId, locked, editLine })
   const { markRefreshed } = tuning
@@ -137,6 +141,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
     const id = newId()
     update((prev) => appendLine(prev, characters, id))
     openLineEditor(id)
+    focusTextOf.current = id
+    revealDockPanel('text')
   }
 
   const exportLine = async () => {
@@ -223,6 +229,12 @@ export function LineEditorPage({ active }: { active: boolean }) {
         }}
       >
         <LineTextArea
+          ref={(el) => {
+            if (el && focusTextOf.current === line.id) {
+              focusTextOf.current = null
+              el.focus()
+            }
+          }}
           line={line}
           disabled={locked}
           label={`${index + 1}行目のセリフ`}
