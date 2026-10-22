@@ -873,6 +873,41 @@ li.selected .row-menu-button[aria-expanded='true'] {
   width: 57px;
 }
 
+/* たたんだときは外枠が幅を取り、メニューはその中で上下いっぱいに浮かせる（広げても画面を押し下げない） */
+.side-nav-slot {
+  flex: none;
+  display: flex;
+}
+
+.side-nav-slot.collapsed {
+  position: relative;
+  width: 57px;
+}
+
+.side-nav-slot.collapsed .side-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1200;
+  overflow: hidden;
+  transition:
+    width 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* マウスを置いて重ねて広げているとき。広げるボタンで広げたときと違い、影を落として浮いているように見せる */
+.side-nav.collapsed.peek {
+  width: 184px;
+  box-shadow: var(--popover-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-nav-slot.collapsed .side-nav {
+    transition: none;
+  }
+}
+
 .side-nav-head {
   display: flex;
   align-items: center;
@@ -881,7 +916,7 @@ li.selected .row-menu-button[aria-expanded='true'] {
   min-height: 32px;
 }
 
-.side-nav.collapsed .side-nav-head {
+.side-nav.collapsed:not(.peek) .side-nav-head {
   justify-content: center;
 }
 
@@ -931,7 +966,7 @@ li.selected .row-menu-button[aria-expanded='true'] {
   line-height: 18px;
 }
 
-.side-nav.collapsed .nav-item {
+.side-nav.collapsed:not(.peek) .nav-item {
   justify-content: center;
   padding: 7px 0;
 }
@@ -959,7 +994,7 @@ li.selected .row-menu-button[aria-expanded='true'] {
   text-overflow: ellipsis;
 }
 
-.side-nav.collapsed .nav-engine {
+.side-nav.collapsed:not(.peek) .nav-engine {
   justify-content: center;
   padding: 0;
 }
