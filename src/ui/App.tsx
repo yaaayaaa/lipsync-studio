@@ -5,7 +5,6 @@ import { EngineStatusProvider } from './engine/EngineStatus'
 import { EngineBanner } from './EngineBanner'
 import { LineEditorPage } from './lineEditor/LineEditorPage'
 import { ScriptProvider } from './script/ScriptContext'
-import { ScriptPage } from './script/ScriptPage'
 import { SettingsPage } from './settings/SettingsPage'
 import { SideNav } from './SideNav'
 import type { Page } from './SideNav'
@@ -29,9 +28,6 @@ export function App() {
               {/* どれも置いたままにする：画面を切り替えても書き出しの進行や画面の状態を失わないため */}
               <div className="page" hidden={page !== 'character'}>
                 <CharacterPage />
-              </div>
-              <div className="page" hidden={page !== 'script'}>
-                <ScriptPage active={page === 'script'} />
               </div>
               <div className="page" hidden={page !== 'line'}>
                 <LineEditorPage active={page === 'line'} />

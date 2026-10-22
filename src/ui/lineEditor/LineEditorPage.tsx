@@ -41,7 +41,7 @@ type ExportState = { lineId: string } & (
   | { state: 'done' | 'error' | 'aborted'; message: string }
 )
 
-/** 1行編集：行の一覧・セリフ・プレビュー・アクセント・高さ・長さ・数値・終端を、並べ替えられるパネルに置く */
+/** 台本：行の一覧・セリフ・プレビュー・アクセント・高さ・長さ・数値・終端を、並べ替えられるパネルに置く */
 export function LineEditorPage({ active }: { active: boolean }) {
   const { characters, settings } = useApp()
   const { lines, update, error: scriptError, editingLineId, openLineEditor, exportLocked } = useScriptLines()
@@ -102,7 +102,7 @@ export function LineEditorPage({ active }: { active: boolean }) {
     if (!line) return
     const lineId = line.id
     setPlayError(null)
-    playback.play(line, index + 1, 'preview', (message) => setPlayError({ lineId, message }))
+    playback.play(line, index + 1, (message) => setPlayError({ lineId, message }))
   }
   const playing = playback.playing !== null && playback.playing.lineId === line?.id
   const canPlay = problem === null && !locked

@@ -6,7 +6,7 @@ import { resetDockLayout } from '../lineEditor/dockLayout'
 import { THEMES, applyTheme, loadTheme, saveTheme } from '../theme'
 import type { Theme } from '../theme'
 
-/** 画面の明暗と、1行編集のパネルの並び。どちらも書き出す動画には関係しない */
+/** 画面の明暗と、台本のパネルの並び。どちらも書き出す動画には関係しない */
 export function AppearanceSettingsPanel() {
   const [theme, setTheme] = useState(loadTheme)
   /** 並びを戻した直後だけ「戻しました」と出す */
@@ -31,7 +31,7 @@ export function AppearanceSettingsPanel() {
         />
       </div>
       <div className="field">
-        <span>1行編集のパネル</span>
+        <span>台本のパネル</span>
         <button
           type="button"
           onClick={() => {

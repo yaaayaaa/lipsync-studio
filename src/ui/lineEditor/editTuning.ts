@@ -19,7 +19,7 @@ export interface ParamRange {
   label: string
 }
 
-/** 範囲は VOICEVOX エディタに合わせる。話速だけは「セリフ」の一覧と同じ範囲・刻みにそろえる */
+/** 範囲は VOICEVOX エディタに合わせる。話速だけは speed.ts の範囲・刻みを使う */
 export const GLOBAL_PARAM_RANGES: Record<GlobalParam | 'speedScale', ParamRange> = {
   speedScale: { min: SPEED_MIN, max: SPEED_MAX, step: SPEED_STEP, label: '話速' },
   pitchScale: { min: -0.15, max: 0.15, step: 0.01, label: '音高' },

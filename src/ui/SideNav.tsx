@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { AudioLines, ListOrdered, PanelLeftClose, PanelLeftOpen, Settings, UserRound } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, ScrollText, Settings, UserRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { engineStatusLabel, useEngineStatus } from './engine/useEngineStatus'
 import type { EngineState } from './engine/useEngineStatus'
 
-export type Page = 'character' | 'script' | 'line' | 'settings'
+export type Page = 'character' | 'line' | 'settings'
 
 const MAIN_PAGES: { id: Page; label: string; icon: LucideIcon }[] = [
   { id: 'character', label: 'キャラ設定', icon: UserRound },
-  { id: 'script', label: 'セリフ', icon: ListOrdered },
-  { id: 'line', label: '1行編集', icon: AudioLines },
+  { id: 'line', label: '台本', icon: ScrollText },
 ]
 
 const COLLAPSED_KEY = 'zunda-lipsync.sideNavCollapsed'

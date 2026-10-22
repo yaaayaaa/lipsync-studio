@@ -82,7 +82,7 @@ function sameTuning(a: Snapshot['tuning'], b: Snapshot['tuning']): boolean {
  * 履歴が最後に見た状態（seen）から、1行編集の編集の経路（editLine・取り消し）を通らずに行が変わったときの扱い。
  * - none：変わっていない
  * - rebase：声の取り直しだけ（同じ文の作り込みを別の声に合わせた）。ユーザーの編集でないので履歴は残し、見た状態だけ進める
- * - clear：それ以外（「セリフ」の画面での変更など）。古い履歴で戻すと、ほかの画面の変更を黙って巻き戻すので捨てる
+ * - clear：それ以外（設定画面やキャラ設定での変更など）。古い履歴で戻すと、ほかの画面の変更を黙って巻き戻すので捨てる
  */
 export function outsideChange(seen: Snapshot, current: Snapshot): 'none' | 'rebase' | 'clear' {
   const restSame =

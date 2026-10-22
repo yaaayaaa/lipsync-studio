@@ -1,4 +1,4 @@
-// 話速の置き場は ScriptLine.speedScale だけ。「セリフ」の一覧と1行編集の両方がこの範囲を使う。
+// 話速の置き場は ScriptLine.speedScale だけ。台本の「その他」の話速はこの範囲を使う。
 export const SPEED_MIN = 0.5
 export const SPEED_MAX = 2.0
 export const SPEED_STEP = 0.05

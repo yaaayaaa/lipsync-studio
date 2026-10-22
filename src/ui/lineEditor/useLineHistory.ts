@@ -27,7 +27,7 @@ import type { EditLine } from './useLineTuning'
  *   操作は始めた側が token で持ち、その token でしか終わらない。積むのは操作の編集が変えた項目だけを戻す形
  * - 声の取り直しなど、ユーザーの編集でない書き込みは editLine を通さない（update を直に使う）ので積まれない。
  *   操作の途中に入っても、その項目は操作のものではないので、取り消しで巻き戻さない
- * - このページは閉じても消えない（タブを替えても残る）。「セリフ」の画面など、ここを通らずに行が変わったら、
+ * - このページは閉じても消えない（タブを替えても残る）。設定画面など、ここを通らずに行が変わったら、
  *   その行の履歴と途中の操作は捨てる（古い履歴で戻すと、ほかの画面の変更を黙って巻き戻すため）。声の取り直しだけは残す
  */
 export function useLineHistory(lines: ScriptLine[] | null) {
@@ -170,7 +170,7 @@ export function useLineHistory(lines: ScriptLine[] | null) {
     cleanups.current.delete(g.token)
   }, [])
 
-  // ここを通らずに変わった行（「セリフ」の画面での変更など）の履歴と途中の操作は捨てる。
+  // ここを通らずに変わった行（設定画面での変更など）の履歴と途中の操作は捨てる。
   // 取り消しのキーより先に効くよう、描画の直後に確かめる
   useLayoutEffect(() => {
     if (!lines) return

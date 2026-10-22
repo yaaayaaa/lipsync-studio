@@ -90,7 +90,7 @@ export function GlobalParams({
           {status}
         </p>
       )}
-      <p className="hint">開始の無音・終了の無音は秒。話速は「セリフ」の一覧の話速と同じ値です。</p>
+      <p className="hint">開始の無音・終了の無音は秒です。</p>
       {children}
     </>
   )

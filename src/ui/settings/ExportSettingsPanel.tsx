@@ -78,7 +78,7 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
         />
         <output className="value">{current.tailSeconds.toFixed(1)} 秒</output>
       </label>
-      <p className="hint">喋り終わったあと、立ち絵を映し続ける長さ。1行編集で行ごとに変えられます</p>
+      <p className="hint">喋り終わったあと、立ち絵を映し続ける長さ。台本で行ごとに変えられます</p>
       <div className="field">
         <span>背景色</span>
         <input

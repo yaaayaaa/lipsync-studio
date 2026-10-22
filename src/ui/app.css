@@ -716,11 +716,6 @@ li.selected .row-menu-button[aria-expanded='true'] {
   flex: 1;
 }
 
-/* 「セリフ」の一覧の行のキャラ・スタイル */
-.line-select {
-  width: 160px;
-}
-
 /* 縮小画像付き（口グループと母音の口、目） */
 .layer-select {
   flex: 1;
@@ -1034,81 +1029,10 @@ li.selected .row-menu-button[aria-expanded='true'] {
   color: var(--danger);
 }
 
-/* ---- セリフ画面 ---- */
-
-.script-page {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(480px, 1fr) minmax(320px, 420px);
-}
-
-.script-column {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.script-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.script-toolbar h2 {
-  margin-bottom: 0;
-}
-
-.script-count {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.export-progress {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
+/* ---- 台本の行の部品 ---- */
 
 progress {
   accent-color: var(--fg);
-}
-
-.line-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.line-row {
-  display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.line-row.has-problem {
-  border-color: var(--danger);
-}
-
-.line-index {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  padding-top: 4px;
 }
 
 /* 作り込み済みの行の印。押しても何も起きない */
@@ -1158,13 +1082,6 @@ progress {
   gap: 6px;
 }
 
-.line-main {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
 .line-text {
   width: 100%;
   resize: vertical;
@@ -1174,20 +1091,6 @@ progress {
   background: var(--surface);
   color: var(--fg);
   font: inherit;
-}
-
-.line-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.speed {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
 }
 
 input[type='range'] {
@@ -1206,30 +1109,8 @@ input[type='range'] {
   color: var(--danger);
 }
 
-.line-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-}
-
-.line-order {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.line-order > button {
-  flex: 1;
-  padding: 2px 6px;
-}
-
 .add-line {
   align-self: flex-start;
-}
-
-.script-side .panel {
-  flex: none;
 }
 
 .line-preview-canvas {
@@ -1764,10 +1645,6 @@ input[type='color'] {
 .group-picker-none.selected:hover:not(:disabled) {
   background: var(--selected-bg);
   color: var(--selected-fg);
-}
-
-.line-editor-side .panel {
-  flex: none;
 }
 
 .global-param {

@@ -66,7 +66,7 @@ function useScript() {
 }
 
 /**
- * セリフの行と口の画像を、「セリフ」と「1行編集」の両方の画面で共有する。AppProvider の内側に置く。
+ * セリフの行と口の画像を、台本の画面と設定画面で共有する。AppProvider の内側に置く。
  * タブの切り替えは App が持つので、1行編集を開くときは onOpenLineEditor でタブを移してもらう。
  */
 export function ScriptProvider({ onOpenLineEditor, children }: { onOpenLineEditor(): void; children: ReactNode }) {

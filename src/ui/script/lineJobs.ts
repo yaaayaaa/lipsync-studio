@@ -8,7 +8,7 @@ import type { LineProblem } from '../../core/storage/db'
 export const PROBLEM_LABELS: Record<LineProblem, string> = {
   'no-character': 'キャラが選ばれていないか、削除されています',
   'no-expression': 'スタイルが選ばれていないか、削除されています',
-  'no-voice': '声が設定されていません（キャラ設定か1行編集で選んでください）',
+  'no-voice': '声が設定されていません（キャラ設定か台本の「その他」で選んでください）',
   'no-mouth': 'キャラ設定で口グループと口の割り当てをしてください',
   'empty-text': 'セリフが空です',
 }
@@ -20,15 +20,10 @@ export interface ReadyLine {
   voice: VoiceRef
 }
 
-/** 声があれば鳴らせる。口が未設定でも試聴はできる（プレビューと書き出しは不可）。 */
-export function canListen(problem: LineProblem | null): boolean {
-  return problem === null || problem === 'no-mouth'
-}
-
-/** 合成できる行ならキャラ・スタイル・声を、できなければ理由を投げる。listenOnly なら口の未設定は許す。 */
-export function resolveLine(line: ScriptLine, characters: Character[], listenOnly = false): ReadyLine {
+/** 合成できる行ならキャラ・スタイル・声を、できなければ理由を投げる */
+export function resolveLine(line: ScriptLine, characters: Character[]): ReadyLine {
   const problem = lineProblem(line, characters)
-  if (problem && !(listenOnly && canListen(problem))) throw new Error(PROBLEM_LABELS[problem])
+  if (problem) throw new Error(PROBLEM_LABELS[problem])
   const character = characters.find((c) => c.id === line.characterId)!
   const expression = character.expressions.find((e) => e.id === line.expressionId)!
   return { character, expression, voice: lineVoice(line, character)! }
@@ -36,7 +31,7 @@ export function resolveLine(line: ScriptLine, characters: Character[], listenOnl
 
 /**
  * 声が変わって取り直した作り込みを、その行へ書き戻す（speakLine が tuning を返したとき）。
- * 合成を待つ間に作り込みが変わった（文の変更で捨てられた・1行編集で動かした）なら、取り直した値は捨てる。
+ * 合成を待つ間に作り込みが変わった（文の変更で捨てられた・台本で動かした）なら、取り直した値は捨てる。
  * 行は書き換えのたびに作り直されるので、合成に使った作り込みと同じオブジェクトのままかで判断する。
  */
 export function saveRefreshedTuning(
