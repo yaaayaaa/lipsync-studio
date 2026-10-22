@@ -3,6 +3,7 @@ import type { ScriptLine } from '../../core/character/types'
 // 1行編集で最後に開いた行。見る人ごとの続きの位置なので、ブラウザ（localStorage）に覚える。
 // 読めない・壊れているときは、1行目を開く。
 
+// 頭は改名前の名前のまま：変えると保存済みの状態を読めなくなる
 const EDITING_LINE_KEY = 'zunda-lipsync.editingLineId'
 
 type LineStorage = Pick<Storage, 'getItem' | 'setItem'>

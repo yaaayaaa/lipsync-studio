@@ -12,6 +12,7 @@ const MAIN_PAGES: { id: Page; label: string; icon: LucideIcon }[] = [
   { id: 'character', label: 'キャラ設定', icon: UserRound },
 ]
 
+// 頭は改名前の名前のまま：変えると保存済みの状態を読めなくなる
 const COLLAPSED_KEY = 'zunda-lipsync.sideNavCollapsed'
 
 // たたんだかどうかは見る人ごとの好みなので、ブラウザに覚えておくだけにする。読めなくても開いた状態で動く
@@ -124,7 +125,7 @@ export function SideNav({ page, onSelect }: { page: Page; onSelect(page: Page): 
         }}
       >
         <div className="side-nav-head">
-          {showLabels && <span className="app-name">zunda-lipsync</span>}
+          {showLabels && <span className="app-name">lipsync-studio</span>}
           <button
             type="button"
             className="nav-toggle"

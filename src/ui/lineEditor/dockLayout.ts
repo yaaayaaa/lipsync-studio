@@ -27,6 +27,7 @@ export const DEFAULT_PROPORTIONS = {
   phraseHeight: 0.22,
 }
 
+// 頭は改名前の名前のまま：変えると保存済みの状態を読めなくなる
 const DOCK_LAYOUT_KEY = 'zunda-lipsync.lineEditorDock'
 
 type DockStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>

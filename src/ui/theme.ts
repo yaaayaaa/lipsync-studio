@@ -9,6 +9,7 @@ export const THEMES: { id: Theme; label: string }[] = [
   { id: 'dark', label: 'ダーク' },
 ]
 
+// 頭は改名前の名前のまま：変えると保存済みの状態を読めなくなる
 const THEME_KEY = 'zunda-lipsync.theme'
 
 type ThemeStorage = Pick<Storage, 'getItem' | 'setItem'>

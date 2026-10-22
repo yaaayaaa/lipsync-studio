@@ -6,8 +6,8 @@ import type { LineProblem } from '../../core/storage/db'
 export type BulkMode = 'joined' | 'zip'
 
 export const BULK_FILE_NAMES: Record<BulkMode, string> = {
-  joined: 'zunda-lipsync.mp4',
-  zip: 'zunda-lipsync.zip',
+  joined: 'lipsync-studio.mp4',
+  zip: 'lipsync-studio.zip',
 }
 
 export interface BulkPlan {

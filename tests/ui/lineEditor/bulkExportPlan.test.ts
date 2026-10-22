@@ -37,13 +37,13 @@ describe('planBulkExport', () => {
 
 describe('bulkSummary', () => {
   it('names the file and the number of lines', () => {
-    expect(bulkSummary('joined', 3, [])).toBe('書き出しました：zunda-lipsync.mp4（3行）')
+    expect(bulkSummary('joined', 3, [])).toBe('書き出しました：lipsync-studio.mp4（3行）')
   })
 
   it('lists skipped lines by number and failed lines with their reasons', () => {
     expect(lineNumbers([1, 3])).toBe('2・4行目')
     expect(bulkSummary('zip', 2, [1, 3], [{ index: 4, error: 'つながりません' }])).toBe(
-      '書き出しました：zunda-lipsync.zip（2行）。2・4行目は、キャラ・声・口・文のどれかが足りないので飛ばしました。5行目は書き出せませんでした：つながりません',
+      '書き出しました：lipsync-studio.zip（2行）。2・4行目は、キャラ・声・口・文のどれかが足りないので飛ばしました。5行目は書き出せませんでした：つながりません',
     )
   })
 

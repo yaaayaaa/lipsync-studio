@@ -1,6 +1,7 @@
 // ×で閉じた説明。見る人ごとの好みなので、IndexedDB の設定ではなくブラウザ（localStorage）に覚える。
 // 読めない・壊れているときは、どれも閉じていない（説明が出る）として扱う。
 
+// 頭は改名前の名前のまま：変えると保存済みの状態を読めなくなる
 const DISMISSED_KEY = 'zunda-lipsync.dismissedHints'
 
 type HintStorage = Pick<Storage, 'getItem' | 'setItem'>

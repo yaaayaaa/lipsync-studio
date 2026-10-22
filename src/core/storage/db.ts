@@ -45,6 +45,7 @@ interface ZundaDB extends DBSchema {
 const SCRIPT_KEY = 'script'
 const SETTINGS_KEY = 'settings'
 
+// 名前は改名前のまま：変えると保存済みのキャラ・台本・設定を読めなくなる
 export async function openStore(dbName = 'zunda-lipsync'): Promise<Store> {
   const db = await openDB<ZundaDB>(dbName, 1, {
     upgrade(database) {
