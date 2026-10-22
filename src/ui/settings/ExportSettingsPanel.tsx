@@ -1,15 +1,10 @@
 import { useState } from 'react'
-import { Dropdown } from '../Dropdown'
 import type { ExportSettings } from '../../core/character/types'
 import { TAIL_RANGE } from '../../core/export/tail'
 import { useApp } from '../useApp'
 import { errorMessage } from '../script/lineJobs'
+import { ResolutionSetting } from './ResolutionSetting'
 import { SettingsGroup, SettingsRow } from './SettingsGroup'
-
-const RESOLUTIONS = [
-  { width: 1920, height: 1080 },
-  { width: 1280, height: 720 },
-] as const
 
 const SCALE_MIN = 0.3
 const SCALE_MAX = 1.5
@@ -22,6 +17,7 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
   const [error, setError] = useState<string | null>(null)
   // 色の文字入力は途中の値（"#00F" など）を持てるよう、確定するまで別に持つ
   const [colorDraft, setColorDraft] = useState<string | null>(null)
+  const [resolutionProblem, setResolutionProblem] = useState<string | null>(null)
 
   const update = (patch: Partial<ExportSettings>) => {
     setError(null)
@@ -45,20 +41,23 @@ export function ExportSettingsPanel({ disabled }: { disabled: boolean }) {
         </p>
       )}
       <SettingsGroup
-        footer={colorDraft !== null && !HEX_COLOR.test(colorDraft) ? <p>#RRGGBB の形で入力してください</p> : undefined}
+        footer={
+          resolutionProblem || (colorDraft !== null && !HEX_COLOR.test(colorDraft)) ? (
+            <>
+              {resolutionProblem && <p className="field-error">{resolutionProblem}</p>}
+              {colorDraft !== null && !HEX_COLOR.test(colorDraft) && <p>#RRGGBB の形で入力してください</p>}
+            </>
+          ) : (
+            <p>解像度はカスタムで、幅と高さを 16〜3840 の偶数で決められます。</p>
+          )
+        }
       >
-        <SettingsRow name="解像度">
-          <Dropdown
-            label="解像度"
-            items={RESOLUTIONS.map((r) => ({ value: `${r.width}x${r.height}`, label: `${r.width}×${r.height}` }))}
-            value={`${current.width}x${current.height}`}
-            disabled={disabled}
-            onChange={(value) => {
-              const r = RESOLUTIONS.find((x) => `${x.width}x${x.height}` === value)
-              if (r) update({ width: r.width, height: r.height })
-            }}
-          />
-        </SettingsRow>
+        <ResolutionSetting
+          current={current}
+          disabled={disabled}
+          onChange={(r) => update({ width: r.width, height: r.height })}
+          onProblem={setResolutionProblem}
+        />
         <SettingsRow name="背景色">
           <input
             type="color"

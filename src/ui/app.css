@@ -1187,6 +1187,17 @@ li.selected .row-menu-button[aria-expanded='true'] {
   margin-bottom: 6px;
 }
 
+/* カスタム解像度の幅と高さ。4桁が入る幅にそろえる */
+.resolution-custom .settings-row-control input {
+  flex: none;
+  width: 5.5em;
+  text-align: right;
+}
+
+.settings-group-footer .field-error {
+  color: var(--danger);
+}
+
 /* 色の文字欄は #RRGGBB が入る幅だけにする（入力欄は既定で行いっぱいに伸びるため） */
 .settings-row-control > .color-text {
   flex: none;
