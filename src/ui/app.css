@@ -1611,11 +1611,26 @@ input[type='color'] {
   padding: 10px 12px;
 }
 
-/* 1行編集の行の声。つながらないときの知らせは選択欄の下に出す */
+/* 1行編集の「その他」のキャラ・声の欄。スライダーと同じく、名前を左の 6em の列に出す。
+   選択欄は開くと下に伸びるので、名前は上にそろえ、閉じた欄の文字と同じ高さに下げる（枠 1px＋ボタンの余白 4px） */
+.line-field {
+  display: grid;
+  grid-template-columns: 6em minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.line-field > span {
+  padding-top: 5px;
+}
+
+/* つながらないときの知らせは選択欄の下に出す */
 .line-voice {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 /* 畳める選択欄（キャラ・スタイル、話者・声）。閉じているときは今の選択を1行で、開くと検索窓と候補を下に出す */
@@ -1631,11 +1646,6 @@ input[type='color'] {
   border: 0;
   background: transparent;
   color: var(--fg);
-}
-
-.group-picker-caption {
-  flex: none;
-  color: var(--muted);
 }
 
 .group-picker-current {

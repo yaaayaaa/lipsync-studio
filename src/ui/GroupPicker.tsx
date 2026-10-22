@@ -14,13 +14,14 @@ interface Props {
   label: string
   /** 閉じているときに出す、今の選択 */
   current: string
-  /** 今の選択の前に添える名前（並べたときに何の欄か分かるように。例「声」） */
-  caption?: string
   groups: readonly PickerGroup[]
   selected: PickerSelection | null
   onChoose(selection: PickerSelection): void
-  /** 見出しに入らない「選ばない」項目（1行編集の「キャラの声」など）。検索中は出さない */
-  none?: { label: string; selected: boolean; onChoose(): void }
+  /**
+   * 見出しに入らない「選ばない」項目（1行編集の声の「デフォルト」など）。検索中は出さない。
+   * title は、名前だけでは中身が分からないときにマウスを重ねて見せる説明
+   */
+  none?: { label: string; title?: string; selected: boolean; onChoose(): void }
   disabled: boolean
   /** 選べるものが1つもないときの案内 */
   emptyHint: string
@@ -32,7 +33,7 @@ interface Props {
  * 項目が多いと長くなるので見出しごとに畳む。開いたときは今の選択の見出しだけを開き、
  * 検索中は当たった見出しをすべて開いて見せる
  */
-export function GroupPicker({ label, current, caption, groups, selected, onChoose, none, disabled, emptyHint }: Props) {
+export function GroupPicker({ label, current, groups, selected, onChoose, none, disabled, emptyHint }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   // 開いて見せている見出し
@@ -69,10 +70,12 @@ export function GroupPicker({ label, current, caption, groups, selected, onChoos
         className="group-picker-toggle"
         aria-expanded={open}
         aria-controls={listId}
+        // 欄の名前は外に出しているので、読み上げでは今の選択に添える
+        aria-label={`${label}：${current}`}
+        title={none?.selected ? none.title : undefined}
         disabled={disabled}
         onClick={() => (open ? close() : show())}
       >
-        {caption && <span className="group-picker-caption">{caption}</span>}
         <span className="group-picker-current">{current}</span>
         <ChevronDown {...iconProps} className="group-picker-chevron" />
       </button>
@@ -105,6 +108,7 @@ export function GroupPicker({ label, current, caption, groups, selected, onChoos
                   type="button"
                   className={none.selected ? 'group-picker-none selected' : 'group-picker-none'}
                   aria-pressed={none.selected}
+                  title={none.title}
                   onClick={() => {
                     none.onChoose()
                     close()

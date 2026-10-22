@@ -239,31 +239,37 @@ export function LineEditorPage({ active }: { active: boolean }) {
       selects={
         line && (
           <>
-            <StylePicker
-              line={line}
-              characters={characters}
-              disabled={locked}
-              onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
-            />
-            {/* 声はこの行だけの上書き。選ばなければキャラ設定の声を使う */}
-            <div className="line-voice">
-              <VoicePicker
-                voice={line.voice ?? null}
-                noneLabel={
-                  character?.voice
-                    ? `キャラの声（${character.voice.speakerName}・${character.voice.styleName}）`
-                    : 'キャラの声（未設定）'
-                }
-                caption="声"
+            <div className="line-field">
+              <span aria-hidden="true">キャラ</span>
+              <StylePicker
+                line={line}
+                characters={characters}
                 disabled={locked}
-                onChange={(voice) =>
-                  void editLine(line.id, (l) => {
-                    if (voice) return { ...l, voice }
-                    const { voice: _own, ...rest } = l
-                    return rest
-                  })
-                }
+                onChange={(patch) => void editLine(line.id, (l) => ({ ...l, ...patch }))}
               />
+            </div>
+            {/* 声はこの行だけの上書き。選ばなければキャラ設定の声を使う */}
+            <div className="line-field">
+              <span aria-hidden="true">声</span>
+              <div className="line-voice">
+                <VoicePicker
+                  voice={line.voice ?? null}
+                  noneLabel="デフォルト"
+                  noneTitle={
+                    character?.voice
+                      ? `キャラ設定の声（${character.voice.speakerName}・${character.voice.styleName}）`
+                      : 'キャラ設定の声（未設定）'
+                  }
+                  disabled={locked}
+                  onChange={(voice) =>
+                    void editLine(line.id, (l) => {
+                      if (voice) return { ...l, voice }
+                      const { voice: _own, ...rest } = l
+                      return rest
+                    })
+                  }
+                />
+              </div>
             </div>
           </>
         )

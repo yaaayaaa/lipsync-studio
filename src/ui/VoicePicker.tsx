@@ -7,10 +7,10 @@ import { useApp } from './useApp'
 interface Props {
   voice: VoiceRef | null
   onChange(voice: VoiceRef | null): void
-  /** 声を選ばない（null）ときの名前。キャラ設定では「未設定」、1行編集では「キャラの声（…）」 */
+  /** 声を選ばない（null）ときの名前。キャラ設定では「未設定」、1行編集では「デフォルト」 */
   noneLabel: string
-  /** 閉じた欄に添える名前。ほかの選択欄と並ぶ1行編集で使う */
-  caption?: string
+  /** 選ばないときに何になるかの説明（1行編集の「デフォルト」がどの声か） */
+  noneTitle?: string
   disabled?: boolean
 }
 
@@ -21,7 +21,7 @@ type SpeakersState =
  * VOICEVOX の話者とスタイルから声を選ぶ。スタイルは話者ごとに畳む。
  * 話者はエンジンから読み、つながらなければ再接続できる
  */
-export function VoicePicker({ voice, onChange, noneLabel, caption, disabled = false }: Props) {
+export function VoicePicker({ voice, onChange, noneLabel, noneTitle, disabled = false }: Props) {
   const { client } = useApp()
   const [state, setState] = useState<SpeakersState>({ status: 'loading' })
 
@@ -59,7 +59,6 @@ export function VoicePicker({ voice, onChange, noneLabel, caption, disabled = fa
     <>
       <GroupPicker
         label="声"
-        caption={caption}
         // エンジンにない声（別のエンジンで選んだなど）も、覚えている名前で出す
         current={
           state.status === 'loading'
@@ -75,7 +74,7 @@ export function VoicePicker({ voice, onChange, noneLabel, caption, disabled = fa
         }))}
         selected={voice && owner ? { groupId: groupIdOf(owner), itemId: String(voice.styleId) } : null}
         onChoose={({ groupId, itemId }) => choose(groupId, itemId)}
-        none={{ label: noneLabel, selected: voice === null, onChoose: () => onChange(null) }}
+        none={{ label: noneLabel, title: noneTitle, selected: voice === null, onChoose: () => onChange(null) }}
         disabled={disabled || state.status !== 'ready'}
         emptyHint="話者が見つかりません"
       />
