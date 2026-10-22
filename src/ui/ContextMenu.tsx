@@ -12,6 +12,9 @@ const MENU_MIN_WIDTH = 180
 export interface ContextMenuAt {
   x: number
   y: number
+  /** ボタンから開くときは、ボタンの大きさ。その下（入らなければ上）に出す。なければ x, y の点から出す */
+  width?: number
+  height?: number
 }
 
 interface Props {
@@ -20,20 +23,23 @@ interface Props {
   /** メニューの読み上げ名（例「1行目の操作」） */
   label: string
   items: RowMenuItem[]
+  /** ボタンから開いたときのボタン。そのボタンを押したときは外側として閉じない（ボタン自身が開け閉めする） */
+  anchor?: HTMLElement | null
   /** 閉じたとき（項目を選んだときも、選ぶ前に呼ぶ）。開いた元へフォーカスを戻すのは呼んだ側 */
   onClose(): void
 }
 
 /**
- * 右クリックで出すメニュー。見た目とキー操作は行の「…」メニューと同じで、押した所に出す。
+ * 右クリックで出すメニュー（ボタンから開くメニューにも使う）。見た目とキー操作は行の「…」メニューと同じで、
+ * 押した所かボタンの下に出す。
  * 画面の一番外側に置き、外を押す・Esc・スクロールで閉じる
  */
 export function ContextMenu({ at, ...rest }: Props) {
   // 開くたびに作り直して、強調中の項目や位置を前の開き方から持ち越さない
-  return at && <OpenContextMenu key={`${at.x},${at.y}`} at={at} {...rest} />
+  return at && <OpenContextMenu key={`${at.x},${at.y},${at.width},${at.height}`} at={at} {...rest} />
 }
 
-function OpenContextMenu({ at, label, items, onClose }: Props & { at: ContextMenuAt }) {
+function OpenContextMenu({ at, label, items, anchor, onClose }: Props & { at: ContextMenuAt }) {
   const id = useId()
   const menuRef = useRef<HTMLUListElement>(null)
   const [state, setState] = useState(
@@ -64,10 +70,11 @@ function OpenContextMenu({ at, label, items, onClose }: Props & { at: ContextMen
     const menu = menuRef.current
     if (!menu) return
     const placement = placePopover(
-      { x: at.x, y: at.y, width: 0, height: 0 },
+      { x: at.x, y: at.y, width: at.width ?? 0, height: at.height ?? 0 },
       { width: window.innerWidth, height: window.innerHeight },
       menu.scrollHeight,
-      { minWidth: MENU_MIN_WIDTH, gap: 0 },
+      // 置く前（幅を決めていないとき）の幅は中身の幅。項目の名前が切れないよう、それより狭くしない
+      { minWidth: Math.max(MENU_MIN_WIDTH, Math.ceil(menu.getBoundingClientRect().width)), gap: at.height ? 4 : 0 },
     )
     if (!placement) onCloseRef.current()
     else setPosition(placement)
@@ -91,11 +98,12 @@ function OpenContextMenu({ at, label, items, onClose }: Props & { at: ContextMen
   // 外側を押したら閉じる（別の行を右クリックしたときも、いったん閉じてから開き直す）
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) onCloseRef.current()
+      const t = e.target as Node
+      if (!menuRef.current?.contains(t) && !anchor?.contains(t)) onCloseRef.current()
     }
     document.addEventListener('pointerdown', onPointerDown, true)
     return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [])
+  }, [anchor])
 
   return createPortal(
     <MenuList

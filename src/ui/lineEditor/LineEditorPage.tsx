@@ -20,6 +20,7 @@ import { useRenderLine } from '../script/useRenderLine'
 import { useScriptLines } from '../script/useScriptLines'
 import { useSpeakLine } from '../script/useSpeakLine'
 import type { SpeakLine } from '../script/useSpeakLine'
+import { BulkExport } from './BulkExport'
 import { GlobalParams } from './GlobalParams'
 import { LineEditorDock } from './LineEditorDock'
 import { revealDockPanel } from './dockLayout'
@@ -33,6 +34,7 @@ import { TailLength } from './TailLength'
 import { setGlobalParam } from './editTuning'
 import { isTextEntry, shortcutAction } from './history'
 import { isPlayShortcut, ownsSpace } from './playShortcut'
+import { useBulkExport } from './useBulkExport'
 import { useLineHistory } from './useLineHistory'
 import { usePhraseAsync } from './usePhraseAsync'
 import { useLineTuning } from './useLineTuning'
@@ -76,6 +78,8 @@ export function LineEditorPage({ active }: { active: boolean }) {
   const playback = useLinePlayback(active, speak)
   const { exportSingle } = useRenderLine(speak)
   const job = useExportJob()
+  // まとめて書き出すときは、鳴っているプレビューを止める
+  const bulk = useBulkExport(speak, playback.stop)
 
   // アクセント・高さ・長さは別々のパネルなので、取り直しの状態はここで持って3つに配る
   const phraseAsync = usePhraseAsync(lineId, tuning.changePhrases)
@@ -481,6 +485,15 @@ export function LineEditorPage({ active }: { active: boolean }) {
               onDuplicate={duplicate}
               onMove={(id, gap) => update((prev) => moveLine(prev, id, gap))}
               onRemove={requestRemove}
+              footer={
+                <BulkExport
+                  status={bulk.status}
+                  canExport={bulk.canExport}
+                  locked={locked}
+                  onExport={(mode) => void bulk.start(mode)}
+                  onAbort={bulk.abort}
+                />
+              }
             />
           ),
           text: textPanel,

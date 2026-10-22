@@ -10,6 +10,12 @@ function titleOf(text: string): string {
   return sanitize(Array.from(sanitize(text)).slice(0, TITLE_LENGTH).join(''))
 }
 
+/** 行ごとの zip の中: `001_キャラ名_本文先頭10文字.mp4`。番号は台本の中の位置（飛ばした行があれば番号も飛ぶ） */
+export function lineFileName(index: number, characterName: string, text: string): string {
+  const number = String(index + 1).padStart(3, '0')
+  return `${number}_${sanitize(characterName)}_${titleOf(text)}.mp4`
+}
+
 const ID_LENGTH = 8
 
 /** 単体ダウンロード: `本文先頭10文字_ID英数字8文字.mp4`。ID は書き出すたびに作り直して渡す。 */

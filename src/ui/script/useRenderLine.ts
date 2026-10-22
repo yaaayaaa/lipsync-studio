@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import type { ScriptLine } from '../../core/character/types'
-import { renderLineMp4 } from '../../core/export/encode'
+import { renderLineMp4, renderSegmentsMp4 } from '../../core/export/encode'
+import type { LineSegment } from '../../core/export/encode'
 import { effectiveTail } from '../../core/export/tail'
 import { creditText, singleFileName } from '../../core/export/naming'
 import { newId } from '../../core/id'
@@ -22,14 +23,21 @@ export interface RenderOptions {
   onRefreshed?(lineId: string): void
 }
 
+export interface JoinedOptions {
+  signal: AbortSignal
+  /** index 番目の行（渡した配列の中の位置）の、その行の中での進み具合 */
+  onProgress(index: number, ratio: number): void
+}
+
 /** 1行分：合成と口の画像の用意を並行し、mp4 にする。書き出しの設定は呼んだ時点のもの */
 export function useRenderLine(speak: SpeakLine) {
   const { characters, settings } = useApp()
   const { frameCache } = useScriptLines()
   const exportSettings = settings.export
 
-  const render = useCallback(
-    async (line: ScriptLine, { signal, onProgress, onRefreshed }: RenderOptions): Promise<RenderedLine> => {
+  /** 1行分の素材（合成と口の画像）を並行して用意する。release は書き終えたら必ず呼ぶ */
+  const loadSegment = useCallback(
+    async (line: ScriptLine, onRefreshed?: (lineId: string) => void) => {
       const { character, expression, voice } = resolveLine(line, characters)
       const lease = frameCache.acquire(character, expression)
       try {
@@ -37,23 +45,52 @@ export function useRenderLine(speak: SpeakLine) {
           lease.frames,
           speak(line, voice.styleId, onRefreshed),
         ])
-        const blob = await renderLineMp4({
+        const segment: LineSegment = {
           wav,
           timeline,
           frames,
           psdSize,
-          settings: exportSettings,
           tailSeconds: effectiveTail(line, exportSettings),
           blinkSeed: line.id,
-          onProgress,
-          signal,
-        })
-        return { blob, characterName: character.name, speakerName: voice.speakerName }
-      } finally {
+        }
+        return {
+          segment,
+          release: () => lease.release(),
+          characterName: character.name,
+          speakerName: voice.speakerName,
+        }
+      } catch (e) {
         lease.release()
+        throw e
       }
     },
     [characters, frameCache, exportSettings, speak],
+  )
+
+  const render = useCallback(
+    async (line: ScriptLine, { signal, onProgress, onRefreshed }: RenderOptions): Promise<RenderedLine> => {
+      const { segment, release, characterName, speakerName } = await loadSegment(line, onRefreshed)
+      try {
+        const blob = await renderLineMp4({ ...segment, settings: exportSettings, onProgress, signal })
+        return { blob, characterName, speakerName }
+      } finally {
+        release()
+      }
+    },
+    [loadSegment, exportSettings],
+  )
+
+  /** 何行かを続けて1本の mp4 にする。行は1つずつ合成して書き込む（全部を先に合成して持たない） */
+  const renderJoined = useCallback(
+    (lines: ScriptLine[], { signal, onProgress }: JoinedOptions): Promise<Blob> =>
+      renderSegmentsMp4({
+        settings: exportSettings,
+        count: lines.length,
+        load: (index) => loadSegment(lines[index]!),
+        onProgress,
+        signal,
+      }),
+    [loadSegment, exportSettings],
   )
 
   /** 1行を mp4 にしてダウンロードさせる。ファイル名の ID は書き出すたびに作る */
@@ -67,5 +104,5 @@ export function useRenderLine(speak: SpeakLine) {
     [render],
   )
 
-  return { render, exportSingle }
+  return { render, renderJoined, exportSingle }
 }

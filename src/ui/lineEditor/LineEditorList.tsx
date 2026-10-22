@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { KeyboardEvent, PointerEvent } from 'react'
+import type { KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { ArrowDown, ArrowUp, Copy, ListPlus, Plus, Trash2 } from 'lucide-react'
 import { iconProps } from '../icons'
 import type { ScriptLine } from '../../core/character/types'
@@ -20,6 +20,8 @@ interface Props {
   /** 行を gap の位置（行の間の番号。0 が先頭の上）へ移す */
   onMove(lineId: string, gap: number): void
   onRemove(lineId: string): void
+  /** 一覧の下に固定して置くもの（まとめて書き出し）。一覧がスクロールしても隠れない */
+  footer?: ReactNode
 }
 
 /** 押してからこれだけ動かしたらドラッグとみなす（押しただけの小さなぶれでは並べ替えない） */
@@ -61,6 +63,7 @@ export function LineEditorList({
   onDuplicate,
   onMove,
   onRemove,
+  footer,
 }: Props) {
   const listRef = useRef<HTMLOListElement>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -83,7 +86,7 @@ export function LineEditorList({
     if (!drag || e.pointerId !== drag.pointerId) return
     if (!drag.moving && Math.abs(e.clientY - drag.startY) < DRAG_THRESHOLD_PX) return
     if (!drag.moving) e.currentTarget.setPointerCapture(e.pointerId)
-    const list = listRef.current?.closest<HTMLElement>('.dock-pane')
+    const list = listRef.current?.closest<HTMLElement>('.line-editor-scroll')
     if (list) {
       const r = list.getBoundingClientRect()
       if (e.clientY < r.top + AUTO_SCROLL_EDGE_PX) list.scrollTop -= AUTO_SCROLL_STEP_PX
@@ -144,58 +147,61 @@ export function LineEditorList({
 
   return (
     <section className={dragging ? 'line-editor-list dragging' : 'line-editor-list'} aria-label="セリフ一覧">
-      <ol ref={listRef}>
-        {lines.map((line, index) => {
-          const classes = [
-            dropGap === index && 'drop-before',
-            dropGap === index + 1 && index === lines.length - 1 && 'drop-after',
-            dragging?.lineId === line.id && 'dragged',
-            menu?.lineId === line.id && 'menu-open',
-          ].filter(Boolean)
-          return (
-            <li key={line.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
-              <button
-                type="button"
-                data-line-id={line.id}
-                className={line.id === selectedId ? 'selected' : undefined}
-                aria-current={line.id === selectedId ? 'true' : undefined}
-                title={locked ? undefined : 'ドラッグで並べ替え・右クリックで操作'}
-                onClick={() => {
-                  if (suppressClick.current) {
-                    suppressClick.current = false
-                    return
-                  }
-                  onSelect(line.id)
-                }}
-                onPointerDown={(e) => onPointerDown(e, line.id)}
-                onPointerMove={onPointerMove}
-                onPointerUp={(e) => endDrag(e, true)}
-                onPointerCancel={(e) => endDrag(e, false)}
-                onKeyDown={(e) => onKeyDown(e, line.id, index)}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  if (locked) return
-                  // キーボードのメニューキーでは位置が 0 になるので、行の左下に出す
-                  const r = e.currentTarget.getBoundingClientRect()
-                  const fromKeyboard = e.clientX === 0 && e.clientY === 0
-                  setMenu({
-                    lineId: line.id,
-                    at: fromKeyboard ? { x: r.left, y: r.bottom } : { x: e.clientX, y: e.clientY },
-                  })
-                }}
-              >
-                <span className="line-editor-number">{index + 1}</span>
-                <span className="line-editor-text">{line.text.trim() || '（空のセリフ）'}</span>
-                {isTuned(line) && <TunedMark />}
-              </button>
-            </li>
-          )
-        })}
-      </ol>
-      <button type="button" className="add-line" disabled={locked} onClick={onAdd}>
-        <Plus {...iconProps} />
-        行を追加
-      </button>
+      <div className="line-editor-scroll">
+        <ol ref={listRef}>
+          {lines.map((line, index) => {
+            const classes = [
+              dropGap === index && 'drop-before',
+              dropGap === index + 1 && index === lines.length - 1 && 'drop-after',
+              dragging?.lineId === line.id && 'dragged',
+              menu?.lineId === line.id && 'menu-open',
+            ].filter(Boolean)
+            return (
+              <li key={line.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
+                <button
+                  type="button"
+                  data-line-id={line.id}
+                  className={line.id === selectedId ? 'selected' : undefined}
+                  aria-current={line.id === selectedId ? 'true' : undefined}
+                  title={locked ? undefined : 'ドラッグで並べ替え・右クリックで操作'}
+                  onClick={() => {
+                    if (suppressClick.current) {
+                      suppressClick.current = false
+                      return
+                    }
+                    onSelect(line.id)
+                  }}
+                  onPointerDown={(e) => onPointerDown(e, line.id)}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={(e) => endDrag(e, true)}
+                  onPointerCancel={(e) => endDrag(e, false)}
+                  onKeyDown={(e) => onKeyDown(e, line.id, index)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    if (locked) return
+                    // キーボードのメニューキーでは位置が 0 になるので、行の左下に出す
+                    const r = e.currentTarget.getBoundingClientRect()
+                    const fromKeyboard = e.clientX === 0 && e.clientY === 0
+                    setMenu({
+                      lineId: line.id,
+                      at: fromKeyboard ? { x: r.left, y: r.bottom } : { x: e.clientX, y: e.clientY },
+                    })
+                  }}
+                >
+                  <span className="line-editor-number">{index + 1}</span>
+                  <span className="line-editor-text">{line.text.trim() || '（空のセリフ）'}</span>
+                  {isTuned(line) && <TunedMark />}
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+        <button type="button" className="add-line" disabled={locked} onClick={onAdd}>
+          <Plus {...iconProps} />
+          行を追加
+        </button>
+      </div>
+      {footer && <div className="line-editor-footer">{footer}</div>}
       <ContextMenu
         at={menu?.at ?? null}
         label={menuLine !== null && menuLine >= 0 ? `${menuLine + 1}行目の操作` : '行の操作'}
