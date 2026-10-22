@@ -2,7 +2,7 @@ import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'r
 import { EllipsisVertical } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { iconProps } from '../icons'
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent, Ref } from 'react'
 import { placePopover } from '../dropdownState'
 import { menuReduce } from './menu'
 import type { MenuEvent } from './menu'
@@ -42,8 +42,6 @@ export function RowMenu({ label, items }: Props) {
   const [position, setPosition] = useState<CSSProperties | null>(null)
   const { open, active } = state
   const disabled = items.map((i) => i.disabled === true)
-  /** 無効な項目の説明を、押せないことをはっきり伝えるため先に付ける */
-  const labelFor = (item: RowMenuItem) => (item.disabled && item.hint ? `${item.hint}（${item.label}）` : (item.hint ?? item.label))
   // Safari はボタンをクリックしてもフォーカスしないので、押した瞬間にフォーカスが外れたように見える。
   // その間はフォーカス離脱で閉じない（閉じた直後のクリックで開き直してしまうため）
   const pointerOnButton = useRef(false)
@@ -146,44 +144,83 @@ export function RowMenu({ label, items }: Props) {
         <EllipsisVertical {...iconProps} />
       </button>
       {open && (
-        <ul
+        <MenuList
           ref={menuRef}
-          id={`${id}-menu`}
-          className="row-menu-list"
-          role="menu"
-          aria-label={label}
+          id={id}
+          label={label}
+          items={items}
+          active={active}
           // 置き場所が決まるまでは透明にしておく（visibility: hidden だとフォーカスを受け取れない）
           style={{ position: 'fixed', ...(position ?? { opacity: 0, pointerEvents: 'none', top: 0, left: 0 }) }}
           onKeyDown={onKeyDown}
-          // 項目を押してもフォーカスがメニューの外（body）へ逃げないようにする（Safari）
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          {items.map((item, i) => {
-            const Icon = item.icon
-            return (
-              <Fragment key={item.label}>
-                {/* 取り返しのつかない操作は区切り線で離す（キーボードの移動先には含めない） */}
-                {item.danger && i > 0 && <li role="separator" className="row-menu-separator" />}
-                <li
-                  id={`${id}-item-${i}`}
-                  role="menuitem"
-                  tabIndex={-1}
-                  aria-disabled={item.disabled || undefined}
-                  // 押せない理由は スクリーンリーダーで読めるテキストにも残す（薄い色だけでは伝わらない）
-                  aria-label={labelFor(item)}
-                  title={item.hint}
-                  className={`row-menu-item${item.danger ? ' danger' : ''}${item.disabled ? ' disabled' : ''}`}
-                  onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
-                  onClick={() => dispatch({ type: 'click', index: i })}
-                >
-                  {Icon && <Icon {...iconProps} />}
-                  {item.label}
-                </li>
-              </Fragment>
-            )
-          })}
-        </ul>
+          dispatch={dispatch}
+        />
       )}
     </span>
+  )
+}
+
+/** 無効な項目の説明を、押せないことをはっきり伝えるため先に付ける */
+const labelFor = (item: RowMenuItem) => (item.disabled && item.hint ? `${item.hint}（${item.label}）` : (item.hint ?? item.label))
+
+/** メニューの項目の一覧（行の「…」メニューと、右クリックのメニューで共通）。項目の id は `${id}-item-${番号}` */
+export function MenuList({
+  ref,
+  id,
+  label,
+  items,
+  active,
+  className,
+  style,
+  onKeyDown,
+  dispatch,
+}: {
+  ref: Ref<HTMLUListElement>
+  id: string
+  label: string
+  items: RowMenuItem[]
+  active: number
+  className?: string
+  style: CSSProperties
+  onKeyDown(e: KeyboardEvent): void
+  dispatch(event: MenuEvent): void
+}) {
+  return (
+    <ul
+      ref={ref}
+      id={`${id}-menu`}
+      className={className ? `row-menu-list ${className}` : 'row-menu-list'}
+      role="menu"
+      aria-label={label}
+      style={style}
+      onKeyDown={onKeyDown}
+      // 項目を押してもフォーカスがメニューの外（body）へ逃げないようにする（Safari）
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {items.map((item, i) => {
+        const Icon = item.icon
+        return (
+          <Fragment key={item.label}>
+            {/* 取り返しのつかない操作は区切り線で離す（キーボードの移動先には含めない） */}
+            {item.danger && i > 0 && <li role="separator" className="row-menu-separator" />}
+            <li
+              id={`${id}-item-${i}`}
+              role="menuitem"
+              tabIndex={-1}
+              aria-disabled={item.disabled || undefined}
+              // 押せない理由は スクリーンリーダーで読めるテキストにも残す（薄い色だけでは伝わらない）
+              aria-label={labelFor(item)}
+              title={item.hint}
+              className={`row-menu-item${item.danger ? ' danger' : ''}${item.disabled ? ' disabled' : ''}`}
+              onMouseMove={() => i !== active && dispatch({ type: 'hover', index: i })}
+              onClick={() => dispatch({ type: 'click', index: i })}
+            >
+              {Icon && <Icon {...iconProps} />}
+              {item.label}
+            </li>
+          </Fragment>
+        )
+      })}
+    </ul>
   )
 }
