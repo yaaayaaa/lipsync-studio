@@ -1633,27 +1633,20 @@ input[type='color'] {
   min-width: 0;
 }
 
-/* 畳める選択欄（キャラ・スタイル、話者・声）。閉じているときは今の選択を1行で、開くと検索窓と候補を下に出す */
-.group-picker {
+/* 畳める選択欄（キャラ・スタイル、話者・声）。閉じているときはドロップダウンと同じボタンで今の選択を1行で出し、
+   押すと検索窓と候補のメニューを下に浮かせて出す */
+.group-picker-menu {
+  z-index: 1100;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface);
+  color: var(--fg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.group-picker-toggle {
-  width: 100%;
-  justify-content: space-between;
-  border: 0;
-  background: transparent;
-  color: var(--fg);
-}
-
-.group-picker-current {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  box-shadow: var(--popover-shadow);
 }
 
 .group-picker-chevron {
@@ -1661,29 +1654,12 @@ input[type='color'] {
   transition: transform 0.15s;
 }
 
-.group-picker-toggle[aria-expanded='true'] .group-picker-chevron {
-  transform: rotate(180deg);
-}
-
-.group-picker-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px;
-  border-top: 1px solid var(--border);
-}
-
-/* 候補欄の高さの上限。キャラやスタイルが多くても、検索窓と下のスライダーを押し出さないよう、中だけをスクロールする。
-   上限は「その他」パネルの高さの半分（パネルの中身を大きさの基準にする） */
-.dock-pane-params {
-  container-type: size;
-}
-
+/* 検索窓は残し、候補だけをメニューの高さの中でスクロールする */
 .group-picker-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: max(160px, 50cqh);
+  min-height: 0;
   overflow-y: auto;
 }
 

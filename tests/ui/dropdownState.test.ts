@@ -135,6 +135,15 @@ describe('placePopover options for menus', () => {
     })
   })
 
+  it('can raise the height limit for long lists', () => {
+    expect(placePopover({ x: 100, y: 100, width: 150, height: 30 }, viewport, 600, { maxHeight: 480 })?.maxHeight).toBe(480)
+    // 下に入りきらなければ、上限より狭い下の余白で収める
+    expect(placePopover({ x: 100, y: 500, width: 150, height: 30 }, viewport, 100, { maxHeight: 480 })).toMatchObject({
+      top: 532,
+      maxHeight: 262,
+    })
+  })
+
   it('still keeps an end-aligned popover on screen', () => {
     expect(placePopover({ x: 20, y: 100, width: 24, height: 24 }, viewport, 80, { align: 'end', minWidth: 140 })?.left).toBe(8)
   })
