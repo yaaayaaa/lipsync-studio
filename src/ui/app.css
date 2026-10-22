@@ -1408,14 +1408,15 @@ input[type='color'] {
 
 .line-dock {
   position: relative;
-  /* パネルの間の隙間。各パネルの周りに半分ずつ余白を取って作る（dockview の gap を使わない理由は LineEditorDock.tsx） */
-  --dock-gap: 8px;
+  /* パネルの間の隙間。各パネルの周りに半分ずつ余白を取って作る（dockview の gap を使わない理由は LineEditorDock.tsx）。
+     いまは隙間なしで敷き詰め、境目は dockview の区切り線で引く */
+  --dock-gap: 0px;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  /* 外周はパネルの周りの余白（隙間の半分）と合わせて 8px にする */
-  padding: calc(8px - var(--dock-gap) / 2);
+  /* 敷き詰めるので外周の余白もなくす */
+  padding: 0;
 }
 
 .line-dock-view {
@@ -1437,7 +1438,7 @@ input[type='color'] {
   --dv-inactivegroup-visiblepanel-tab-color: var(--fg);
   --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
   --dv-tab-divider-color: transparent;
-  --dv-separator-border: transparent;
+  --dv-separator-border: var(--border);
   --dv-drag-over-background-color: var(--hover-bg);
   --dv-drag-over-border-color: var(--fg);
   --dv-sash-color: transparent;
@@ -1456,11 +1457,9 @@ input[type='color'] {
   padding: calc(var(--dock-gap) / 2);
 }
 
-/* パネルは .panel と同じ枠で囲む */
+/* 敷き詰めたパネルは枠で囲まず、隣との境目は区切り線（--dv-separator-border）だけで分ける */
 .line-dock .dv-groupview {
   box-sizing: border-box;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   overflow: hidden;
 }
 
