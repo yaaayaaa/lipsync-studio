@@ -53,26 +53,29 @@ interface DefaultPlacement {
   inactive?: boolean
 }
 
-/** 初めの並び：左に一覧、真ん中の列に上からプレビューとアクセント・高さ・長さ・セリフの束、右の列にその他 */
+/**
+ * 初めの並び：左に上から下まで通しの一覧。その右は、上の段にプレビューとその他を横に並べ、
+ * 下の段にアクセント・高さ・長さ・セリフの束をプレビューとその他の幅いっぱいに置く
+ */
 function addDefaultPanels(api: DockviewApi) {
   api.clear()
   const add = (id: PanelId, more: DefaultPlacement = {}) =>
     api.addPanel({ id, component: id, title: PANEL_TITLES[id], ...more })
   add('lines')
-  add('preview', { position: { referencePanel: 'lines', direction: 'right' } })
-  add('accent', { position: { referencePanel: 'preview', direction: 'below' } })
+  // 下の段を先に置き、その上にプレビューを足してから、プレビューの右にその他を足す（下の段は2つにまたがる）
+  add('accent', { position: { referencePanel: 'lines', direction: 'right' } })
   add('pitch', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
   add('length', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
   add('text', { position: { referencePanel: 'accent', direction: 'within' }, inactive: true })
-  // 右端に、上から下まで通しの列を足す
-  add('params', { position: { direction: 'right' } })
-  // 足すたびに等分されるので、並べ終えてから大きさを決める（パネルの周りの余白を含む）。
-  // 大きさを変えると隣のパネルが伸び縮みするので、真ん中の列とプレビューが残りを受け持つ順に決める
+  add('preview', { position: { referencePanel: 'accent', direction: 'above' } })
+  add('params', { position: { referencePanel: 'preview', direction: 'right' } })
+  // 足すたびに等分されるので、並べ終えてから大きさを決める。
+  // 大きさを変えると隣のパネルが伸び縮みするので、プレビューが残りを受け持つ順に決める
   const size = (id: PanelId, box: { width?: number; height?: number }) => api.getPanel(id)?.group.api.setSize(box)
   const { width, height } = api
   size('lines', { width: Math.round(width * DEFAULT_PROPORTIONS.linesWidth) })
-  size('params', { width: Math.round(width * DEFAULT_PROPORTIONS.paramsWidth) })
   size('accent', { height: Math.round(height * DEFAULT_PROPORTIONS.phraseHeight) })
+  size('params', { width: Math.round(width * DEFAULT_PROPORTIONS.paramsWidth) })
 }
 
 type DockGroup = NonNullable<DockviewWillShowOverlayLocationEvent['group']>
