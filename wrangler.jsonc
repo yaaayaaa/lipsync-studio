@@ -1,0 +1,15 @@
+// 公開先（Cloudflare Workers の静的配信）。npm run deploy で dist/ をそのまま配る
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "lipsync-studio",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // 画面の切り替えは URL を変えないが、どのパスで開かれても index.html を返しておく
+    "not_found_handling": "single-page-application"
+  },
+  // 公開するアドレスは1つにする。VOICEVOX 側で許可してもらうアドレスが変わらないように
+  "routes": [{ "pattern": "lipsync-studio.yaaaa.net", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
+}
