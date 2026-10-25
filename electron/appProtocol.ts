@@ -34,3 +34,18 @@ export function decideNavigation(url: string): 'external' | 'ignore' {
     return 'ignore'
   }
 }
+
+/**
+ * url が origin（例 'app://lipsync-studio'、'http://localhost:5173'）と同じオリジンか。
+ * Node の URL は app: のような非特殊スキームの origin を 'null' にするので、
+ * URL.origin 同士を比べると app:// 同士でも一致しない。スキームとホスト（ポート込み）で比べる。
+ */
+export function isSameOrigin(url: string, origin: string): boolean {
+  try {
+    const a = new URL(url)
+    const b = new URL(origin)
+    return a.protocol === b.protocol && a.host === b.host && a.host !== ''
+  } catch {
+    return false
+  }
+}

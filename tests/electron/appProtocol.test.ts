@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { resolveAppPath, decideNavigation } from '../../electron/appProtocol'
+import { resolveAppPath, decideNavigation, isSameOrigin } from '../../electron/appProtocol'
 
 const root = '/opt/app/dist'
 
@@ -28,5 +28,26 @@ describe('decideNavigation', () => {
     expect(decideNavigation('file:///etc/passwd')).toBe('ignore')
     expect(decideNavigation('javascript:alert(1)')).toBe('ignore')
     expect(decideNavigation('not a url')).toBe('ignore')
+  })
+})
+
+describe('isSameOrigin', () => {
+  // Node の URL は非特殊スキーム（app:）の origin を 'null' にするので、それに頼らず比べられること
+  test('app://lipsync-studio 配下は同じオリジン', () => {
+    expect(isSameOrigin('app://lipsync-studio/', 'app://lipsync-studio')).toBe(true)
+    expect(isSameOrigin('app://lipsync-studio/index.html#x', 'app://lipsync-studio')).toBe(true)
+  })
+  test('別ホスト・別スキームは違うオリジン', () => {
+    expect(isSameOrigin('app://other/', 'app://lipsync-studio')).toBe(false)
+    expect(isSameOrigin('https://lipsync-studio/', 'app://lipsync-studio')).toBe(false)
+    expect(isSameOrigin('file:///index.html', 'app://lipsync-studio')).toBe(false)
+  })
+  test('開発用の http オリジンはポートまで比べる', () => {
+    expect(isSameOrigin('http://localhost:5173/', 'http://localhost:5173')).toBe(true)
+    expect(isSameOrigin('http://localhost:5174/', 'http://localhost:5173')).toBe(false)
+  })
+  test('壊れた URL は false', () => {
+    expect(isSameOrigin('not a url', 'app://lipsync-studio')).toBe(false)
+    expect(isSameOrigin('', 'app://lipsync-studio')).toBe(false)
   })
 })

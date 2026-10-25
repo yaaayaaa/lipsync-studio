@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Character } from '../core/character/types'
 import { openStore } from '../core/storage/db'
 import type { AppSettings, Store } from '../core/storage/db'
+import { createBridgeFetch } from '../core/voicevox/bridgeFetch'
 import { VoicevoxClient } from '../core/voicevox/client'
 import { SpeechCache } from '../core/voicevox/speechCache'
 import { AppContext } from './useApp'
@@ -73,7 +74,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 
   const engineUrl = loaded?.settings.engineUrl
-  const client = useMemo(() => (engineUrl ? new VoicevoxClient({ baseUrl: engineUrl }) : null), [engineUrl])
+  // デスクトップ版では main プロセス経由で通信する（CORS で app:// が弾かれるため）。
+  // ブラウザでの開発時（npm run dev）は窓口が無いので、今までどおり直接 fetch する
+  const client = useMemo(() => {
+    if (!engineUrl) return null
+    const desktop = window.lipsyncDesktop
+    return new VoicevoxClient({ baseUrl: engineUrl, fetch: desktop ? createBridgeFetch(desktop) : undefined })
+  }, [engineUrl])
   // 合成結果はエンジンごとに別物なので、client と一緒に作り直す
   const speech = useMemo(() => (client ? SpeechCache.forClient(client) : null), [client])
 
