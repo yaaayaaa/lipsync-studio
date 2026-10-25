@@ -40,8 +40,8 @@ export function EngineSettingsPanel() {
               </p>
             )}
             <p>
-              既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、エンジン側で CORS
-              の許可も必要です。
+              既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、そのパソコンで
+              VOICEVOX を --host 0.0.0.0 付きで起動してください。
             </p>
           </>
         }

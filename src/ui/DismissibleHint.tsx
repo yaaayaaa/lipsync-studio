@@ -10,7 +10,7 @@ interface Props {
   children: ReactNode
 }
 
-/** ×で閉じられる説明。一度閉じたら、このブラウザでは次から出さない */
+/** ×で閉じられる説明。一度閉じたら、このパソコンでは次から出さない */
 export function DismissibleHint({ id, children }: Props) {
   const [dismissed, setDismissed] = useState(() => loadDismissedHints().has(id))
   if (dismissed) return null

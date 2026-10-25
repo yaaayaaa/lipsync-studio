@@ -17,7 +17,7 @@ export function EngineBanner({ onOpenSettings }: { onOpenSettings(): void }) {
       <div className="engine-message">
         <p>VOICEVOX に接続できません（URL: {settings.engineUrl}）。VOICEVOX が起動しているか確認してください</p>
         <p className="detail">
-          URL が正しいか、別のパソコンのエンジンなら CORS の許可（エンジンの設定）も確認してください。
+          URL が正しいか確認してください。別のパソコンのエンジンなら、そのパソコンで VOICEVOX を --host 0.0.0.0 付きで起動してください。
         </p>
       </div>
       <div className="engine-actions">

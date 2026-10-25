@@ -23,9 +23,9 @@ export interface EncodeSupport {
 
 export async function checkEncodeSupport(settings: ExportSettings): Promise<EncodeSupport> {
   const video = await canEncodeVideo('avc', { width: settings.width, height: settings.height })
-  if (!video) return { ok: false, reason: 'このブラウザは H.264 での動画エンコードに対応していません' }
+  if (!video) return { ok: false, reason: 'この環境は H.264 での動画エンコードに対応していません' }
   const audio = await canEncodeAudio('aac', { numberOfChannels: 1, sampleRate: AUDIO_SAMPLE_RATE })
-  if (!audio) return { ok: false, reason: 'このブラウザは AAC での音声エンコードに対応していません' }
+  if (!audio) return { ok: false, reason: 'この環境は AAC での音声エンコードに対応していません' }
   return { ok: true }
 }
 
