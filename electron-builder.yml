@@ -4,15 +4,15 @@ directories:
   output: release
 # 実行時に要るのは vite の出力（dist/）と main / preload（dist-electron/）だけ。
 # src/・samples/・docs/ は入れない。型定義と tsc の増分ビルド情報も実行には要らない。
-# dependencies（react など）は vite が dist/ に束ねているので、node_modules を丸ごと入れると
-# 実行時に使わないファイルで app.asar が数十 MB 膨らむ。main / preload は electron 以外を require しない
+# node_modules は electron-builder が package.json の dependencies だけを自動で入れる。
+# 画面側のライブラリ（react など）は vite が dist/ に束ねるので devDependencies に置き、
+# dependencies には main / preload が実行時に require するものだけを置く
 files:
   - dist/**
   - dist-electron/**
   - '!dist-electron/**/*.d.ts'
   - '!dist-electron/.tsbuildinfo'
   - package.json
-  - '!node_modules/**'
 # ルートの package.json は "type": "module" だが、main / preload は CommonJS で出している。
 # dist-electron/package.json の目印が万一抜けても main が ESM として読まれて起動できなくならないよう、
 # 同梱する package.json 側でも CommonJS と明示する（画面側は app:// で読むので type の影響を受けない）
