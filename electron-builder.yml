@@ -1,0 +1,44 @@
+appId: net.yaaaa.lipsync-studio
+productName: lipsync-studio
+directories:
+  output: release
+# 実行時に要るのは vite の出力（dist/）と main / preload（dist-electron/）だけ。
+# src/・samples/・docs/ は入れない。型定義と tsc の増分ビルド情報も実行には要らない。
+# dependencies（react など）は vite が dist/ に束ねているので、node_modules を丸ごと入れると
+# 実行時に使わないファイルで app.asar が数十 MB 膨らむ。main / preload は electron 以外を require しない
+files:
+  - dist/**
+  - dist-electron/**
+  - '!dist-electron/**/*.d.ts'
+  - '!dist-electron/.tsbuildinfo'
+  - package.json
+  - '!node_modules/**'
+# ルートの package.json は "type": "module" だが、main / preload は CommonJS で出している。
+# dist-electron/package.json の目印が万一抜けても main が ESM として読まれて起動できなくならないよう、
+# 同梱する package.json 側でも CommonJS と明示する（画面側は app:// で読むので type の影響を受けない）
+extraMetadata:
+  type: commonjs
+mac:
+  # universal にしない（大きさが倍になるため）。arm64 と x64 を別々に作る
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  category: public.app-category.video
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  # 既定の名前（"lipsync-studio Setup 0.0.0.exe"）は空白を含み、latest.yml に書かれる名前（空白→-）と食い違う
+  artifactName: ${productName}-Setup-${version}.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+publish:
+  provider: github
+  owner: yaaayaaa
+  repo: lipsync-studio

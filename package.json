@@ -12,7 +12,9 @@
     "typecheck": "tsc -b --noEmit",
     "electron:build": "tsc -p tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist-electron/package.json', '{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
     "electron:start": "npm run build && npm run electron:build && electron .",
-    "electron:dev": "npm run electron:build && ELECTRON_DEV_URL=http://localhost:5173 electron ."
+    "electron:dev": "npm run electron:build && ELECTRON_DEV_URL=http://localhost:5173 electron .",
+    "dist:mac": "npm run build && npm run electron:build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "dist:win": "npm run build && npm run electron:build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win"
   },
   "dependencies": {
     "ag-psd": "^31.0.3",
@@ -30,6 +32,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "43.7.9",
+    "electron-builder": "26.17.0",
     "fake-indexeddb": "^6.2.6",
     "oxlint": "^1.88.0",
     "tsx": "^4.23.15",
