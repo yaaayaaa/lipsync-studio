@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src tests electron",
-    "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "electron:build": "tsc -p tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist-electron/package.json', '{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
