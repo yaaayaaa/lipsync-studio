@@ -46,8 +46,10 @@ win:
 nsis:
   # 既定の名前（"lipsync-studio Setup 0.0.0.exe"）は空白を含み、latest.yml に書かれる名前（空白→-）と食い違う
   artifactName: ${productName}-Setup-${version}.${ext}
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+  # 利用者ごと（%LOCALAPPDATA%\Programs）に入れ、選ばせない。「すべてのユーザー」を選べる案内型だと
+  # Program Files に入り、終了時の自動更新のたびに UAC の確認が出て「知らせずに更新」が崩れるため
+  oneClick: true
+  perMachine: false
 publish:
   provider: github
   owner: yaaayaaa
