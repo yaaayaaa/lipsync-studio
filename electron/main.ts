@@ -2,9 +2,11 @@ import { app, BrowserWindow, ipcMain, net, protocol, shell } from 'electron'
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { autoUpdater } from 'electron-updater'
 import { APP_ORIGIN, decideNavigation, isSameOrigin, resolveAppPath } from './appProtocol'
 import { isAllowedEngineRequest, parseEngineRequest } from './engineRequest'
 import type { EngineResponse } from './engineTypes'
+import { createFileLogger, startSilentUpdates } from './updater'
 
 // ビルド済みの画面（vite build の出力）。dist-electron/main.js から見て一つ上の dist/
 const DIST_ROOT = path.resolve(__dirname, '..', 'dist')
@@ -95,6 +97,12 @@ void app.whenReady().then(() => {
   registerAppProtocol()
   registerEngineFetch()
   createWindow()
+  // Mac は ~/Library/Logs/lipsync-studio/、Windows は %APPDATA%\lipsync-studio\logs\ に残る
+  startSilentUpdates({
+    updater: autoUpdater,
+    isPackaged: app.isPackaged,
+    logger: createFileLogger(path.join(app.getPath('logs'), 'updater.log')),
+  })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

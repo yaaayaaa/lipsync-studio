@@ -24,6 +24,8 @@ done
 # GUI のないセッション（ssh など）からは login キーチェーンの鍵で codesign が errSecInternalComponent になるため。
 # パスワードは -p で渡すと ps に見えるので、標準入力から渡す
 security unlock-keychain "$keychain" <"$keychain_password_file" >/dev/null
+# 終わったら（失敗で抜けたときも）鍵をかけ直し、署名の鍵を開いたままにしない
+trap 'security lock-keychain "$keychain" || true' EXIT
 
 # APPLE_API_KEY（.p8 の絶対パス）・APPLE_API_KEY_ID・APPLE_API_ISSUER。
 # electron-builder はこの3つがそろっていると @electron/notarize で .app を公証する

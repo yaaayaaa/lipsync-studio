@@ -20,20 +20,30 @@ module.exports = async function notarizeDmg(event) {
   }
 
   console.log(`  • notarizing dmg  file=${event.file}`)
-  const { stdout } = await run('xcrun', [
-    'notarytool',
-    'submit',
-    event.file,
-    '--key',
-    APPLE_API_KEY,
-    '--key-id',
-    APPLE_API_KEY_ID,
-    '--issuer',
-    APPLE_API_ISSUER,
-    '--wait',
-    '--output-format',
-    'json',
-  ])
+  let stdout
+  try {
+    ;({ stdout } = await run('xcrun', [
+      'notarytool',
+      'submit',
+      event.file,
+      '--key',
+      APPLE_API_KEY,
+      '--key-id',
+      APPLE_API_KEY_ID,
+      '--issuer',
+      APPLE_API_ISSUER,
+      '--wait',
+      '--output-format',
+      'json',
+    ]))
+  } catch (error) {
+    // execFile のエラーはコマンド行をそのまま含み、鍵の場所・ID・発行者が CI のログなどに残ってしまう。
+    // notarytool 自身の出力だけを、資格情報を伏せて伝える
+    const hide = (text) =>
+      [APPLE_API_KEY, APPLE_API_KEY_ID, APPLE_API_ISSUER].reduce((t, secret) => t.split(secret).join('***'), text)
+    const detail = hide(`${error.stderr ?? ''}${error.stdout ?? ''}`.trim())
+    throw new Error(`dmg の公証の送信に失敗しました (exit code ${error.code})${detail ? `: ${detail}` : ''}`)
+  }
   const result = JSON.parse(stdout)
   console.log(`  • dmg notarization finished  id=${result.id} status=${result.status}`)
   if (result.status !== 'Accepted') {

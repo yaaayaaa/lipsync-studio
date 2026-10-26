@@ -42,5 +42,8 @@
     "dockview-core": "8.4.1",
     "dockview": "8.4.1"
   },
-  "main": "dist-electron/main.js"
+  "main": "dist-electron/main.js",
+  "dependencies": {
+    "electron-updater": "6.8.10"
+  }
 }
