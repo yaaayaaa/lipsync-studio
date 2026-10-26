@@ -93,21 +93,42 @@ function createWindow() {
   void win.loadURL(DEV_URL ?? `${APP_ORIGIN}/`)
 }
 
-void app.whenReady().then(() => {
-  registerAppProtocol()
-  registerEngineFetch()
-  createWindow()
-  // Mac は ~/Library/Logs/lipsync-studio/、Windows は %APPDATA%\lipsync-studio\logs\ に残る
-  startSilentUpdates({
-    updater: autoUpdater,
-    isPackaged: app.isPackaged,
-    logger: createFileLogger(path.join(app.getPath('logs'), 'updater.log')),
+// 同じ userData を二つの起動が同時に使うと、後から開いた側は IndexedDB を開けず、
+// キャラ・台本・設定が消えたように見える。終了時の更新（Windows のインストーラー）とも競合する。
+// そのため 2 つ目の起動は何もせずに終わり、先に開いている窓を前に出す
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // 起動の途中なら、このあと whenReady で窓ができるので何もしない
+    if (!app.isReady()) return
+    const win = BrowserWindow.getAllWindows()[0]
+    if (!win) {
+      // Mac で窓を閉じてアプリだけ残っているとき
+      createWindow()
+      return
+    }
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.focus()
   })
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+  void app.whenReady().then(() => {
+    registerAppProtocol()
+    registerEngineFetch()
+    createWindow()
+    // Mac は ~/Library/Logs/lipsync-studio/、Windows は %APPDATA%\lipsync-studio\logs\ に残る
+    startSilentUpdates({
+      updater: autoUpdater,
+      isPackaged: app.isPackaged,
+      logger: createFileLogger(path.join(app.getPath('logs'), 'updater.log')),
+    })
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+}
