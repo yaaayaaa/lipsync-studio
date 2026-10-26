@@ -1,21 +1,31 @@
 # lipsync-studio（リップシンクスタジオ）
 
-PSD の立ち絵を VOICEVOX の音声にリップシンクさせ、mp4 として書き出すブラウザアプリです。
-PSD・セリフ・音声は外部に送信しません。通信するのは、設定した VOICEVOX エンジンの URL だけです。
+PSD の立ち絵を VOICEVOX の音声にリップシンクさせ、mp4 として書き出すデスクトップアプリです（Mac / Windows）。
+PSD・セリフ・音声は外部に送信しません。通信するのは、設定した VOICEVOX エンジンの URL と、更新の確認とダウンロードのための GitHub（このリポジトリの Releases）だけです。
 
 ## 必要なもの
 
-- [VOICEVOX](https://voicevox.hiroshiba.jp/)（エンジンを起動しておく。既定の URL は `http://localhost:50021`）
-- Node.js
-- Chrome または Edge のデスクトップ版（Windows / macOS）
+- macOS（Apple シリコン / Intel）または Windows 10 / 11（64 ビット）
+- [VOICEVOX](https://voicevox.hiroshiba.jp/)（使うときにエンジンを起動しておく。既定の URL は `http://localhost:50021`）
+
+## 入れ方
+
+[Releases](https://github.com/yaaayaaa/lipsync-studio/releases/latest) から、使うパソコンに合うファイルをダウンロードします。
+
+- **Mac（Apple シリコン）**：`lipsync-studio-<版>-arm64.dmg`
+- **Mac（Intel）**：`lipsync-studio-<版>.dmg`
+- **Windows**：`lipsync-studio-Setup-<版>.exe`
+
+Mac は dmg を開き、`lipsync-studio` を「アプリケーション」フォルダにドラッグします。初めて開くときに「インターネットからダウンロードされたアプリケーションです。開いてもよろしいですか?」と聞かれたら「開く」を選びます。
+
+Windows はインストーラーを実行します。署名していないため「Windows によって PC が保護されました」（SmartScreen）と出たら、「詳細情報」を押してから「実行」を押します。
 
 ## 起動手順
 
-1. `npm install`
-2. VOICEVOX を起動する
-3. `npm run dev`
+1. VOICEVOX を起動する
+2. lipsync-studio を開く
 
-これはブラウザでの開発用の手順です。デスクトップ版は VOICEVOX との通信をアプリ本体が行うので、エンジン側で許可するオリジンの設定は要りません。
+更新は自動です。新しい版が出ていると裏でダウンロードし、次にアプリを終了したときに入れ替わります（知らせは出ません）。
 
 ## 使い方
 
@@ -58,14 +68,24 @@ VOICEVOX で作った音声を公開するときは、クレジット表記が�
 
 実機での確認項目と、開発時に確認した内容、既知の制限は [docs/manual-check.md](docs/manual-check.md) にあります。
 
-## 開発用コマンド
+## 開発
+
+Node.js が要ります。
+
+1. `npm install`
+2. `npm run dev` で画面の開発サーバーを起動し、別の端末で `npm run electron:dev` を実行すると、その画面をデスクトップアプリの窓で開く
 
 - `npm test` : テストを実行する
 - `npm run typecheck` : 型チェック
 - `npm run lint` : oxlint
-- `npm run build` : 本番ビルド
+- `npm run build` : 画面の本番ビルド
+- `npm run electron:start` : 画面と main を本番ビルドしてデスクトップアプリで開く
+- `npm run dist:mac` / `npm run dist:win` : 配布物を `release/` に作る（Mac は署名と公証の鍵が要る。`scripts/dist-mac.sh` を参照）
 - `npx tsx scripts/make-sample-psd.ts` : サンプル PSD の生成
 - `npx tsx scripts/check-timeline.ts` : 口パクのタイムライン（1行編集で手を加えたクエリを含む）を本物のエンジンで照合する
+
+Electron の本体は `electron` コマンドを初めて使うときに落ちてきます。`node_modules/electron/dist/` の中を直接起動するスクリプト（Playwright の `_electron.launch` など）を先に使うときは、`npx install-electron` を一度実行してください。
+`npm run dev` の画面をブラウザで直接開くときだけは、VOICEVOX エンジンの `/setting` で開発サーバーのオリジン（`http://localhost:5173`）を許可する必要があります（デスクトップアプリではエンジンとの通信をアプリ本体が行うので要りません）。
 
 ## 立ち絵素材について
 
