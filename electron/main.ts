@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, net, protocol, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, net, protocol, session, shell } from 'electron'
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -66,6 +66,14 @@ function registerEngineFetch() {
   })
 }
 
+// 画面はカメラ・マイク・通知・位置情報・クリップボードの読み取りなど、許可の要る機能を使わない
+// （書き出しはダウンロード、再生は audio 要素、コピーと貼り付けはメニューの役割で、どれも許可を求めない）。
+// 万一読み込まれた別の中身が許可を得られないよう、すべて断る
+function denyPermissions() {
+  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
+  session.defaultSession.setPermissionCheckHandler(() => false)
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
@@ -116,6 +124,7 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   void app.whenReady().then(() => {
+    denyPermissions()
     registerAppProtocol()
     registerEngineFetch()
     createWindow()
