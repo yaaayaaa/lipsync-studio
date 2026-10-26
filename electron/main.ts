@@ -10,7 +10,9 @@ import { createFileLogger, startSilentUpdates } from './updater'
 
 // ビルド済みの画面（vite build の出力）。dist-electron/main.js から見て一つ上の dist/
 const DIST_ROOT = path.resolve(__dirname, '..', 'dist')
-const DEV_URL = process.env.ELECTRON_DEV_URL
+// 開発用に画面を vite の開発サーバーから読む。配布版では無視する。環境変数ひとつで
+// 任意の URL を画面として開け、engine:fetch の受け付け先までそのオリジンに変わってしまうため
+const DEV_URL = app.isPackaged ? undefined : process.env.ELECTRON_DEV_URL
 // 画面のオリジン。遷移の判定と、IPC を受け付ける相手の判定に使う
 const OWN_ORIGIN = DEV_URL ? new URL(DEV_URL).origin : APP_ORIGIN
 // renderer 側の合成のタイムアウト（120 秒）より長くする。先に main が切ると、
