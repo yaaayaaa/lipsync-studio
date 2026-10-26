@@ -29,6 +29,16 @@ mac:
   hardenedRuntime: true
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # 資格情報（APPLE_API_KEY・APPLE_API_KEY_ID・APPLE_API_ISSUER）は scripts/dist-mac.sh が環境変数で渡す
+  notarize: true
+dmg:
+  # dmg も署名し、scripts/notarize-dmg.cjs で公証して票を貼る（electron-builder は .app しか公証しない）
+  sign: true
+  # 公証の票を貼ると dmg の中身が変わり、先に計算された sha512 と blockmap が合わなくなる。
+  # Mac の自動更新は zip しか使わないので、dmg は latest-mac.yml に載せない
+  writeUpdateInfo: false
+# dmg ができてから publish（アップロード）されるまでの間に呼ばれる
+artifactBuildCompleted: ./scripts/notarize-dmg.cjs
 win:
   target:
     - target: nsis

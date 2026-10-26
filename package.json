@@ -13,7 +13,7 @@
     "electron:build": "tsc -p tsconfig.electron.json && node -e \"require('fs').writeFileSync('dist-electron/package.json', '{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
     "electron:start": "npm run build && npm run electron:build && electron .",
     "electron:dev": "npm run electron:build && ELECTRON_DEV_URL=http://localhost:5173 electron .",
-    "dist:mac": "npm run build && npm run electron:build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish never",
+    "dist:mac": "scripts/dist-mac.sh --publish never",
     "dist:win": "npm run build && npm run electron:build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --publish never"
   },
   "devDependencies": {
