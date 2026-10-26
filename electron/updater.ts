@@ -7,7 +7,7 @@ export const UPDATE_CHECK_DELAY_MS = 10_000
 // ログは調べるときに読むためだけのもの。増え続けないよう、この大きさを超えたら一つ前の世代に回す
 const MAX_LOG_BYTES = 1_000_000
 
-type SilentUpdater = Pick<AppUpdater, 'autoDownload' | 'autoInstallOnAppQuit' | 'logger' | 'checkForUpdates' | 'on'>
+type SilentUpdater = Pick<AppUpdater, 'autoDownload' | 'autoInstallOnAppQuit' | 'logger' | 'checkForUpdates'>
 
 export interface SilentUpdateOptions {
   updater: SilentUpdater
@@ -33,15 +33,14 @@ export function startSilentUpdates({
 
   updater.autoDownload = true
   updater.autoInstallOnAppQuit = true
+  // 失敗は electron-updater 自身が 'error' の受け手で logger に書く（受け手があるので EventEmitter は例外を投げない）
   updater.logger = logger
-  // 'error' の受け手がないと EventEmitter が例外を投げ、main プロセスが落ちる
-  updater.on('error', (error) => logger.error(`更新に失敗しました: ${error?.stack ?? String(error)}`))
 
   setTimer(() => {
     updater
       .checkForUpdates()
       .then((result) => {
-        // ダウンロードの失敗は上の 'error' で記録済み。未処理の reject として残さない
+        // ダウンロードの失敗は 'error' として記録済み。未処理の reject として残さない
         result?.downloadPromise?.catch(() => {})
       })
       .catch(() => {

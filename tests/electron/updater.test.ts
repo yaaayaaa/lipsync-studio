@@ -10,6 +10,11 @@ class FakeUpdater extends EventEmitter {
   autoDownload = false
   autoInstallOnAppQuit = false
   logger: Logger | null = null
+  constructor() {
+    super()
+    // 本物の AppUpdater と同じく、'error' を自分の logger に書く受け手を最初から持つ
+    this.on('error', (error: Error) => this.logger?.error(`Error: ${error.stack ?? error.message}`))
+  }
   checkForUpdates = vi.fn<() => Promise<unknown>>(() => Promise.resolve(null))
 }
 
@@ -46,13 +51,15 @@ describe('startSilentUpdates', () => {
     start(updater, { isPackaged: false, setTimer: timer })
     expect(timer.pending).toHaveLength(0)
     expect(updater.autoDownload).toBe(false)
-    expect(updater.listenerCount('error')).toBe(0)
+    expect(updater.logger).toBeNull()
   })
 
   test('パッケージ版は自動で落とし、終了時に入れ替える設定にして、少し待ってから確認する', async () => {
     const updater = new FakeUpdater()
+    const logger = silentLogger()
     const timer = manualTimer()
-    start(updater, { isPackaged: true, setTimer: timer })
+    start(updater, { isPackaged: true, logger, setTimer: timer })
+    expect(updater.logger).toBe(logger)
     expect(updater.autoDownload).toBe(true)
     expect(updater.autoInstallOnAppQuit).toBe(true)
     expect(updater.checkForUpdates).not.toHaveBeenCalled()
