@@ -1,6 +1,23 @@
 import path from 'node:path'
 
-export const APP_ORIGIN = 'app://lipsync-studio'
+export const APP_HOST = 'lipsync-studio'
+export const APP_ORIGIN = `app://${APP_HOST}`
+
+/**
+ * app: の依頼 URL を dist/ 配下のファイルパスにする。ホストが lipsync-studio 以外なら null。
+ * app://lipsync-studio 以外のオリジンに同じ中身を配ると、別オリジンの画面ができてしまい、
+ * engine:fetch の送信元の判定や IndexedDB の置き場所の前提が崩れるため
+ */
+export function resolveAppRequest(requestUrl: string, root: string): string | null {
+  let url: URL
+  try {
+    url = new URL(requestUrl)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'app:' || url.host !== APP_HOST) return null
+  return resolveAppPath(url.pathname, root)
+}
 
 /**
  * app://lipsync-studio/<urlPath> を root（dist/ の絶対パス）配下のファイルパスにする。

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { resolveAppPath, decideNavigation, isSameOrigin } from '../../electron/appProtocol'
+import { resolveAppPath, resolveAppRequest, decideNavigation, isSameOrigin } from '../../electron/appProtocol'
 
 const root = '/opt/app/dist'
 
@@ -18,6 +18,25 @@ describe('resolveAppPath', () => {
   })
   test('不正なエンコードは null', () => {
     expect(resolveAppPath('/%E3%81', root)).toBeNull()
+  })
+})
+
+describe('resolveAppRequest', () => {
+  test('app://lipsync-studio の依頼は dist/ のファイルにする', () => {
+    expect(resolveAppRequest('app://lipsync-studio/', root)).toBe('/opt/app/dist/index.html')
+    expect(resolveAppRequest('app://lipsync-studio/assets/a.js?v=1#x', root)).toBe('/opt/app/dist/assets/a.js')
+  })
+  test('別のホスト・ホストなし・別スキームは null（404 にする）', () => {
+    expect(resolveAppRequest('app://evil/', root)).toBeNull()
+    expect(resolveAppRequest('app://lipsync-studio.evil/index.html', root)).toBeNull()
+    expect(resolveAppRequest('app://lipsync-studio:8080/index.html', root)).toBeNull()
+    expect(resolveAppRequest('app:///index.html', root)).toBeNull()
+    expect(resolveAppRequest('https://lipsync-studio/index.html', root)).toBeNull()
+    expect(resolveAppRequest('not a url', root)).toBeNull()
+  })
+  test('ホストが正しくても root の外へ出るパスは null', () => {
+    // URL の解析で畳まれない、エンコードした / を使った逸脱
+    expect(resolveAppRequest('app://lipsync-studio/..%2F..%2Fsecret.txt', root)).toBeNull()
   })
 })
 

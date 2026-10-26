@@ -3,7 +3,7 @@ import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { autoUpdater } from 'electron-updater'
-import { APP_ORIGIN, decideNavigation, isSameOrigin, resolveAppPath } from './appProtocol'
+import { APP_ORIGIN, decideNavigation, isSameOrigin, resolveAppRequest } from './appProtocol'
 import { isAllowedEngineRequest, parseEngineRequest } from './engineRequest'
 import type { EngineResponse } from './engineTypes'
 import { createFileLogger, startSilentUpdates } from './updater'
@@ -30,7 +30,7 @@ protocol.registerSchemesAsPrivileged([
 
 function registerAppProtocol() {
   protocol.handle('app', (request) => {
-    const file = resolveAppPath(new URL(request.url).pathname, DIST_ROOT)
+    const file = resolveAppRequest(request.url, DIST_ROOT)
     if (file === null || !existsSync(file) || !statSync(file).isFile()) {
       return new Response('Not Found', { status: 404 })
     }
