@@ -21,7 +21,23 @@ describe('isAllowedEngineRequest', () => {
     expect(isAllowedEngineRequest(req('https://example.com/'))).toBe(false)
     expect(isAllowedEngineRequest(req('http://localhost:50021/setting'))).toBe(false)
     expect(isAllowedEngineRequest(req('http://localhost:50021/version/extra'))).toBe(false)
-    expect(isAllowedEngineRequest(req('http://localhost:50021/prefix/version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://localhost:50021/xversion'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://localhost:50021/voicevox/setting'))).toBe(false)
+  })
+  // リバースプロキシの下に置いたエンジン（http://host/voicevox など）
+  test('エンジンの URL にパスがあっても、その後ろの API のパスは通す', () => {
+    expect(isAllowedEngineRequest(req('https://example.com/voicevox/version'))).toBe(true)
+    expect(isAllowedEngineRequest(req('http://192.168.1.5/a/b-c_d/synthesis?speaker=3', 'POST'))).toBe(true)
+    expect(isAllowedEngineRequest(req('http://h/%E9%9F%B3%E5%A3%B0/speakers'))).toBe(true)
+  })
+  test('パスの前置きが汚いもの（空の区切り・エンコードした区切り文字）は拒否', () => {
+    expect(isAllowedEngineRequest(req('http://h//version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/a//version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/voicevox/'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/a%2Fb/version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/a%2fb/version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/a%5Cb/version'))).toBe(false)
+    expect(isAllowedEngineRequest(req('http://h/..%2F/version'))).toBe(false)
   })
   test('パスは URL 正規化後で判定する', () => {
     expect(isAllowedEngineRequest(req('http://localhost:50021/../version'))).toBe(true)

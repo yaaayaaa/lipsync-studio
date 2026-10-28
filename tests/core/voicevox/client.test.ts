@@ -30,6 +30,16 @@ const catchError = async (p: Promise<unknown>): Promise<VoicevoxError> => {
 }
 
 describe('VoicevoxClient', () => {
+  // main の許可リスト（electron/engineRequest.ts）は「エンジンの URL のパス + API のパス」の形を前提にしている
+  it('joins API paths after a base URL with a path, with or without the trailing slash', async () => {
+    const bases = ['https://example.com/voicevox', 'https://example.com/voicevox/', 'https://example.com/voicevox//']
+    for (const baseUrl of bases) {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse('0.25.2'))
+      await new VoicevoxClient({ baseUrl, fetch: fetchMock }).version()
+      expect(fetchMock.mock.calls[0][0]).toBe('https://example.com/voicevox/version')
+    }
+  })
+
   it('audioQuery POSTs encoded text and speaker', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(sampleQuery()))
     const client = new VoicevoxClient({ baseUrl: `${BASE}/`, fetch: fetchMock })
