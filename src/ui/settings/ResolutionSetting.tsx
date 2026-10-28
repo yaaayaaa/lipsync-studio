@@ -13,7 +13,7 @@ interface Props {
   current: ExportSettings
   disabled: boolean
   onChange(resolution: Resolution): void
-  /** 入力の誤りやブラウザが対応していない大きさの知らせ。null で消す */
+  /** 入力の誤りや、このパソコンのエンコーダーが対応していない大きさの知らせ。null で消す */
   onProblem(message: string | null): void
 }
 

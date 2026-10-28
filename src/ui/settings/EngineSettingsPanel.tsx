@@ -40,8 +40,9 @@ export function EngineSettingsPanel() {
               </p>
             )}
             <p>
-              既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、そのパソコンで
-              VOICEVOX を --host 0.0.0.0 付きで起動してください。
+              既定は http://localhost:50021 です。別のパソコンのエンジンを使うときは、そのパソコンで VOICEVOX
+              のエンジン（エディターではなく、エンジンの run または vv-engine/run）を --host 0.0.0.0
+              を付けて起動してください。
             </p>
           </>
         }

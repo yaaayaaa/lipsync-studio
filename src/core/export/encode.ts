@@ -19,13 +19,15 @@ const AUDIO_SAMPLE_RATE = 48000
 export interface EncodeSupport {
   ok: boolean
   reason?: string
+  /** 何が足りないか。映像なら解像度を下げると通ることがあるので、案内を分けるために返す */
+  cause?: 'video' | 'audio'
 }
 
 export async function checkEncodeSupport(settings: ExportSettings): Promise<EncodeSupport> {
   const video = await canEncodeVideo('avc', { width: settings.width, height: settings.height })
-  if (!video) return { ok: false, reason: 'この環境は H.264 での動画エンコードに対応していません' }
+  if (!video) return { ok: false, cause: 'video', reason: 'この環境は H.264 での動画エンコードに対応していません' }
   const audio = await canEncodeAudio('aac', { numberOfChannels: 1, sampleRate: AUDIO_SAMPLE_RATE })
-  if (!audio) return { ok: false, reason: 'この環境は AAC での音声エンコードに対応していません' }
+  if (!audio) return { ok: false, cause: 'audio', reason: 'この環境は AAC での音声エンコードに対応していません' }
   return { ok: true }
 }
 
