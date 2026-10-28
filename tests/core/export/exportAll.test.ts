@@ -65,6 +65,11 @@ describe('exportLines', () => {
   })
 })
 
+const ZIP_HEADERS: Record<number, { kind: string; flag: number; nameLength: number; name: number }> = {
+  0x04034b50: { kind: 'local', flag: 6, nameLength: 26, name: 30 },
+  0x02014b50: { kind: 'central', flag: 8, nameLength: 28, name: 46 },
+}
+
 describe('zipResults', () => {
   it('stores only the successful files, with their names and contents', async () => {
     const results = await exportLines(lines, renderOne)
@@ -75,5 +80,30 @@ describe('zipResults', () => {
     expect(Object.keys(files).sort()).toEqual(['001_いち.mp4', '003_さん.mp4'])
     expect(new TextDecoder().decode(files['001_いち.mp4'])).toBe('mp4:いち')
     expect(new TextDecoder().decode(files['003_さん.mp4'])).toBe('mp4:さん')
+  })
+
+  // 汎用フラグの bit 11（0x0800）が立っていないと、展開する側は名前を UTF-8 ではなく
+  // CP437 や Shift_JIS として読み、日本語の名前が化ける
+  it('marks every entry name as UTF-8 (general purpose bit 11)', async () => {
+    const results = await exportLines(lines, renderOne)
+    const bytes = new Uint8Array(await (await zipResults(results)).arrayBuffer())
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+    const flags: { kind: string; name: string; utf8: boolean }[] = []
+    for (let i = 0; i + 4 <= bytes.length; i++) {
+      const sig = view.getUint32(i, true)
+      // ローカルヘッダーと中央ディレクトリで、フラグ・名前の長さ・名前の位置が違う
+      const layout = ZIP_HEADERS[sig]
+      if (!layout) continue
+      const nameLength = view.getUint16(i + layout.nameLength, true)
+      const name = new TextDecoder().decode(bytes.subarray(i + layout.name, i + layout.name + nameLength))
+      flags.push({ kind: layout.kind, name, utf8: (view.getUint16(i + layout.flag, true) & 0x0800) !== 0 })
+    }
+    expect(flags.map((f) => `${f.kind}:${f.name}`).sort()).toEqual([
+      'central:001_いち.mp4',
+      'central:003_さん.mp4',
+      'local:001_いち.mp4',
+      'local:003_さん.mp4',
+    ])
+    expect(flags.every((f) => f.utf8)).toBe(true)
   })
 })
